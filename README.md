@@ -1,4 +1,4 @@
-# hello_universe
+# Hello Universe
 
 ### Hello Universe reinvented in PyGame.
 
