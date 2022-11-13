@@ -7,3 +7,11 @@ Currently in the very early prototyping stage. Sorely lacking in polish, gamepla
 I have outlined the main systems which the gameplay will be built upon.
 
 Let's see if I can coke up a way to animate these creatures procedurally without access to standard models and meshes typically offered by a game engine.
+
+### Instructions
+
+[Python Installation](https://www.python.org/downloads/)
+
+[PyGame Installation](https://www.pygame.org/wiki/GettingStarted)
+
+Download and unzip the repository. Run ```python main.py``` or ```python3 main.py``` or simply the file ```main.py``` from the root directory. Otherwise, the assets won't load properly.
