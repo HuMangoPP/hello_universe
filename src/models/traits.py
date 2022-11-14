@@ -27,7 +27,7 @@ class Traits:
         if len(self.traits)>=10:
             return
 
-        if creature.legs.num_pair_legs>1:
+        if creature.legs.num_legs()>1:
             # then this entity has two pairs of legs
             # so one can specialize
             if 'wings' not in self.traits and stats['mobility']>=20:
@@ -36,8 +36,7 @@ class Traits:
                 # can give them wings
                 self.traits.append('wings')
                 self.min_stats['mobility'] = 20
-                creature.decrease_legs()
-                print('wings')
+                creature.give_wings()
             
             if 'arms' not in self.traits and stats['intelligence']>=30:
                 # intelligence = arms
@@ -45,8 +44,7 @@ class Traits:
                 # can give them arms
                 self.traits.append('arms')
                 self.min_stats['intelligence'] = 30
-                creature.decrease_legs()
-                print('arms')
+                creature.give_arms()
 
         if creature.legs.num_pair_legs>0:
             if 'leg_weapon' not in self.traits and stats['power']>=10 and stats['mobility']>=10:
@@ -56,7 +54,6 @@ class Traits:
                 self.traits.append('leg_weapon')
                 self.min_stats['power'] = 10
                 self.min_stats['mobility'] = 10
-                print('leg_weapon')
 
         if 'head_weapon' not in self.traits and stats['power']>=20 and stats['mobility']>=10:
             # power = horn/antler
@@ -65,9 +62,7 @@ class Traits:
             self.traits.append('head_weapon')
             self.min_stats['power'] = 20
             self.min_stats['mobility'] = 10
-            print('head_weapon')
         
         if 'body_armour' not in self.traits and stats['defense']>=10:
             self.traits.append('body_armour')
             self.min_stats['defense'] = 10
-            print('body_armour')

@@ -183,15 +183,12 @@ class Entities:
     def give_abilities(self, index):
         if 'wings' in self.traits[index].traits and 'fly' not in self.abilities[index]:
             self.abilities[index].append('fly')
-            print(self.abilities[index])
         
         if 'head_weapon' in self.traits[index].traits and 'rush' not in self.abilities[index]:
             self.abilities[index].append('rush')
-            print(self.abilities[index])
 
         if 'leg_weapon' in self.traits[index].traits and 'slash' not in self.abilities[index]:
             self.abilities[index].append('slash')
-            print(self.abilities[index])
 
     def new_generation(self):
         # choose some entities to duplicate

@@ -1,6 +1,6 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
-from src.settings import BAR_WIDTH, EDGE_PADDING, HEALTH_AND_ENERGY_RADIUS, UI_BG_COLOR, UI_BG_HEIGHT, UI_BG_WDITH, WIDTH, HEIGHT, STAT_COLORS, GAUGE_COLORS
+from src.settings import BAR_WIDTH, EDGE_PADDING, HEALTH_AND_ENERGY_RADIUS, UI_BG_COLOR, UI_BG_HEIGHT, WIDTH, HEIGHT, STAT_COLORS, GAUGE_COLORS, ABILITY_Y_ALIGN, TRAIT_Y_ALIGN
 from src.combat.abilities import ALL_ABILITIES
 
 class UserInterface:
@@ -8,6 +8,7 @@ class UserInterface:
         self.player = player
         self.stat_icons = list(ui_sprites['stat_icons'].values())
         self.ability_icons = ui_sprites['ability_icons']
+        self.trait_icons = ui_sprites['trait_icons']
     
     def draw_mouse(self, screen):
         mx, my = pg.mouse.get_pos()
@@ -80,6 +81,7 @@ class UserInterface:
                                              HEIGHT-EDGE_PADDING+BAR_WIDTH/2-self.stat_icons[i].get_height()/2))
         
         self.ability_slots(screen, entities)
+        self.trait_slots(screen, entities)
 
         self.draw_mouse(screen)
 
@@ -88,7 +90,14 @@ class UserInterface:
 
         for i in range(len(abilities)):
             screen.blit(self.ability_icons[abilities[i]], (WIDTH//2 + (i-2)*2*BAR_WIDTH - self.ability_icons[abilities[i]].get_width()/2, 
-                                                           HEIGHT-EDGE_PADDING - self.ability_icons[abilities[i]].get_height()/2))
+                                                           ABILITY_Y_ALIGN - self.ability_icons[abilities[i]].get_height()/2))
+
+    def trait_slots(self, screen, entities):
+        traits = entities.traits[self.player].traits
+
+        for i in range(len(traits)):
+            screen.blit(self.trait_icons[traits[i]], (WIDTH//2+(i-2)*2*BAR_WIDTH - self.trait_icons[traits[i]].get_width()/2,
+                                                      TRAIT_Y_ALIGN - self.trait_icons[traits[i]].get_width()/2))
 
     def ability_indicator(self, screen, entities, player, controller, camera):
         ability_num = controller.queued_ability

@@ -15,9 +15,11 @@ if __name__ == '__main__':
     
     stat_icons = load_assets('./assets/stats', 1.0)
     ability_icons = load_assets('./assets/abilities', 2.0)
+    trait_icons = load_assets('./assets/traits', 2.0)
     sprites = {}
     sprites['stat_icons'] = stat_icons
     sprites['ability_icons'] = ability_icons
+    sprites['trait_icons'] = trait_icons
 
     clock = pg.time.Clock()
 

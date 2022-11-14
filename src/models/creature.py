@@ -9,18 +9,18 @@ class Creature:
         self.skeleton = []
         self.size = size
         self.build_skeleton(pos)
-        self.legs = Legs(num_pair_legs, leg_length)
+        self.legs = Legs(num_pair_legs, leg_length, [], [])
         self.give_legs()
     
     def build_skeleton(self, pos, a=0):
         for i in range(self.num_parts):
             self.skeleton.append([pos[0]-(i+1)*2*self.size, pos[1], pos[2], a])
     
-    def decrease_legs(self):
-        num_legs = self.legs.num_pair_legs-1
-        leg_length = self.legs.leg_length
-        self.legs = Legs(num_legs, leg_length)
-        self.give_legs()
+    def give_wings(self):
+        self.legs.transform_wings()
+
+    def give_arms(self):
+        self.legs.transform_arms()
 
     def give_legs(self):
         if self.legs.num_pair_legs == 0:
@@ -35,9 +35,11 @@ class Creature:
                 self.legs.build_legs(self.skeleton[i])
 
     def draw(self, screen, camera):
-        pg.draw.circle(screen, 'red', (self.head[0]-camera.x, self.head[1]-camera.y), self.size)
+        x, y = camera.transform_to_screen(self.head[0], self.head[1])
+        pg.draw.circle(screen, 'red', (x, y), self.size)
         for i in range(self.num_parts):
-            pg.draw.circle(screen, 'white', (self.skeleton[i][0]-camera.x, self.skeleton[i][1]-camera.y), self.size)
+            x, y = camera.transform_to_screen(self.skeleton[i][0], self.skeleton[i][1])
+            pg.draw.circle(screen, 'white', (x, y), self.size)
         self.legs.draw(screen, self.skeleton, camera)
     
     def move(self, pos):
