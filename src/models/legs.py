@@ -31,29 +31,43 @@ class Legs:
 
     def draw(self, screen, skeleton, camera):
         for i in range(self.num_pair_legs):
+            screen_pos = []
+            # foot pos
+            screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i][0], 
+                                                         self.feet_pos[2*i][1], 
+                                                         self.feet_pos[2*i][2]))
+            # joint pos
+            joint_x, joint_y, joint_z = self.calculate_leg_joint_pos(self.feet_pos[2*i], skeleton[self.attached_segments[i]], 1)
+            screen_pos.append(camera.transform_to_screen(joint_x, joint_y, joint_z))
+            # body pos
+            screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0],
+                                                         skeleton[self.attached_segments[i]][1],
+                                                         skeleton[self.attached_segments[i]][2]))
             # draw the feet
-            
-            pg.draw.circle(screen, 'blue', camera.transform_to_screen(self.feet_pos[2*i][0], self.feet_pos[2*i][1]), self.feet_size)
-            pg.draw.circle(screen, 'blue', camera.transform_to_screen(self.feet_pos[2*i+1][0], self.feet_pos[2*i+1][1]), self.feet_size)
+            pg.draw.circle(screen, 'blue', screen_pos[0], self.feet_size)
+            pg.draw.line(screen, 'green', screen_pos[0],
+                                          screen_pos[1])
+            pg.draw.line(screen, 'green', screen_pos[1],
+                                          screen_pos[2])
 
-            # give each leg one join that bisects the leg
-            # calculate leg bend angle using cosine law
-            joint_x, joint_y = self.calculate_leg_joint_pos(self.feet_pos[2*i], skeleton[self.attached_segments[i]], 1)
-            joint_x, joint_y = camera.transform_to_screen(joint_x, joint_y)
-            # draw leg
-            pg.draw.line(screen, 'green', camera.transform_to_screen(self.feet_pos[2*i][0], self.feet_pos[2*i][1]),
-                                          (joint_x, joint_y))
-            pg.draw.line(screen, 'green', (joint_x, joint_y),
-                                          camera.transform_to_screen(skeleton[self.attached_segments[i]][0],
-                                           skeleton[self.attached_segments[i]][1]))
             # other leg of pair
-            joint_x, joint_y = self.calculate_leg_joint_pos(self.feet_pos[2*i+1], skeleton[self.attached_segments[i]], -1)
-            joint_x, joint_y = camera.transform_to_screen(joint_x, joint_y)
-            pg.draw.line(screen, 'green', camera.transform_to_screen(self.feet_pos[2*i+1][0], self.feet_pos[2*i+1][1]),
-                                          (joint_x, joint_y))
-            pg.draw.line(screen, 'green', (joint_x, joint_y),
-                                          camera.transform_to_screen(skeleton[self.attached_segments[i]][0], 
-                                           skeleton[self.attached_segments[i]][1]))
+            screen_pos = []
+            # foot pos
+            screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i+1][0], 
+                                                         self.feet_pos[2*i+1][1], 
+                                                         self.feet_pos[2*i+1][2]))
+            # joint pos
+            joint_x, joint_y, joint_z = self.calculate_leg_joint_pos(self.feet_pos[2*i+1], skeleton[self.attached_segments[i]], 1)
+            screen_pos.append(camera.transform_to_screen(joint_x, joint_y, joint_z))
+            # body pos
+            screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0],
+                                                         skeleton[self.attached_segments[i]][1],
+                                                         skeleton[self.attached_segments[i]][2]))
+            pg.draw.circle(screen, 'blue', screen_pos[0], self.feet_size)
+            pg.draw.line(screen, 'green', screen_pos[0],
+                                          screen_pos[1])
+            pg.draw.line(screen, 'green', screen_pos[1],
+                                          screen_pos[2])
     
     def move_arms(self, skeleton, i):
         # first, calculate where it should be
@@ -121,15 +135,22 @@ class Legs:
         return sqrt((foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2)
 
     def calculate_leg_joint_pos(self, foot_pos, body_seg_pos, neg):
-        dist = (foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2
-        cos_bend_angle = (dist-self.leg_length**2/2)/(-self.leg_length**2/2)
-        cos_bend_angle = round(cos_bend_angle, 3)
-        bend_angle = acos(cos_bend_angle)
+        xy_dist = sqrt((foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2)
+        half_dist = xy_dist/2
         dx = foot_pos[0]-body_seg_pos[0]
         dy = foot_pos[1]-body_seg_pos[1]
         body_to_foot_horizontal_angle = neg*atan2(dy,dx)
-        body_to_joint_vertical_angle = pi/2-body_to_foot_horizontal_angle-(pi-bend_angle)/2
-        joint_x = body_seg_pos[0]+self.leg_length/2*sin(body_to_joint_vertical_angle)
-        joint_y = body_seg_pos[1]+neg*self.leg_length/2*cos(body_to_joint_vertical_angle)
-        return joint_x, joint_y
+        joint_x = body_seg_pos[0]+half_dist*cos(body_to_foot_horizontal_angle)
+        joint_y = body_seg_pos[1]+neg*half_dist*sin(body_to_foot_horizontal_angle)
+        half_length = self.leg_length/2
+        joint_z = body_seg_pos[2]+sqrt(abs(half_length**2-half_dist**2))
+
+        # dist = (foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2
+        # cos_bend_angle = (dist-self.leg_length**2/2)/(-self.leg_length**2/2)
+        # cos_bend_angle = round(cos_bend_angle, 3)
+        # bend_angle = acos(cos_bend_angle)
+        # body_to_joint_vertical_angle = pi/2-body_to_foot_horizontal_angle-(pi-bend_angle)/2
+        # joint_x = body_seg_pos[0]+self.leg_length/2*sin(body_to_joint_vertical_angle)
+        # joint_y = body_seg_pos[1]+neg*self.leg_length/2*cos(body_to_joint_vertical_angle)
+        return joint_x, joint_y, joint_z
         

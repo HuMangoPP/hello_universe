@@ -35,10 +35,10 @@ class Creature:
                 self.legs.build_legs(self.skeleton[i])
 
     def draw(self, screen, camera):
-        x, y = camera.transform_to_screen(self.head[0], self.head[1])
+        x, y = camera.transform_to_screen(self.head[0], self.head[1], self.head[2])
         pg.draw.circle(screen, 'red', (x, y), self.size)
         for i in range(self.num_parts):
-            x, y = camera.transform_to_screen(self.skeleton[i][0], self.skeleton[i][1])
+            x, y = camera.transform_to_screen(self.skeleton[i][0], self.skeleton[i][1], self.skeleton[i][2])
             pg.draw.circle(screen, 'white', (x, y), self.size)
         self.legs.draw(screen, self.skeleton, camera)
     
