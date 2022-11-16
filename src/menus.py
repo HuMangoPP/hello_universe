@@ -51,7 +51,7 @@ def game_menu(screen, game_data):
         screen.fill('black')
         x_i, y_i = controller.movement_input()
         a_i = controller.ability_input(entities)
-        entities.use_ability(a_i, player)
+        entities.use_ability(a_i, player, camera)
         entities.parse_input(x_i, y_i, player)
         entities.update()
         camera.update(entities, player)

@@ -7,8 +7,10 @@ class Camera():
 
         self.x_transform = [1, 0.5]
         self.y_transform = [-1, 0.5]
+        self.x_inverse = [0.5, -0.5]
+        self.y_inverse = [1, 1]
 
-    def isometric_to_screen(self, x, y, z):
+    def world_to_screen(self, x, y, z):
         return (x*self.x_transform[0]+y*self.y_transform[0],
                 x*self.x_transform[1]+y*self.y_transform[1]-z)
 
@@ -17,9 +19,13 @@ class Camera():
                 self.x*self.x_transform[1]+self.y*self.y_transform[1])
 
     def transform_to_screen(self, x, y, z):
-        x_pos, y_pos = self.isometric_to_screen(x, y, z)
+        x_pos, y_pos = self.world_to_screen(x, y, z)
         camera_x, camera_y = self.camera_to_screen()
         return (x_pos-camera_x, y_pos-camera_y)
+
+    def screen_to_world(self, x, y):
+        return (x*self.x_inverse[0]+y*self.y_inverse[0],
+                x*self.x_inverse[1]+y*self.y_inverse[1])
 
     def update(self, entities, following):
         # solved via a system of equations

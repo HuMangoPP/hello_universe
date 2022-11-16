@@ -1,6 +1,6 @@
 import pygame as pg
 from random import choice, randint
-from math import atan2, cos, sin, sqrt
+from math import atan2, cos, sin, sqrt, pi
 from src.combat.abilities import BASIC_ABILITIES, ALL_ABILITIES, ActiveAbility
 from src.settings import HEIGHT, WIDTH
 from src.models.creature import Creature
@@ -72,7 +72,7 @@ class Entities:
         self.active_abilities()
         self.collide()
 
-    def use_ability(self, a_i, player):
+    def use_ability(self, a_i, player, camera):
         if a_i['ability']!=-1:
             # all abilities
             self.status_effects[player]['effects'].append('ability_lock')
@@ -82,8 +82,10 @@ class Entities:
             # abilities with movement tag
             if 'movement' in ALL_ABILITIES[self.abilities[player][a_i['ability']]]['type']:
                 # get the direction of the movement
+
                 x_dir = a_i['mx']-WIDTH//2
                 y_dir = a_i['my']-HEIGHT//2
+                x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
                 angle = atan2(y_dir, x_dir)
                 spd_mod = 3+(self.stats[player]['mobility']+self.stats[player]['power'])/100
                 self.vel[player][0] = spd_mod*self.spd[player]*cos(angle)

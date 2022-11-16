@@ -79,4 +79,5 @@ class ActiveAbility:
 
     def draw(self, screen, camera):
         for pos in self.pos:
-            pg.draw.circle(screen, 'blue', (pos[0]-camera.x, pos[1]-camera.y), self.range)
+            x, y = camera.transform_to_screen(pos[0], pos[1], pos[2])
+            pg.draw.circle(screen, 'blue', (x, y), self.range)
