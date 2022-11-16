@@ -102,6 +102,7 @@ class Entities:
                 # get the strike direction
                 x_dir = a_i['mx']-WIDTH//2
                 y_dir = a_i['my']-HEIGHT//2
+                x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
                 angle = atan2(y_dir, x_dir)
 
                 # update hurtboxes
