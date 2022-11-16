@@ -52,7 +52,7 @@ def game_menu(screen, game_data):
         x_i, y_i = controller.movement_input()
         a_i = controller.ability_input(entities)
         entities.use_ability(a_i, player, camera)
-        entities.parse_input(x_i, y_i, player)
+        entities.parse_input(x_i, y_i, player, camera)
         entities.update()
         camera.update(entities, player)
         if controller.queued_ability!=-1:

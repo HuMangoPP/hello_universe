@@ -121,22 +121,23 @@ class Entities:
                         self.health[j]-=2
                         self.health[i]-=1
 
-    def parse_input(self, x_i, y_i, player):
+    def parse_input(self, x_i, y_i, player, camera):
         if 'ability_lock' in self.status_effects[player]['effects']:
             x_i, y_i = 0, 0
 
         # entity movement
-        if x_i==0:
+        x_dir, y_dir = camera.screen_to_world(x_i, y_i)
+        if x_dir==0:
             self.vel[player][0] = de_accelerate(self.acc[player], self.vel[player][0])
         else:
-            self.vel[player][0] = accelerate(x_i,
+            self.vel[player][0] = accelerate(x_dir,
                                                  self.acc[player],
                                                  self.vel[player][0])
         
-        if y_i==0:
+        if y_dir==0:
             self.vel[player][1] = de_accelerate(self.acc[player], self.vel[player][1])
         else:
-            self.vel[player][1] = accelerate(y_i,
+            self.vel[player][1] = accelerate(y_dir,
                                                  self.acc[player],
                                                  self.vel[player][1])
         
