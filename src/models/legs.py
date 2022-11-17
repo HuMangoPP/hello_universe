@@ -37,7 +37,7 @@ class Legs:
                                                          self.feet_pos[2*i][1], 
                                                          self.feet_pos[2*i][2]))
             # joint pos
-            joint_x, joint_y, joint_z = self.calculate_leg_joint_pos(self.feet_pos[2*i], skeleton[self.attached_segments[i]], 1)
+            joint_x, joint_y, joint_z = self.calculate_leg_joint_pos(self.feet_pos[2*i], skeleton[self.attached_segments[i]], -1)
             screen_pos.append(camera.transform_to_screen(joint_x, joint_y, joint_z))
             # body pos
             screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0],
@@ -93,11 +93,12 @@ class Legs:
             x, y, z = skeleton[index][0], skeleton[index][1], 0          
             angle = skeleton[index][3]
             
-            self.step_pos[2*i] = [x+self.leg_length*cos(self.step_bend+angle), 
-                                  y+self.leg_length*sin(self.step_bend+angle), 
+            leg_length_left = sqrt(self.leg_length**2-skeleton[index][2]**2)
+            self.step_pos[2*i] = [x+leg_length_left*cos(self.step_bend+angle), 
+                                  y+leg_length_left*sin(self.step_bend+angle), 
                                   z]
-            self.step_pos[2*i+1] = [x+self.leg_length*cos(-self.step_bend+angle), 
-                                    y+self.leg_length*sin(-self.step_bend+angle), 
+            self.step_pos[2*i+1] = [x+leg_length_left*cos(-self.step_bend+angle), 
+                                    y+leg_length_left*sin(-self.step_bend+angle), 
                                     z]
         
         # update the renderable feet pos as neceessary
@@ -138,25 +139,55 @@ class Legs:
 
 
     def dist_foot_to_body(self, foot_pos, body_seg_pos):
-        return sqrt((foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2)
+        return sqrt((foot_pos[0]-body_seg_pos[0])**2 +
+                    (foot_pos[1]-body_seg_pos[1])**2 + 
+                    (foot_pos[2]-body_seg_pos[2])**2)
 
     def calculate_leg_joint_pos(self, foot_pos, body_seg_pos, neg):
-        xy_dist = sqrt((foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2)
-        half_dist = xy_dist/2
-        dx = foot_pos[0]-body_seg_pos[0]
-        dy = foot_pos[1]-body_seg_pos[1]
-        body_to_foot_horizontal_angle = neg*atan2(dy,dx)
-        joint_x = body_seg_pos[0]+half_dist*cos(body_to_foot_horizontal_angle)
-        joint_y = body_seg_pos[1]+neg*half_dist*sin(body_to_foot_horizontal_angle)
-        half_length = self.leg_length/2
-        joint_z = body_seg_pos[2]+sqrt(abs(half_length**2-half_dist**2))
+        # xy_dist = sqrt((foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2)
+        
+        # distance from foot to body segment
+        dist = self.dist_foot_to_body(foot_pos, body_seg_pos)
+        # vector pointing from body to foot
+        body_to_foot_dir = [foot_pos[0]-body_seg_pos[0],
+                            foot_pos[1]-body_seg_pos[1],
+                            foot_pos[2]-body_seg_pos[2]]
+        # vector that the body is point in on the xy plane
+        facing_dir = [cos(body_seg_pos[3]),
+                      sin(body_seg_pos[3]),
+                      0]
+        # take the cross product of these two vectors to find the direction of the bend
+        bend_vec = [
+            neg*(body_to_foot_dir[1]*facing_dir[2]-body_to_foot_dir[2]*facing_dir[1]),
+            neg*(body_to_foot_dir[2]*facing_dir[0]-body_to_foot_dir[0]*facing_dir[2]),
+            neg*(body_to_foot_dir[0]*facing_dir[1]-body_to_foot_dir[1]*facing_dir[0]),
+        ]
+        # normalize the joint vector
+        size = sqrt(bend_vec[0]**2+bend_vec[1]**2+bend_vec[2]**2)
+        bend_dir = bend_vec
+        if size!=0:
+            bend_dir = [
+                bend_vec[0]/size,
+                bend_vec[1]/size,
+                bend_vec[2]/size
+            ]
+        # find the tail of the joint vector
+        bend_root = [
+            body_seg_pos[0]+(foot_pos[0]-body_seg_pos[0])/2,
+            body_seg_pos[1]+(foot_pos[1]-body_seg_pos[1])/2,
+            body_seg_pos[2]+(foot_pos[2]-body_seg_pos[2])/2,
+        ]
+        # each segment of the leg is half of the length of the entire leg
+        # use pythagorean to determine the magnitude of the joint vector
+        joint_vec_size = (self.leg_length/2)**2-(dist/2)**2
+        # absolute value to account for floating point arithmetic
+        joint_vec_size = sqrt(abs(joint_vec_size))
+        # now calculate the position of the joint
+        joint_pos = [
+            bend_root[0]+joint_vec_size*bend_dir[0],
+            bend_root[1]+joint_vec_size*bend_dir[1],
+            bend_root[2]+joint_vec_size*bend_dir[2],
+        ]
 
-        # dist = (foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2
-        # cos_bend_angle = (dist-self.leg_length**2/2)/(-self.leg_length**2/2)
-        # cos_bend_angle = round(cos_bend_angle, 3)
-        # bend_angle = acos(cos_bend_angle)
-        # body_to_joint_vertical_angle = pi/2-body_to_foot_horizontal_angle-(pi-bend_angle)/2
-        # joint_x = body_seg_pos[0]+self.leg_length/2*sin(body_to_joint_vertical_angle)
-        # joint_y = body_seg_pos[1]+neg*self.leg_length/2*cos(body_to_joint_vertical_angle)
-        return joint_x, joint_y, joint_z
+        return joint_pos[0], joint_pos[1], joint_pos[2]
         

@@ -6,11 +6,13 @@ class Creature:
     def __init__(self, num_parts, pos, size, num_pair_legs, leg_length):
         self.num_parts = num_parts
         self.head = pos
+        self.z_pos = pos[2]
         self.skeleton = []
         self.size = size
         self.build_skeleton(pos)
         self.legs = Legs(num_pair_legs, leg_length, [], [])
         self.give_legs()
+        self.upright()
     
     def build_skeleton(self, pos, a=0):
         for i in range(self.num_parts):
@@ -43,7 +45,6 @@ class Creature:
                     self.legs.build_legs(self.skeleton[i])
                     if self.legs.num_legs()==self.legs.num_pair_legs:
                         return
-        self.upright()
 
     def draw(self, screen, camera):
         x, y = camera.transform_to_screen(self.head[0], self.head[1], self.head[2])
@@ -73,8 +74,8 @@ class Creature:
     def upright(self):
         torso_segment = self.legs.get_torso_start()
         for i in range(torso_segment, -1, -1):
-            self.skeleton[i][2]+=self.size*(torso_segment-i)
-        self.head[2]+=self.size*(torso_segment+1)
+            self.skeleton[i][2]=self.z_pos+self.size*2*(torso_segment-i)
+        self.head[2]=self.z_pos+self.size*2*(torso_segment+1)
 
     def collide(self, hurt_box):
 

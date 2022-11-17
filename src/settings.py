@@ -8,7 +8,7 @@ NEW_GEN_TIME = 100
 BASE_STATS = {
     # intelligence has to do with heavioural traits of entities
     # awareness, vision, breeding/herding behaviour, etc
-    'intelligence': 50,
+    'intelligence': 0,
     # power has to do with the raw damage output during combat
     # different types of moves/abilities and features that
     # are used during combat
