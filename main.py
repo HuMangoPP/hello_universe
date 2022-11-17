@@ -28,7 +28,7 @@ if __name__ == '__main__':
     camera = Camera(WIDTH//2, HEIGHT//2)
     entities = Entities()
     entities.add_new_entity({
-        'pos': [0, 0, 0],
+        'pos': [0, 0, 20],
         'spd': 5,
         'acc': 0.5,
         'body_parts': 10,
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         'leg_length': 60,
     }, BASE_STATS)
     entities.add_new_entity({
-        'pos': [100, 100, 0],
+        'pos': [100, 100, 20],
         'spd': 1,
         'acc': 0.05,
         'body_parts': 10,

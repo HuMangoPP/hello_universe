@@ -37,6 +37,7 @@ class Traits:
                 self.traits.append('wings')
                 self.min_stats['mobility'] = 20
                 creature.give_wings()
+                creature.upright()
             
             if 'arms' not in self.traits and stats['intelligence']>=30:
                 # intelligence = arms
@@ -45,6 +46,7 @@ class Traits:
                 self.traits.append('arms')
                 self.min_stats['intelligence'] = 30
                 creature.give_arms()
+                creature.upright()
 
         if creature.legs.num_pair_legs>0:
             if 'leg_weapon' not in self.traits and stats['power']>=10 and stats['mobility']>=10:

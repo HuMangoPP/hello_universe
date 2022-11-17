@@ -32,5 +32,5 @@ class Camera():
         # we see that: WIDTH//2 = x - y
         # and          HEIGHT   = x + y
         # to keep the player centered
-        self.x = entities.pos[following][0]-(HEIGHT//2+WIDTH//4)
-        self.y = entities.pos[following][1]-(HEIGHT//2-WIDTH//4)
+        self.x = entities.pos[following][0]-(HEIGHT//2+WIDTH//4+entities.pos[following][2])
+        self.y = entities.pos[following][1]-(HEIGHT//2-WIDTH//4+entities.pos[following][2])   

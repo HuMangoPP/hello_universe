@@ -18,16 +18,16 @@ class Legs:
     def build_legs(self, body_seg_pos):
         self.feet_pos.append([body_seg_pos[0], 
                                 body_seg_pos[1]+self.leg_length/2, 
-                                body_seg_pos[2]])
+                                0])
         self.step_pos.append([body_seg_pos[0]+self.leg_length*cos(self.step_bend), 
                                 body_seg_pos[1]+self.leg_length*sin(self.step_bend), 
-                                body_seg_pos[2]])
+                                0])
         self.feet_pos.append([body_seg_pos[0], 
                                 body_seg_pos[1]+self.leg_length/-2, 
-                                body_seg_pos[2]])
+                                0])
         self.step_pos.append([body_seg_pos[0]+self.leg_length*cos(-self.step_bend), 
                                 body_seg_pos[1]+self.leg_length*sin(-self.step_bend), 
-                                body_seg_pos[2]])
+                                0])
 
     def draw(self, screen, skeleton, camera):
         for i in range(self.num_pair_legs):
@@ -76,10 +76,10 @@ class Legs:
         angle = skeleton[index][3]
         self.step_pos[2*i] = [x+self.leg_length/2*cos(pi/2+angle),
                               y+self.leg_length/2*sin(pi/2+angle),
-                              z]
+                              z-self.leg_length/2]
         self.step_pos[2*i+1] = [x+self.leg_length/2*cos(-pi/2+angle),
                                 y+self.leg_length/2*sin(-pi/2+angle),
-                                z]
+                                z-self.leg_length/2]
 
         # then move it there depending on other factors
         self.feet_pos[2*i] = self.step_pos[2*i]
@@ -90,7 +90,7 @@ class Legs:
         # it took a step
         for i in range(self.num_pair_legs):
             index = self.attached_segments[i]
-            x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]            
+            x, y, z = skeleton[index][0], skeleton[index][1], 0          
             angle = skeleton[index][3]
             
             self.step_pos[2*i] = [x+self.leg_length*cos(self.step_bend+angle), 
@@ -130,6 +130,12 @@ class Legs:
 
     def num_legs(self):
         return len(self.attached_segments)-len(self.arm_attachments)-len(self.wing_attachments)
+
+    def get_torso_start(self):
+        for i in self.attached_segments:
+            if i not in self.arm_attachments and i not in self.wing_attachments:
+                return i-1
+
 
     def dist_foot_to_body(self, foot_pos, body_seg_pos):
         return sqrt((foot_pos[0]-body_seg_pos[0])**2+(foot_pos[1]-body_seg_pos[1])**2)

@@ -31,3 +31,11 @@
 * updated player movement to match input
 
 * both of these are fixes to problems related to isometric perspective
+
+### 2022-11-16
+
+* began giving creatures verticality
+
+* creatures can stand upright based on leg positions
+
+* plans to change how legs bend + get arms and wings positioned correctly

@@ -28,12 +28,19 @@ class Creature:
         if self.legs.num_pair_legs>self.num_parts:
             return
         
-        ratio_body_to_legs = floor(self.num_parts/self.legs.num_pair_legs)
-        for i in range(len(self.skeleton)):
-            if i%ratio_body_to_legs==0:
-                self.legs.attached_segments.append(i)
-                self.legs.build_legs(self.skeleton[i])
-
+        ratio_body_to_legs = floor(self.num_parts/(self.legs.num_pair_legs+1))
+        if ratio_body_to_legs>=1:
+            for i in range(len(self.skeleton)):
+                if i%ratio_body_to_legs==0 and i!=0:
+                    self.legs.attached_segments.append(i)
+                    self.legs.build_legs(self.skeleton[i])
+        else:
+            for i in range(len(self.skeleton)):
+                if i%ratio_body_to_legs==0:
+                    self.legs.attached_segments.append(i)
+                    self.legs.build_legs(self.skeleton[i])
+        self.upright()
+        
     def draw(self, screen, camera):
         x, y = camera.transform_to_screen(self.head[0], self.head[1], self.head[2])
         pg.draw.circle(screen, 'red', (x, y), self.size)
@@ -41,7 +48,7 @@ class Creature:
             x, y = camera.transform_to_screen(self.skeleton[i][0], self.skeleton[i][1], self.skeleton[i][2])
             pg.draw.circle(screen, 'white', (x, y), self.size)
         self.legs.draw(screen, self.skeleton, camera)
-    
+
     def move(self, pos):
         self.head = pos
         dist = self.dist_between_segment(self.skeleton[0], self.head)
@@ -59,6 +66,12 @@ class Creature:
         
         self.legs.move_feet(self.skeleton)
     
+    def upright(self):
+        torso_segment = self.legs.get_torso_start()
+        for i in range(torso_segment, -1, -1):
+            self.skeleton[i][2]+=10*(torso_segment-i)
+        self.head[2]+=10*(torso_segment+1)
+
     def collide(self, hurt_box):
 
         hit_box = pg.Rect(self.head[0]-self.size, self.head[1]-self.size, self.size*2, self.size*2)
@@ -75,7 +88,8 @@ class Creature:
 
     def dist_between_segment(self, seg1, seg2):
         return sqrt((seg1[0]-seg2[0])**2 +
-                    (seg1[1]-seg2[1])**2)
+                    (seg1[1]-seg2[1])**2 +
+                    (seg1[2]-seg2[2])**2)
     
     def angle_between_segment(self, seg1, seg2):
         return atan2(seg2[1]-seg1[1], seg2[0]-seg1[0])
