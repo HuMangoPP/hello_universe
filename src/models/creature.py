@@ -17,7 +17,7 @@ class Creature:
             self.skeleton.append([pos[0]-(i+1)*2*self.size, pos[1], pos[2], a])
     
     def give_wings(self):
-        self.legs.transform_wings()
+        self.legs.transform_arms()
 
     def give_arms(self):
         self.legs.transform_arms()
@@ -34,13 +34,17 @@ class Creature:
                 if i%ratio_body_to_legs==0 and i!=0:
                     self.legs.attached_segments.append(i)
                     self.legs.build_legs(self.skeleton[i])
+                    if self.legs.num_legs()==self.legs.num_pair_legs:
+                        return
         else:
             for i in range(len(self.skeleton)):
                 if i%ratio_body_to_legs==0:
                     self.legs.attached_segments.append(i)
                     self.legs.build_legs(self.skeleton[i])
+                    if self.legs.num_legs()==self.legs.num_pair_legs:
+                        return
         self.upright()
-        
+
     def draw(self, screen, camera):
         x, y = camera.transform_to_screen(self.head[0], self.head[1], self.head[2])
         pg.draw.circle(screen, 'red', (x, y), self.size)
@@ -69,8 +73,8 @@ class Creature:
     def upright(self):
         torso_segment = self.legs.get_torso_start()
         for i in range(torso_segment, -1, -1):
-            self.skeleton[i][2]+=10*(torso_segment-i)
-        self.head[2]+=10*(torso_segment+1)
+            self.skeleton[i][2]+=self.size*(torso_segment-i)
+        self.head[2]+=self.size*(torso_segment+1)
 
     def collide(self, hurt_box):
 

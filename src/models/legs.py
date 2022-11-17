@@ -102,9 +102,9 @@ class Legs:
         
         # update the renderable feet pos as neceessary
         for i in range(self.num_pair_legs):
-            if i in self.arm_attachments:
+            if self.attached_segments[i] in self.arm_attachments:
                 self.move_arms(skeleton, i)
-            elif i in self.wing_attachments: 
+            elif self.attached_segments[i] in self.wing_attachments: 
                 self.feet_pos[2*i] = self.step_pos[2*i]
                 self.feet_pos[2*i+1] = self.step_pos[2*i+1]
             else: 
@@ -117,13 +117,13 @@ class Legs:
                     self.feet_pos[2*i+1] = self.step_pos[2*i+1]
 
     def transform_wings(self):
-        for i in range(len(self.attached_segments)):
+        for i in self.attached_segments:
             if i not in self.arm_attachments and i not in self.wing_attachments:
                 self.arm_attachments.append(i)
                 return
 
     def transform_arms(self):
-        for i in range(len(self.attached_segments)):
+        for i in self.attached_segments:
             if i not in self.arm_attachments and i not in self.wing_attachments:
                 self.arm_attachments.append(i)
                 return
