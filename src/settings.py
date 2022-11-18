@@ -8,7 +8,7 @@ NEW_GEN_TIME = 100
 BASE_STATS = {
     # intelligence has to do with heavioural traits of entities
     # awareness, vision, breeding/herding behaviour, etc
-    'intelligence': 0,
+    'intelligence': 50,
     # power has to do with the raw damage output during combat
     # different types of moves/abilities and features that
     # are used during combat
@@ -22,7 +22,7 @@ BASE_STATS = {
     # dodging attacks, running away from other entities to avoid
     # combat, etc
     # stamina and mobility outside of combat
-    'mobility': 0,
+    'mobility': 50,
     # essentially a measure of population size
     # with each generation, health increases randomly
     'health': 10,

@@ -33,7 +33,7 @@ if __name__ == '__main__':
         'acc': 0.5,
         'body_parts': 10,
         'size': 5,
-        'num_legs': 2,
+        'num_legs': 3,
         'leg_length': 60,
     }, BASE_STATS)
     # entities.add_new_entity({

@@ -39,3 +39,9 @@
 * creatures can stand upright based on leg positions
 
 * plans to change how legs bend + get arms and wings positioned correctly
+
+### 2022-11-17
+
+* fixed leg joint and step calculations taking into account verticality
+
+* fixed locations for arms + wing placement

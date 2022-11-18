@@ -19,7 +19,7 @@ class Creature:
             self.skeleton.append([pos[0]-(i+1)*2*self.size, pos[1], pos[2], a])
     
     def give_wings(self):
-        self.legs.transform_arms()
+        self.legs.transform_wings()
 
     def give_arms(self):
         self.legs.transform_arms()

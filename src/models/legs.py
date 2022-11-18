@@ -69,17 +69,31 @@ class Legs:
             pg.draw.line(screen, 'green', screen_pos[1],
                                           screen_pos[2])
     
+    def move_wings(self, skeleton, i):
+        index = self.attached_segments[i]
+        x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
+        angle = skeleton[index][3]
+        self.step_pos[2*i] = [x+self.leg_length/2*cos(3*pi/4+angle),
+                              y+self.leg_length/2*sin(3*pi/4+angle),
+                              z]
+        self.step_pos[2*i+1] = [x+self.leg_length/2*cos(-3*pi/4+angle),
+                               y+self.leg_length/2*sin(-3*pi/4+angle),
+                               z]
+        self.feet_pos[2*i] = self.step_pos[2*i]
+        self.feet_pos[2*i+1] = self.step_pos[2*i+1]
+
+
     def move_arms(self, skeleton, i):
         # first, calculate where it should be
         index = self.attached_segments[i]
         x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
         angle = skeleton[index][3]
-        self.step_pos[2*i] = [x+self.leg_length/2*cos(pi/2+angle),
-                              y+self.leg_length/2*sin(pi/2+angle),
-                              z-self.leg_length/2]
-        self.step_pos[2*i+1] = [x+self.leg_length/2*cos(-pi/2+angle),
-                                y+self.leg_length/2*sin(-pi/2+angle),
-                                z-self.leg_length/2]
+        self.step_pos[2*i] = [x+self.leg_length/4*cos(pi/4+angle),
+                              y+self.leg_length/4*sin(pi/4+angle),
+                              z-self.leg_length/sqrt(2)]
+        self.step_pos[2*i+1] = [x+self.leg_length/4*cos(-pi/4+angle),
+                                y+self.leg_length/4*sin(-pi/4+angle),
+                                z-self.leg_length/sqrt(2)]
 
         # then move it there depending on other factors
         self.feet_pos[2*i] = self.step_pos[2*i]
@@ -106,8 +120,7 @@ class Legs:
             if self.attached_segments[i] in self.arm_attachments:
                 self.move_arms(skeleton, i)
             elif self.attached_segments[i] in self.wing_attachments: 
-                self.feet_pos[2*i] = self.step_pos[2*i]
-                self.feet_pos[2*i+1] = self.step_pos[2*i+1]
+                self.move_wings(skeleton, i)
             else: 
                 if self.dist_foot_to_body(self.feet_pos[2*i], skeleton[self.attached_segments[i]]) >= self.leg_length:
                     # if the distance from the foot to the body segment
@@ -120,7 +133,7 @@ class Legs:
     def transform_wings(self):
         for i in self.attached_segments:
             if i not in self.arm_attachments and i not in self.wing_attachments:
-                self.arm_attachments.append(i)
+                self.wing_attachments.append(i)
                 return
 
     def transform_arms(self):
