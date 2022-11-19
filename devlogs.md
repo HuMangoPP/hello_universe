@@ -45,3 +45,8 @@
 * fixed leg joint and step calculations taking into account verticality
 
 * fixed locations for arms + wing placement
+
+### 2022-11-19
+
+* fixed hitboxes for different attacks to take into account verticality
+

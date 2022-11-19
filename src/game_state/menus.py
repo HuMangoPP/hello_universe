@@ -1,6 +1,5 @@
 import pygame as pg
 from src.settings import WIDTH, HEIGHT, NEW_GEN_TIME, FPS
-from time import time
 
 def start_menu(screen, game_data):
 

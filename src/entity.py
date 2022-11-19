@@ -4,7 +4,7 @@ from math import atan2, cos, sin, sqrt, pi
 from src.combat.abilities import BASIC_ABILITIES, ALL_ABILITIES, ActiveAbility
 from src.settings import HEIGHT, WIDTH
 from src.models.creature import Creature
-from src.physics import accelerate, de_accelerate
+from src.physics.physics import accelerate, de_accelerate
 from src.models.traits import Traits
 
 class Entities:
@@ -14,7 +14,7 @@ class Entities:
         self.vel = []
         self.spd = []
         self.acc = []
-        self.render = []
+        self.creature = []
 
         # game data
         self.stats = []
@@ -36,14 +36,14 @@ class Entities:
         size = entity_data['size']
         num_legs = entity_data['num_legs']
         leg_length = entity_data['leg_length']
-        self.render.append(Creature(body_parts, entity_data['pos'], size, num_legs, leg_length))
+        self.creature.append(Creature(body_parts, entity_data['pos'], size, num_legs, leg_length))
 
         # game data
         self.stats.append(stats)
         self.health.append(stats['health'])
         self.energy.append((self.stats[len(self.stats)-1]['power']+
                             self.stats[len(self.stats)-1]['defense']+
-                            self.render[len(self.render)-1].num_parts)) # calculation based on stats
+                            self.creature[len(self.creature)-1].num_parts)) # calculation based on stats
         self.abilities.append(BASIC_ABILITIES)
         self.status_effects.append({
             'effects': [],
@@ -61,8 +61,8 @@ class Entities:
         self.hurt_box.append(None)
     
     def draw(self, screen, camera):
-        for i in range(len(self.render)):
-            self.render[i].draw(screen, camera)
+        for i in range(len(self.creature)):
+            self.creature[i].draw(screen, camera)
             if self.hurt_box[i]:
                 self.hurt_box[i].draw(screen, camera)
 
@@ -92,10 +92,13 @@ class Entities:
                 self.vel[player][1] = spd_mod*self.spd[player]*sin(angle)
 
                 # update the entity hurt box to deal damage
-                self.hurt_box[player] = ActiveAbility('movement', [self.pos[player]], self.render[player].size)
+                movement_hurt_box = []
+                for part in self.creature[player].skeleton:
+                    movement_hurt_box.append([part[0], part[1], part[2]])
+                self.hurt_box[player] = ActiveAbility('movement', movement_hurt_box, 2*self.creature[player].size)
 
                 # consume energy to use ability
-                energy_usage = 1/2000*self.render[player].num_parts*(spd_mod*self.spd[player])**2
+                energy_usage = 1/2000*self.creature[player].num_parts*(spd_mod*self.spd[player])**2
                 self.energy[player]-=energy_usage
 
             if 'strike' in ALL_ABILITIES[self.abilities[player][a_i['ability']]]['type']:
@@ -108,18 +111,19 @@ class Entities:
                 # update hurtboxes
                 strike_hurt_box = []
                 for i in range(10):
-                    strike_hurt_box.append([self.pos[player][0]+i*2*self.render[player].size*cos(angle), 
-                                           self.pos[player][1]+i*2*self.render[player].size*sin(angle),
+                    strike_hurt_box.append([self.pos[player][0]+i*2*self.creature[player].size*cos(angle), 
+                                           self.pos[player][1]+i*2*self.creature[player].size*sin(angle),
                                            self.pos[player][2]])
-                self.hurt_box[player] = ActiveAbility('strike', strike_hurt_box, self.render[player].size)
+                self.hurt_box[player] = ActiveAbility('strike', strike_hurt_box, 2*self.creature[player].size)
 
     def collide(self):
         for i in range(len(self.hurt_box)):
             if self.hurt_box[i]:
-                for j in range(len(self.render)):
-                    if i!=j and self.render[j].collide(self.hurt_box[i]):
+                for j in range(len(self.creature)):
+                    if i!=j and self.creature[j].collide(self.hurt_box[i].get_pos()):
                         self.health[j]-=2
                         self.health[i]-=1
+                        print('hit!')
 
     def parse_input(self, x_i, y_i, player, camera):
         if 'ability_lock' in self.status_effects[player]['effects']:
@@ -152,7 +156,7 @@ class Entities:
         for i in range(len(self.pos)):
             self.pos[i][0]+=self.vel[i][0]
             self.pos[i][1]+=self.vel[i][1]
-            self.render[i].move(self.pos[i])
+            self.creature[i].move(self.pos[i])
     
     def status_effect_cds(self):
         for i in range(len(self.status_effects)):
@@ -179,7 +183,10 @@ class Entities:
     def active_abilities(self):
         for i in range(len(self.hurt_box)):
             if self.hurt_box[i] and self.hurt_box[i].type=='movement':
-                self.hurt_box[i].update([self.pos[i]], self.render[i].size)
+                movement_hurt_box = []
+                for part in self.creature[i].skeleton:
+                    movement_hurt_box.append([part[0], part[1], part[2]])
+                self.hurt_box[i].update(movement_hurt_box, 2*self.creature[i].size)
 
     def remove_abilities(self, index):
         pass
@@ -209,13 +216,13 @@ class Entities:
             if self.stats[i][decrease]<self.traits[i].min_stats[decrease]:
                 self.stats[i][decrease] = self.traits[i].min_stats[decrease]
 
-            self.traits[i].remove_traits(self.render[i], self.stats[i])
-            self.traits[i].give_traits(self.render[i], self.stats[i])
+            self.traits[i].remove_traits(self.creature[i], self.stats[i])
+            self.traits[i].give_traits(self.creature[i], self.stats[i])
             self.remove_abilities(i)
             self.give_abilities(i)
             total_energy_calculation = (self.stats[i]['power']+
                                         self.stats[i]['defense']+
-                                        self.render[i].num_parts)
+                                        self.creature[i].num_parts)
             self.energy[i] = total_energy_calculation
             self.regen()
 

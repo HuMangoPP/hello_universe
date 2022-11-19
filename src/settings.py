@@ -22,7 +22,7 @@ BASE_STATS = {
     # dodging attacks, running away from other entities to avoid
     # combat, etc
     # stamina and mobility outside of combat
-    'mobility': 50,
+    'mobility': 10,
     # essentially a measure of population size
     # with each generation, health increases randomly
     'health': 10,

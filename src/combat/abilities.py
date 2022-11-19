@@ -67,17 +67,16 @@ class ActiveAbility:
     def update(self, pos, range):
         self.pos = pos
         self.range = range
-        self.get_rects()
-
-    def get_rects(self):
-        self.rects = []
+    
+    def get_pos(self):
+        all_pos = []
+         # gets the position and size of the hit_boxes
         for pos in self.pos:
-            self.rects.append(pg.Rect(pos[0]-self.range, 
-                                      pos[1]-self.range, 
-                                      self.range*2, 
-                                      self.range*2))
+            all_pos.append([pos[0], pos[1], pos[2], self.range])
+
+        return all_pos
 
     def draw(self, screen, camera):
         for pos in self.pos:
             x, y = camera.transform_to_screen(pos[0], pos[1], pos[2])
-            pg.draw.circle(screen, 'blue', (x, y), self.range)
+            pg.draw.circle(screen, 'yellow', (x, y), self.range, 1)

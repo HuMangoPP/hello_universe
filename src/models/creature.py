@@ -1,6 +1,7 @@
 import pygame as pg
 from math import atan2, sqrt, cos, sin, floor, tan, pi
 from src.models.legs import Legs
+from src.physics.physics import collide
 
 class Creature:
     def __init__(self, num_parts, pos, size, num_pair_legs, leg_length):
@@ -77,18 +78,18 @@ class Creature:
             self.skeleton[i][2]=self.z_pos+self.size*2*(torso_segment-i)
         self.head[2]=self.z_pos+self.size*2*(torso_segment+1)
 
-    def collide(self, hurt_box):
+    def collide(self, hurt_boxes):
 
-        hit_box = pg.Rect(self.head[0]-self.size, self.head[1]-self.size, self.size*2, self.size*2)
-        
-        for rect in hurt_box.rects:
-            if hit_box.colliderect(rect):
+        hit_box = [self.head[0], self.head[1], self.head[2], self.size]
+        for hurt_box in hurt_boxes:
+            if collide(hit_box, hurt_box):
                 return True
 
         for i in range(len(self.skeleton)):
-            hit_box = pg.Rect(self.skeleton[i][0]-self.size, self.skeleton[i][1]-self.size, self.size*2, self.size*2)
-            for rect in hurt_box.rects:
-                if hit_box.colliderect(rect):
+            segment = self.skeleton[i]
+            hit_box = [segment[0], segment[1], segment[2], self.size]
+            for hurt_box in hurt_boxes:
+                if collide(hit_box, hurt_box):
                     return True
 
     def dist_between_segment(self, seg1, seg2):

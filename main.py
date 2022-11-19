@@ -1,10 +1,10 @@
 import pygame as pg
 from src.entity import Entities
-from src.player_controller import PlayerController
-from src.camera import Camera
+from src.game_state.player_controller import PlayerController
+from src.game_state.camera import Camera
 from src.settings import RES, HEIGHT, WIDTH, BASE_STATS, NEW_GEN_TIME, FPS
-from src.menus import start_menu
-from src.ui import UserInterface
+from src.game_state.menus import start_menu
+from src.game_state.ui import UserInterface
 from src.asset_loader import load_assets
 
 
@@ -31,20 +31,20 @@ if __name__ == '__main__':
         'pos': [0, 0, 20],
         'spd': 5,
         'acc': 0.5,
-        'body_parts': 10,
+        'body_parts': 5,
         'size': 5,
         'num_legs': 3,
         'leg_length': 60,
     }, BASE_STATS)
-    # entities.add_new_entity({
-    #     'pos': [100, 100, 20],
-    #     'spd': 1,
-    #     'acc': 0.05,
-    #     'body_parts': 10,
-    #     'size': 5,
-    #     'num_legs': 2,
-    #     'leg_length': 60,
-    # }, BASE_STATS)
+    entities.add_new_entity({
+        'pos': [100, 100, 20],
+        'spd': 1,
+        'acc': 0.05,
+        'body_parts': 10,
+        'size': 5,
+        'num_legs': 2,
+        'leg_length': 60,
+    }, BASE_STATS)
     
     controller = PlayerController(player)
 
