@@ -46,7 +46,7 @@
 
 * fixed locations for arms + wing placement
 
-### 2022-11-19
+### 2022-11-20
 
 * fixed hitboxes for different attacks to take into account verticality
 
