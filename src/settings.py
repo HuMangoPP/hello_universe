@@ -38,6 +38,16 @@ TRAITS = [
     'body_segments',
 ]
 
+MODEL_COLORS = {
+    'skeleton': 'white',
+    'head': 'red',
+    'hit_box': 'yellow',
+    'hurt_box': 'magenta',
+    'leg': 'green',
+    'foot': 'blue'
+}
+
+
 STAT_COLORS = [
     'white',
     'orange',

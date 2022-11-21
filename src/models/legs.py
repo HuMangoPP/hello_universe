@@ -1,5 +1,6 @@
 import pygame as pg
 from math import atan2, sqrt, pi, sin, cos, acos, tan
+from src.settings import MODEL_COLORS
 
 class Legs:
     def __init__(self, num_pair_legs, leg_length, 
@@ -44,10 +45,10 @@ class Legs:
                                                          skeleton[self.attached_segments[i]][1],
                                                          skeleton[self.attached_segments[i]][2]))
             # draw the feet
-            pg.draw.circle(screen, 'blue', screen_pos[0], self.feet_size)
-            pg.draw.line(screen, 'green', screen_pos[0],
+            pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
+            pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
                                           screen_pos[1])
-            pg.draw.line(screen, 'green', screen_pos[1],
+            pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[1],
                                           screen_pos[2])
 
             # other leg of pair
@@ -63,10 +64,10 @@ class Legs:
             screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0],
                                                          skeleton[self.attached_segments[i]][1],
                                                          skeleton[self.attached_segments[i]][2]))
-            pg.draw.circle(screen, 'blue', screen_pos[0], self.feet_size)
-            pg.draw.line(screen, 'green', screen_pos[0],
+            pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
+            pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
                                           screen_pos[1])
-            pg.draw.line(screen, 'green', screen_pos[1],
+            pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[1],
                                           screen_pos[2])
     
     def move_wings(self, skeleton, i):

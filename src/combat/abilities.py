@@ -1,4 +1,5 @@
 import pygame as pg
+from src.settings import MODEL_COLORS
 
 MAX_NUM_ABILITIES = 5
 
@@ -79,4 +80,4 @@ class ActiveAbility:
     def draw(self, screen, camera):
         for pos in self.pos:
             x, y = camera.transform_to_screen(pos[0], pos[1], pos[2])
-            pg.draw.circle(screen, 'yellow', (x, y), self.range, 1)
+            pg.draw.circle(screen, MODEL_COLORS['hit_box'], (x, y), self.range, 1)

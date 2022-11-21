@@ -2,6 +2,7 @@ import pygame as pg
 from math import atan2, sqrt, cos, sin, floor, tan, pi
 from src.models.legs import Legs
 from src.physics.physics import collide
+from src.settings import MODEL_COLORS
 
 class Creature:
     def __init__(self, num_parts, pos, size, num_pair_legs, leg_length):
@@ -49,10 +50,11 @@ class Creature:
 
     def draw(self, screen, camera):
         x, y = camera.transform_to_screen(self.head[0], self.head[1], self.head[2])
-        pg.draw.circle(screen, 'red', (x, y), self.size)
+        pg.draw.circle(screen, MODEL_COLORS['head'], (x, y), self.size)
         for i in range(self.num_parts):
             x, y = camera.transform_to_screen(self.skeleton[i][0], self.skeleton[i][1], self.skeleton[i][2])
-            pg.draw.circle(screen, 'white', (x, y), self.size)
+            pg.draw.circle(screen, MODEL_COLORS['skeleton'], (x, y), self.size)
+            pg.draw.circle(screen, MODEL_COLORS['hurt_box'], (x, y), self.size, 1)
         self.legs.draw(screen, self.skeleton, camera)
 
     def move(self, pos):
