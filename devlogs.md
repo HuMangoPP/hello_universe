@@ -50,3 +50,6 @@
 
 * fixed hitboxes for different attacks to take into account verticality
 
+### 2022-11-21
+
+* began working on the systems by which evolution will take place, like mutation and reproduction (currently just duplication)

@@ -46,6 +46,8 @@ def game_menu(screen, game_data):
             if event.type==pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     return
+                if event.key == pg.K_SPACE:
+                    entities.reproduce()
         
         screen.fill('black')
         x_i, y_i = controller.movement_input()

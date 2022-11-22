@@ -202,12 +202,53 @@ class Entities:
             self.abilities[index].append('slash')
 
     def new_generation(self):
-        # choose some entities to duplicate
+        self.mutate()
 
-        # update entity stats with random mutation
-        # add one/two points to a stat and remove one/two point from a stat
-        # include a system that will choose the stat to increase/decrease 
-        # based on playstyle (very far in future)
+        for i in range(len(self.stats)):
+            total_energy_calculation = (self.stats[i]['power']+
+                                        self.stats[i]['defense']+
+                                        self.creature[i].num_parts)
+            self.energy[i] = total_energy_calculation
+            self.regen()
+
+    def reproduce(self):
+        # currently copies the player
+        # into a new creature
+        # soon will be changed for breeding and 
+        # generating offspring
+
+        i = 0
+
+        entity_data = {
+            'pos': self.pos[i].copy(),
+            'spd': self.spd[i],
+            'acc': self.acc[i],
+            'body_parts': self.creature[i].num_parts,
+            'size': self.creature[i].size,
+            'num_legs': self.creature[i].legs.num_pair_legs,
+            'leg_length': self.creature[i].legs.leg_length,
+        }
+        stats = self.stats[i].copy()
+        self.add_new_entity(entity_data, stats)
+        # new_creature = {
+        #     'pos': [],
+        #     'vel': [],
+        #     'spd': [],
+        #     'acc': [],
+        #     'creature': [],
+        #     'stats': [],
+        #     'health': [],
+        #     'energy': [],
+        #     'abilities': [],
+        #     'status_effects': [],
+        #     'traits': [],
+        #     'hurt_box': [],
+        # }
+
+        pass
+
+    def mutate(self):
+        # mutation is completely random
         for i in range(len(self.stats)):
             increase = choice(list(self.stats[i].keys()))
             decrease = choice(list(self.stats[i].keys()))
@@ -220,11 +261,6 @@ class Entities:
             self.traits[i].give_traits(self.creature[i], self.stats[i])
             self.remove_abilities(i)
             self.give_abilities(i)
-            total_energy_calculation = (self.stats[i]['power']+
-                                        self.stats[i]['defense']+
-                                        self.creature[i].num_parts)
-            self.energy[i] = total_energy_calculation
-            self.regen()
 
     def regen(self):
         for i in range(len(self.health)):
