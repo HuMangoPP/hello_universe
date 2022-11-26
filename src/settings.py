@@ -1,6 +1,7 @@
 import pygame as pg
 
 RES = WIDTH, HEIGHT = 1280, 720
+OUT_OF_BOUNDS = 100
 FPS = 60
 
 NEW_GEN_TIME = 100
@@ -8,11 +9,11 @@ NEW_GEN_TIME = 100
 BASE_STATS = {
     # intelligence has to do with heavioural traits of entities
     # awareness, vision, breeding/herding behaviour, etc
-    'intelligence': 50,
+    'intelligence': 0,
     # power has to do with the raw damage output during combat
     # different types of moves/abilities and features that
     # are used during combat
-    'power': 0,
+    'power': 50,
     # defense has to do with damage absorption during combat
     # different types of fur/scales/feathers that might make
     # the entity more sturdy/capable of blocking attacks

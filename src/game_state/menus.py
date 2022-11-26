@@ -1,3 +1,4 @@
+from random import randint
 import pygame as pg
 from src.settings import WIDTH, HEIGHT, NEW_GEN_TIME, FPS
 
@@ -47,19 +48,22 @@ def game_menu(screen, game_data):
                 if event.key == pg.K_ESCAPE:
                     return
                 if event.key == pg.K_SPACE:
-                    entities.reproduce()
+                    entities.in_species_reproduce(0)
         
         screen.fill('black')
         x_i, y_i = controller.movement_input()
         a_i = controller.ability_input(entities)
         entities.use_ability(a_i, player, camera)
         entities.parse_input(x_i, y_i, player, camera)
-        entities.update()
-        camera.update(entities, player)
         if controller.queued_ability!=-1:
             ui.ability_indicator(screen, entities, player, controller, camera)
+        entities.update()
+        camera.update(entities, player)
         entities.draw(screen, camera)
         ui.display(screen, entities)
+
+        if entities.kill(player):
+            return
 
         if pg.time.get_ticks() - generation_time > NEW_GEN_TIME:
             generation_time = pg.time.get_ticks()
@@ -68,4 +72,4 @@ def game_menu(screen, game_data):
     
         clock.tick(FPS)
         pg.display.update()
-        pg.display.set_caption(f'{clock.get_fps()}')
+        pg.display.set_caption(f'{clock.get_fps()}, {len(entities.pos)}')

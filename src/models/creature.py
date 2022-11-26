@@ -2,7 +2,7 @@ import pygame as pg
 from math import atan2, sqrt, cos, sin, floor, tan, pi
 from src.models.legs import Legs
 from src.physics.physics import collide
-from src.settings import MODEL_COLORS
+from src.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
 
 class Creature:
     def __init__(self, num_parts, pos, size, num_pair_legs, leg_length):
@@ -48,14 +48,25 @@ class Creature:
                     if self.legs.num_legs()==self.legs.num_pair_legs:
                         return
 
+    def change_physiology(self, parts, legs):
+        self.num_parts+=parts
+        new_pos = [self.head[0], self.head[1], self.z_pos]
+        self.build_skeleton(new_pos)
+
+        self.legs.num_pair_legs+=legs
+        self.give_legs()
+
     def draw(self, screen, camera):
         x, y = camera.transform_to_screen(self.head[0], self.head[1], self.head[2])
+        if x>WIDTH+OUT_OF_BOUNDS or x<-OUT_OF_BOUNDS or y>HEIGHT+OUT_OF_BOUNDS or y<-OUT_OF_BOUNDS:
+            return False 
         pg.draw.circle(screen, MODEL_COLORS['head'], (x, y), self.size)
         for i in range(self.num_parts):
             x, y = camera.transform_to_screen(self.skeleton[i][0], self.skeleton[i][1], self.skeleton[i][2])
             pg.draw.circle(screen, MODEL_COLORS['skeleton'], (x, y), self.size)
             pg.draw.circle(screen, MODEL_COLORS['hurt_box'], (x, y), self.size, 1)
         self.legs.draw(screen, self.skeleton, camera)
+        return True
 
     def move(self, pos):
         self.head = pos

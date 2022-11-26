@@ -62,8 +62,7 @@ class Entities:
     
     def draw(self, screen, camera):
         for i in range(len(self.creature)):
-            self.creature[i].draw(screen, camera)
-            if self.hurt_box[i]:
+            if self.creature[i].draw(screen, camera) and self.hurt_box[i]:
                 self.hurt_box[i].draw(screen, camera)
 
     def update(self):
@@ -71,6 +70,33 @@ class Entities:
         self.status_effect_cds()
         self.active_abilities()
         self.collide()
+    
+    def kill(self, player):
+        remove = []
+        for i in range(len(self.health)):
+            if self.health[i]<=0:
+                remove.append(i)
+        
+        if player in remove:
+            return True
+
+        for j in range(len(remove)-1, -1, -1):
+            i = remove[j]
+            print(i)
+            self.pos[i:i+1] = []
+            self.vel[i:i+1] = []
+            self.spd[i:i+1] = []
+            self.acc[i:i+1] = []
+            self.creature[i:i+1] = []
+            self.stats[i:i+1] = []
+            self.health[i:i+1] = []
+            self.energy[i:i+1] = []
+            self.abilities[i:i+1] = []
+            self.status_effects[i:i+1] = []
+            self.traits[i:i+1] = []
+            self.hurt_box[i:i+1] = []
+
+        return False
 
     def use_ability(self, a_i, player, camera):
         if a_i['ability']!=-1:
@@ -98,7 +124,7 @@ class Entities:
                 self.hurt_box[player] = ActiveAbility('movement', movement_hurt_box, 2*self.creature[player].size)
 
                 # consume energy to use ability
-                energy_usage = 1/2000*self.creature[player].num_parts*(spd_mod*self.spd[player])**2
+                energy_usage = 1/2*self.creature[player].num_parts*(spd_mod*self.spd[player])**2/1000
                 self.energy[player]-=energy_usage
 
             if 'strike' in ALL_ABILITIES[self.abilities[player][a_i['ability']]]['type']:
@@ -122,7 +148,6 @@ class Entities:
                 for j in range(len(self.creature)):
                     if i!=j and self.creature[j].collide(self.hurt_box[i].get_pos()):
                         self.health[j]-=2
-                        self.health[i]-=1
                         print('hit!')
 
     def parse_input(self, x_i, y_i, player, camera):
@@ -204,51 +229,64 @@ class Entities:
     def new_generation(self):
         self.mutate()
 
-        for i in range(len(self.stats)):
-            total_energy_calculation = (self.stats[i]['power']+
-                                        self.stats[i]['defense']+
-                                        self.creature[i].num_parts)
-            self.energy[i] = total_energy_calculation
-            self.regen()
+        self.regen()
 
-    def reproduce(self):
-        # currently copies the player
-        # into a new creature
-        # soon will be changed for breeding and 
-        # generating offspring
+    def inter_species_reproduce(self, i, j):
+        # inter-species reproduction allows for reproduction
+        # with another creature
+        # the new creature will get traits from both parents
+        # to perform inter-species reproduction, a world quest must be completed
 
         i = 0
+        j = 0
 
+        entity_data = {
+            'pos': self.pos[i].copy(),
+            'spd': (self.spd[i]+self.spd[j])/2,
+            'acc': (self.acc[i]+self.acc[j])/2,
+            'body_parts': int((self.creature[i].num_parts+self.creature[j].num_parts)/2),
+            'size': (self.creature[i].size+self.creature[j].size)/2,
+            'num_legs': int((self.creature[i].legs.num_pair_legs+self.creature[j].legs.num_pair_legs)/2),
+            'leg_length': int((self.creature[i].legs.leg_length+self.creature[i].legs.leg_length)/2),
+        }
+        stats = {
+            'intelligence': (self.stats[i]['intelligence']+self.stats[i]['intelligence'])/2,
+            'power': (self.stats[i]['power']+self.stats[j]['power'])/2,
+            'defense': (self.stats[i]['defense']+self.stats[j]['defense'])/2,
+            'health': (self.stats[i]['health']+self.stats[j]['health'])/2,
+            'mobility': (self.stats[i]['mobility']+self.stats[j]['mobility'])/2,
+            'stealth': (self.stats[i]['stealth']+self.stats[j]['stealth'])/2,
+        }
+        self.add_new_entity(entity_data, stats)
+
+    def in_species_reproduce(self, i):
+        # in-species reproduction allows for reproduction in-species
+        # has the possibility of generating new mutations and traits
+        i = 0
         entity_data = {
             'pos': self.pos[i].copy(),
             'spd': self.spd[i],
             'acc': self.acc[i],
-            'body_parts': self.creature[i].num_parts,
-            'size': self.creature[i].size,
-            'num_legs': self.creature[i].legs.num_pair_legs,
-            'leg_length': self.creature[i].legs.leg_length,
+            'body_parts': int(self.creature[i].num_parts),
+            'size': int(self.creature[i].size),
+            'num_legs': int(self.creature[i].legs.num_pair_legs),
+            'leg_length': int(self.creature[i].legs.leg_length)
         }
-        stats = self.stats[i].copy()
-        self.add_new_entity(entity_data, stats)
-        # new_creature = {
-        #     'pos': [],
-        #     'vel': [],
-        #     'spd': [],
-        #     'acc': [],
-        #     'creature': [],
-        #     'stats': [],
-        #     'health': [],
-        #     'energy': [],
-        #     'abilities': [],
-        #     'status_effects': [],
-        #     'traits': [],
-        #     'hurt_box': [],
-        # }
 
-        pass
+        stats = {
+            'intelligence': self.stats[i]['intelligence'],
+            'power': self.stats[i]['power'],
+            'defense': self.stats[i]['defense'],
+            'health': self.stats[i]['health'],
+            'mobility': self.stats[i]['mobility'],
+            'stealth': self.stats[i]['stealth'],
+        }
+
+        self.add_new_entity(entity_data, stats)
 
     def mutate(self):
         # mutation is completely random
+        # choose a random stat to decrease and increase
         for i in range(len(self.stats)):
             increase = choice(list(self.stats[i].keys()))
             decrease = choice(list(self.stats[i].keys()))
@@ -257,7 +295,7 @@ class Entities:
             if self.stats[i][decrease]<self.traits[i].min_stats[decrease]:
                 self.stats[i][decrease] = self.traits[i].min_stats[decrease]
 
-            self.traits[i].remove_traits(self.creature[i], self.stats[i])
+            self.traits[i].change_physiology(self.creature[i], self.stats[i])
             self.traits[i].give_traits(self.creature[i], self.stats[i])
             self.remove_abilities(i)
             self.give_abilities(i)
@@ -266,5 +304,3 @@ class Entities:
         for i in range(len(self.health)):
             if self.health[i]<self.stats[i]['health']:
                 self.health[i]+=1
-
-        
