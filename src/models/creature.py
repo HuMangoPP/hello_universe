@@ -33,6 +33,7 @@ class Creature:
             return
         
         ratio_body_to_legs = floor(self.num_parts/(self.legs.num_pair_legs+1))
+        self.legs.attached_segments = []
         if ratio_body_to_legs>=1:
             for i in range(len(self.skeleton)):
                 if i%ratio_body_to_legs==0 and i!=0:
@@ -70,20 +71,21 @@ class Creature:
 
     def move(self, pos):
         self.head = pos
-        dist = self.dist_between_segment(self.skeleton[0], self.head)
-        angle = self.angle_between_segment(self.skeleton[0], self.head)
-        self.skeleton[0][0]+=(dist-2*self.size)*cos(angle)
-        self.skeleton[0][1]+=(dist-2*self.size)*sin(angle)
-        self.skeleton[0][3] = angle
+        if self.skeleton:
+            dist = self.dist_between_segment(self.skeleton[0], self.head)
+            angle = self.angle_between_segment(self.skeleton[0], self.head)
+            self.skeleton[0][0]+=(dist-2*self.size)*cos(angle)
+            self.skeleton[0][1]+=(dist-2*self.size)*sin(angle)
+            self.skeleton[0][3] = angle
 
-        for i in range(1, len(self.skeleton)):
-            dist = self.dist_between_segment(self.skeleton[i], self.skeleton[i-1])
-            angle = self.angle_between_segment(self.skeleton[i], self.skeleton[i-1])
-            self.skeleton[i][0]+=(dist-2*self.size)*cos(angle)
-            self.skeleton[i][1]+=(dist-2*self.size)*sin(angle)
-            self.skeleton[i][3] = angle
-        
-        self.legs.move_feet(self.skeleton)
+            for i in range(1, len(self.skeleton)):
+                dist = self.dist_between_segment(self.skeleton[i], self.skeleton[i-1])
+                angle = self.angle_between_segment(self.skeleton[i], self.skeleton[i-1])
+                self.skeleton[i][0]+=(dist-2*self.size)*cos(angle)
+                self.skeleton[i][1]+=(dist-2*self.size)*sin(angle)
+                self.skeleton[i][3] = angle
+            
+            self.legs.move_feet(self.skeleton)
     
     def upright(self):
         torso_segment = self.legs.get_torso_start()

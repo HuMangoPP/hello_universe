@@ -64,7 +64,7 @@ class UserInterface:
         # total energy based on power and defense and number of body parts
         total_energy_calculation = (entities.stats[self.player]['power']+
                                     entities.stats[self.player]['defense']+
-                                    entities.creature[self.player].num_parts)
+                                    entities.creature[self.player].num_parts+1)
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
 
         pg.draw.rect(energy_bar, 'black', (0, 0, 2*HEALTH_AND_ENERGY_RADIUS, energy_ratio*HEALTH_AND_ENERGY_RADIUS*2))

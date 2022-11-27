@@ -3,6 +3,9 @@ from math import atan2, sqrt, pi, sin, cos, acos, tan
 from src.settings import MODEL_COLORS
 
 class Legs:
+    ############################# 
+    # init and spawn            #
+    ############################# 
     def __init__(self, num_pair_legs, leg_length, 
                        arm_attachments, wing_attachments,
                        size=5, step_bend = pi/6,):
@@ -30,6 +33,9 @@ class Legs:
                                 body_seg_pos[1]+self.leg_length*sin(-self.step_bend), 
                                 0])
 
+    ############################# 
+    # draw                      #
+    ############################# 
     def draw(self, screen, skeleton, camera):
         for i in range(self.num_pair_legs):
             screen_pos = []
@@ -70,6 +76,9 @@ class Legs:
             pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[1],
                                           screen_pos[2])
     
+    ############################# 
+    # movement                  #
+    ############################# 
     def move_wings(self, skeleton, i):
         index = self.attached_segments[i]
         x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
@@ -82,7 +91,6 @@ class Legs:
                                z]
         self.feet_pos[2*i] = self.step_pos[2*i]
         self.feet_pos[2*i+1] = self.step_pos[2*i+1]
-
 
     def move_arms(self, skeleton, i):
         # first, calculate where it should be
@@ -131,6 +139,9 @@ class Legs:
                     # same for the other foot
                     self.feet_pos[2*i+1] = self.step_pos[2*i+1]
 
+    ############################# 
+    # evolution systems         #
+    ############################# 
     def transform_wings(self):
         for i in self.attached_segments:
             if i not in self.arm_attachments and i not in self.wing_attachments:
@@ -143,6 +154,9 @@ class Legs:
                 self.arm_attachments.append(i)
                 return
 
+    ############################# 
+    # data getters              #
+    ############################# 
     def num_legs(self):
         return len(self.attached_segments)-len(self.arm_attachments)-len(self.wing_attachments)
 
@@ -151,7 +165,11 @@ class Legs:
             if i not in self.arm_attachments and i not in self.wing_attachments:
                 return i-1
 
+        return -1
 
+    ############################# 
+    # calculations              #
+    ############################# 
     def dist_foot_to_body(self, foot_pos, body_seg_pos):
         return sqrt((foot_pos[0]-body_seg_pos[0])**2 +
                     (foot_pos[1]-body_seg_pos[1])**2 + 

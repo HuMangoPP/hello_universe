@@ -33,18 +33,9 @@ if __name__ == '__main__':
         'acc': 0.5,
         'body_parts': 5,
         'size': 5,
-        'num_legs': 3,
-        'leg_length': 60,
+        'num_legs': 2,
+        'leg_length': 100,
     }, BASE_STATS)
-    # entities.add_new_entity({
-    #     'pos': [100, 100, 20],
-    #     'spd': 1,
-    #     'acc': 0.05,
-    #     'body_parts': 10,
-    #     'size': 5,
-    #     'num_legs': 2,
-    #     'leg_length': 60,
-    # }, BASE_STATS)
     
     controller = PlayerController(player)
 

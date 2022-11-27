@@ -10,9 +10,10 @@ ALL_TRAITS = [
 ]
 
 class Traits:
-    def __init__(self, traits, min_stats):
+    def __init__(self, traits, min_stats, max_stats):
         self.traits = traits
         self.min_stats = min_stats
+        self.max_stats = max_stats
     
     def give_traits(self, creature, stats):
         # stops the entity from gaining more than 10 traits at any given time 
@@ -61,10 +62,12 @@ class Traits:
             self.traits.append('body_armour')
             self.min_stats['defense'] = 10
         
-    def change_physiology(self, creature, stats):
-        if stats['defense']>=10 and self.min_stats['defense']<10:
+    def change_physiology(self, creature, breakthrough):
+        print(f'upgraded {breakthrough}')
+        self.max_stats[breakthrough]+=5
+        if breakthrough=='defense' or breakthrough=='health':
             creature.change_physiology(1, 0)
-        
-        if stats['mobility']>=10 and self.min_stats['mobility']<10:
+            return 
+        if breakthrough=='mobility':
             creature.change_physiology(0, 1)
-            self.min_stats['mobility']=10
+            return

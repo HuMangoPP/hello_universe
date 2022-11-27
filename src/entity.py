@@ -8,6 +8,9 @@ from src.physics.physics import accelerate, de_accelerate
 from src.models.traits import Traits
 
 class Entities:
+    ############################# 
+    # init and spawning         #
+    ############################# 
     def __init__(self):
         # physical/render data
         self.pos = []
@@ -50,16 +53,12 @@ class Entities:
             'cd': [],
             'time': [],
         })
-        self.traits.append(Traits([], {
-            'intelligence': 0,
-            'power': 0,
-            'defense': 0,
-            'mobility': 0,
-            'health': 1,
-            'stealth': 0,
-        }))
+        self.traits.append(Traits([], stats['min'], stats['max']))
         self.hurt_box.append(None)
     
+    ############################# 
+    # draw, update, movement    #
+    ############################# 
     def draw(self, screen, camera):
         for i in range(len(self.creature)):
             if self.creature[i].draw(screen, camera) and self.hurt_box[i]:
@@ -70,7 +69,43 @@ class Entities:
         self.status_effect_cds()
         self.active_abilities()
         self.collide()
+
+    def parse_input(self, x_i, y_i, player, camera):
+        if 'ability_lock' in self.status_effects[player]['effects']:
+            x_i, y_i = 0, 0
+
+        # entity movement
+        x_dir, y_dir = camera.screen_to_world(x_i, y_i)
+        if x_dir==0:
+            self.vel[player][0] = de_accelerate(self.acc[player], self.vel[player][0])
+        else:
+            self.vel[player][0] = accelerate(x_dir,
+                                                 self.acc[player],
+                                                 self.vel[player][0])
+        
+        if y_dir==0:
+            self.vel[player][1] = de_accelerate(self.acc[player], self.vel[player][1])
+        else:
+            self.vel[player][1] = accelerate(y_dir,
+                                                 self.acc[player],
+                                                 self.vel[player][1])
+        
+        if 'ability_lock' not in self.status_effects[player]['effects']:
+            if self.vel[player][0]**2 + self.vel[player][1]**2 > self.spd[player]**2:
+                # normalize the speed
+                ratio = sqrt(self.spd[player]**2/(self.vel[player][0]**2 + self.vel[player][1]**2))
+                self.vel[player][0]*=ratio
+                self.vel[player][1]*=ratio
     
+    def move(self):
+        for i in range(len(self.pos)):
+            self.pos[i][0]+=self.vel[i][0]
+            self.pos[i][1]+=self.vel[i][1]
+            self.creature[i].move(self.pos[i])
+    
+    ############################# 
+    # combat systems            #
+    ############################# 
     def kill(self, player):
         remove = []
         for i in range(len(self.health)):
@@ -150,39 +185,11 @@ class Entities:
                         self.health[j]-=2
                         print('hit!')
 
-    def parse_input(self, x_i, y_i, player, camera):
-        if 'ability_lock' in self.status_effects[player]['effects']:
-            x_i, y_i = 0, 0
+    def consume(self, index, target):
+        energy_calculation = 0
+        self.energy[index]+=energy_calculation
+        pass
 
-        # entity movement
-        x_dir, y_dir = camera.screen_to_world(x_i, y_i)
-        if x_dir==0:
-            self.vel[player][0] = de_accelerate(self.acc[player], self.vel[player][0])
-        else:
-            self.vel[player][0] = accelerate(x_dir,
-                                                 self.acc[player],
-                                                 self.vel[player][0])
-        
-        if y_dir==0:
-            self.vel[player][1] = de_accelerate(self.acc[player], self.vel[player][1])
-        else:
-            self.vel[player][1] = accelerate(y_dir,
-                                                 self.acc[player],
-                                                 self.vel[player][1])
-        
-        if 'ability_lock' not in self.status_effects[player]['effects']:
-            if self.vel[player][0]**2 + self.vel[player][1]**2 > self.spd[player]**2:
-                # normalize the speed
-                ratio = sqrt(self.spd[player]**2/(self.vel[player][0]**2 + self.vel[player][1]**2))
-                self.vel[player][0]*=ratio
-                self.vel[player][1]*=ratio
-    
-    def move(self):
-        for i in range(len(self.pos)):
-            self.pos[i][0]+=self.vel[i][0]
-            self.pos[i][1]+=self.vel[i][1]
-            self.creature[i].move(self.pos[i])
-    
     def status_effect_cds(self):
         for i in range(len(self.status_effects)):
             if self.status_effects[i]['effects']:
@@ -213,6 +220,9 @@ class Entities:
                     movement_hurt_box.append([part[0], part[1], part[2]])
                 self.hurt_box[i].update(movement_hurt_box, 2*self.creature[i].size)
 
+    ############################# 
+    # evolution systems         #
+    ############################# 
     def remove_abilities(self, index):
         pass
 
@@ -228,7 +238,6 @@ class Entities:
 
     def new_generation(self):
         self.mutate()
-
         self.regen()
 
     def inter_species_reproduce(self, i, j):
@@ -256,6 +265,8 @@ class Entities:
             'health': (self.stats[i]['health']+self.stats[j]['health'])/2,
             'mobility': (self.stats[i]['mobility']+self.stats[j]['mobility'])/2,
             'stealth': (self.stats[i]['stealth']+self.stats[j]['stealth'])/2,
+            'min': 0,
+            'max': 0,
         }
         self.add_new_entity(entity_data, stats)
 
@@ -280,6 +291,8 @@ class Entities:
             'health': self.stats[i]['health'],
             'mobility': self.stats[i]['mobility'],
             'stealth': self.stats[i]['stealth'],
+            'min': self.traits[i].min_stats.copy(),
+            'max': self.traits[i].max_stats.copy(),
         }
 
         self.add_new_entity(entity_data, stats)
@@ -288,18 +301,30 @@ class Entities:
         # mutation is completely random
         # choose a random stat to decrease and increase
         for i in range(len(self.stats)):
-            increase = choice(list(self.stats[i].keys()))
-            decrease = choice(list(self.stats[i].keys()))
+            # increasing and decreasing stats
+            increase = choice(list(self.stats[i].keys())[:6])
+            decrease = choice(list(self.stats[i].keys())[:6])
             self.stats[i][increase]+=randint(1, 2)
             self.stats[i][decrease]-=randint(1, 2)
             if self.stats[i][decrease]<self.traits[i].min_stats[decrease]:
                 self.stats[i][decrease] = self.traits[i].min_stats[decrease]
+            if self.stats[i][increase]>self.traits[i].max_stats[increase]:
+                self.stats[i][increase] = self.traits[i].max_stats[increase]
+            
+            # choosing stats to let creatures "breakthrough"
+            breakthrough = choice(list(self.stats[i].keys())[:6])
+            if self.stats[i][breakthrough] == self.traits[i].max_stats[breakthrough]:
+                # if the chosen stat is at the maximum, "roll" the dice to
+                # see if the creature can breakthrough
+                roll = randint(1,6)
+                if roll==1:
+                    self.traits[i].change_physiology(self.creature[i], breakthrough)
 
-            self.traits[i].change_physiology(self.creature[i], self.stats[i])
+            # giving creatures traits and abilities based on their new stats
             self.traits[i].give_traits(self.creature[i], self.stats[i])
             self.remove_abilities(i)
             self.give_abilities(i)
-
+    
     def regen(self):
         for i in range(len(self.health)):
             if self.health[i]<self.stats[i]['health']:
