@@ -6,6 +6,7 @@ from src.settings import HEIGHT, WIDTH
 from src.models.creature import Creature
 from src.physics.physics import accelerate, de_accelerate
 from src.models.traits import Traits
+from src.models.behaviour import Behaviour
 
 class Entities:
     ############################# 
@@ -28,6 +29,8 @@ class Entities:
         self.status_effects = []
         self.traits = []
         self.hurt_box = []
+
+        self.behaviours = []
     
     def add_new_entity(self, entity_data, stats):
         # physical/render data
@@ -35,18 +38,19 @@ class Entities:
         self.vel.append([0, 0, 0])
         self.spd.append(entity_data['spd'])
         self.acc.append(entity_data['acc'])
-        body_parts = entity_data['body_parts']
-        size = entity_data['size']
-        num_legs = entity_data['num_legs']
-        leg_length = entity_data['leg_length']
-        self.creature.append(Creature(body_parts, entity_data['pos'], size, num_legs, leg_length))
+        self.creature.append(Creature(entity_data['body_parts'], 
+                                      entity_data['pos'], 
+                                      entity_data['size'], 
+                                      entity_data['num_legs'],
+                                      entity_data['leg_length']))
 
         # game data
         self.stats.append(stats)
         self.health.append(stats['health'])
-        self.energy.append((self.stats[len(self.stats)-1]['power']+
-                            self.stats[len(self.stats)-1]['defense']+
-                            self.creature[len(self.creature)-1].num_parts)) # calculation based on stats
+        self.energy.append(self.energy_calculation(stats['power'], 
+                                                   stats['defense'], 
+                                                   entity_data['body_parts'])) # energy calculation
+        
         self.abilities.append(BASIC_ABILITIES)
         self.status_effects.append({
             'effects': [],
@@ -55,7 +59,16 @@ class Entities:
         })
         self.traits.append(Traits([], stats['min'], stats['max']))
         self.hurt_box.append(None)
-    
+
+        self.behaviours.append(Behaviour({
+            'aggression': entity_data['aggression'],
+            'herding': entity_data['herd']
+        }))
+
+        for i in range(len(self.behaviours)):
+            self.behaviours[i].update_aggression(len(self.creature)-1, 0)
+            self.behaviours[i].update_herd_behaviour(len(self.creature)-1, 0)
+
     ############################# 
     # draw, update, movement    #
     ############################# 
@@ -117,7 +130,6 @@ class Entities:
 
         for j in range(len(remove)-1, -1, -1):
             i = remove[j]
-            print(i)
             self.pos[i:i+1] = []
             self.vel[i:i+1] = []
             self.spd[i:i+1] = []
@@ -182,8 +194,11 @@ class Entities:
             if self.hurt_box[i]:
                 for j in range(len(self.creature)):
                     if i!=j and self.creature[j].collide(self.hurt_box[i].get_pos()):
+                        # decrease hp
                         self.health[j]-=2
-                        print('hit!')
+
+                        # increase the target's aggression score against the attacker
+                        self.behaviours[j].aggression[i]+=0.1
 
     def consume(self, index, target):
         energy_calculation = 0
@@ -219,6 +234,12 @@ class Entities:
                 for part in self.creature[i].skeleton:
                     movement_hurt_box.append([part[0], part[1], part[2]])
                 self.hurt_box[i].update(movement_hurt_box, 2*self.creature[i].size)
+
+    def energy_calculation(self, power, defense, num_parts):
+        return power+defense+num_parts
+
+    def awareness_calculation(self, intelligence, target_stealth):
+        return max(intelligence-target_stealth, 1000)
 
     ############################# 
     # evolution systems         #
@@ -281,7 +302,9 @@ class Entities:
             'body_parts': int(self.creature[i].num_parts),
             'size': int(self.creature[i].size),
             'num_legs': int(self.creature[i].legs.num_pair_legs),
-            'leg_length': int(self.creature[i].legs.leg_length)
+            'leg_length': int(self.creature[i].legs.leg_length),
+            'aggression': self.behaviours[i].aggression.copy(),
+            'herd': self.behaviours[i].herding.copy(),
         }
 
         stats = {

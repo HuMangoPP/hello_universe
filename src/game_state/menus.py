@@ -31,6 +31,7 @@ def start_menu(screen, game_data):
 def game_menu(screen, game_data):
     entities = game_data['entities']
     controller = game_data['controller']
+    ai_controller = game_data['ai']
     camera = game_data['camera']
     player = game_data['player']
     ui = game_data['ui']
@@ -55,6 +56,7 @@ def game_menu(screen, game_data):
         a_i = controller.ability_input(entities)
         entities.use_ability(a_i, player, camera)
         entities.parse_input(x_i, y_i, player, camera)
+        ai_controller.movement_input(entities, camera)
         if controller.queued_ability!=-1:
             ui.ability_indicator(screen, entities, player, controller, camera)
         entities.update()

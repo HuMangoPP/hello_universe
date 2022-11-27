@@ -17,6 +17,7 @@ class Creature:
         self.upright()
     
     def build_skeleton(self, pos, a=0):
+        self.skeleton = []
         for i in range(self.num_parts):
             self.skeleton.append([pos[0]-(i+1)*2*self.size, pos[1], pos[2], a])
     

@@ -1,4 +1,5 @@
 import pygame as pg
+from src.game_state.ai_controller import AIController
 from src.entity import Entities
 from src.game_state.player_controller import PlayerController
 from src.game_state.camera import Camera
@@ -35,9 +36,12 @@ if __name__ == '__main__':
         'size': 5,
         'num_legs': 2,
         'leg_length': 100,
+        'aggression': [],
+        'herd': [],
     }, BASE_STATS)
     
     controller = PlayerController(player)
+    ai_controller = AIController(player)
 
     ui = UserInterface(player, sprites)
 
@@ -46,6 +50,7 @@ if __name__ == '__main__':
         'camera': camera,
         'player': player,
         'controller': controller,
+        'ai': ai_controller,
         'ui': ui,
         'clock': clock,
         'sprites': sprites,
