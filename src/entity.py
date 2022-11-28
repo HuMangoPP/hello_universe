@@ -149,16 +149,20 @@ class Entities:
     def use_ability(self, a_i, player, camera):
         if a_i['ability']!=-1:
             # all abilities
+            if type(a_i['ability']) is str:
+                queued_ability = a_i['ability']
+            else:
+                queued_ability = self.abilities[player][a_i['ability']]
+            
             self.status_effects[player]['effects'].append('ability_lock')
-            self.status_effects[player]['cd'].append(ALL_ABILITIES[self.abilities[player][a_i['ability']]]['cd'])
+            self.status_effects[player]['cd'].append(ALL_ABILITIES[queued_ability]['cd'])
             self.status_effects[player]['time'].append(pg.time.get_ticks())
 
             # abilities with movement tag
-            if 'movement' in ALL_ABILITIES[self.abilities[player][a_i['ability']]]['type']:
+            if 'movement' in ALL_ABILITIES[queued_ability]['type']:
                 # get the direction of the movement
-
-                x_dir = a_i['mx']-WIDTH//2
-                y_dir = a_i['my']-HEIGHT//2
+                x_dir = cos(a_i['angle'])
+                y_dir = sin(a_i['angle'])
                 x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
                 angle = atan2(y_dir, x_dir)
                 spd_mod = 3+(self.stats[player]['mobility']+self.stats[player]['power'])/100
@@ -175,7 +179,7 @@ class Entities:
                 energy_usage = 1/2*self.creature[player].num_parts*(spd_mod*self.spd[player])**2/1000
                 self.energy[player]-=energy_usage
 
-            if 'strike' in ALL_ABILITIES[self.abilities[player][a_i['ability']]]['type']:
+            if 'strike' in ALL_ABILITIES[queued_ability]['type']:
                 # get the strike direction
                 x_dir = a_i['mx']-WIDTH//2
                 y_dir = a_i['my']-HEIGHT//2

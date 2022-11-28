@@ -22,37 +22,37 @@ SPECIAL_ABILITIES = [
 
 ALL_ABILITIES = {
     'advance': {
-        'type': ['skillshot', 'movement'],
+        'type': ['attack', 'skillshot', 'movement'],
         'damage_modifiers': [],
         'cd': 500,
     },
     'intimidate': {
-        'type': ['aoe'],
+        'type': ['utility', 'aoe'],
         'damage_modifiers': ['weaken'],
         'cd': 500,
     },
     'rush': {
-        'type': ['skillshot', 'movement'],
+        'type': ['attack', 'skillshot', 'movement'],
         'damage_modifiers': ['critical', 'stun'],
         'cd': 500,
     },
     'hit': {
-        'type': ['skillshot', 'strike'],
+        'type': ['attack', 'skillshot', 'strike'],
         'damage_modifiers': ['critical', 'stun'],
         'cd': 500,
     },
     'bite': {
-        'type': ['skillshot', 'strike'],
+        'type': ['attack', 'skillshot', 'strike'],
         'damage_modifiers': ['critical', 'bleed'],
         'cd': 500,
     },
     'slash': {
-        'type': ['skillshot', 'strike'],
+        'type': ['attack', 'skillshot', 'strike'],
         'damage_modifiers': ['bleed'],
         'cd': 500,
     },
     'fly': {
-        'type': ['skillshot'],
+        'type': ['utility', 'skillshot'],
         'damage_modifiers': [],
         'cd': 500,
     }

@@ -1,5 +1,7 @@
-from math import sqrt
+from math import atan2, sqrt
 import pygame as pg
+
+from src.settings import HEIGHT, WIDTH
 
 class PlayerController():
     def __init__(self, index):
@@ -35,10 +37,10 @@ class PlayerController():
         
         if pg.mouse.get_pressed()[0] and self.queued_ability!=-1:
             print(f'used {entity.abilities[self.index][self.queued_ability]}!')
+            angle = atan2(pg.mouse.get_pos()[1]-HEIGHT//2, pg.mouse.get_pos()[0]-WIDTH//2)
             ability = {
                 'ability': self.queued_ability,
-                'mx': pg.mouse.get_pos()[0],
-                'my': pg.mouse.get_pos()[1],
+                'angle': angle,
             }
             self.queued_ability = -1
             return ability

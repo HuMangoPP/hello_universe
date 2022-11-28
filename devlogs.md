@@ -59,3 +59,15 @@
 * evolution mechanics and systems
 
 * get more body segments and legs
+
+### 2022-11-27
+
+* began building the ai system
+
+* ai movement and tracking player
+
+### 2022-11-28
+
+* fixed some bugs with ai movement and mutation systems
+
+* began building ai ability usage and attacking player
