@@ -14,7 +14,6 @@ class Creature:
         self.build_skeleton(pos)
         self.legs = Legs(num_pair_legs, leg_length, [], [])
         self.give_legs()
-        self.upright()
     
     def build_skeleton(self, pos, a=0):
         self.skeleton = []
@@ -41,15 +40,16 @@ class Creature:
                     self.legs.attached_segments.append(i)
                     self.legs.build_legs(self.skeleton[i])
                     if self.legs.num_legs()==self.legs.num_pair_legs:
-                        return
+                        break
         else:
             for i in range(len(self.skeleton)):
                 if i%ratio_body_to_legs==0:
                     self.legs.attached_segments.append(i)
                     self.legs.build_legs(self.skeleton[i])
                     if self.legs.num_legs()==self.legs.num_pair_legs:
-                        return
-
+                        break
+        self.upright()
+        
     def change_physiology(self, parts, legs):
         self.num_parts+=parts
         new_pos = [self.head[0], self.head[1], self.z_pos]

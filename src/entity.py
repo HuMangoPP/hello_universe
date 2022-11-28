@@ -142,6 +142,7 @@ class Entities:
             self.status_effects[i:i+1] = []
             self.traits[i:i+1] = []
             self.hurt_box[i:i+1] = []
+            self.behaviours[i:i+1] = []
 
         return False
 
@@ -195,7 +196,7 @@ class Entities:
                 for j in range(len(self.creature)):
                     if i!=j and self.creature[j].collide(self.hurt_box[i].get_pos()):
                         # decrease hp
-                        self.health[j]-=2
+                        self.health[j]-=1
 
                         # increase the target's aggression score against the attacker
                         self.behaviours[j].aggression[i]+=0.1
