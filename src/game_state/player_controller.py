@@ -36,17 +36,15 @@ class PlayerController():
                 self.queued_ability = i-pg.K_1
         
         if pg.mouse.get_pressed()[0] and self.queued_ability!=-1:
-            print(f'used {entity.abilities[self.index][self.queued_ability]}!')
             angle = atan2(pg.mouse.get_pos()[1]-HEIGHT//2, pg.mouse.get_pos()[0]-WIDTH//2)
             ability = {
-                'ability': self.queued_ability,
+                'ability': entity.abilities[self.index][self.queued_ability],
                 'angle': angle,
             }
             self.queued_ability = -1
             return ability
         
         if pg.mouse.get_pressed()[2] and self.queued_ability!=-1:
-            print(f'{entity.abilities[self.index][self.queued_ability]} cancelled')
             self.queued_ability = -1
         
         return {'ability': -1}

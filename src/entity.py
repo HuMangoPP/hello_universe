@@ -74,8 +74,9 @@ class Entities:
     ############################# 
     def draw(self, screen, camera):
         for i in range(len(self.creature)):
-            if self.creature[i].draw(screen, camera) and self.hurt_box[i]:
-                self.hurt_box[i].draw(screen, camera)
+            # if self.creature[i].draw(screen, camera) and self.hurt_box[i]:
+            #     self.hurt_box[i].draw(screen, camera)
+            self.creature[i].draw(screen, camera)
 
     def update(self):
         self.move()
@@ -147,52 +148,57 @@ class Entities:
         return False
 
     def use_ability(self, a_i, player, camera):
-        if a_i['ability']!=-1:
-            # all abilities
-            if type(a_i['ability']) is str:
-                queued_ability = a_i['ability']
-            else:
-                queued_ability = self.abilities[player][a_i['ability']]
+        # no input // only for player
+        if a_i['ability']==-1:
+            return
+        
+        # prevent spamming
+        if 'ability_lock' in self.status_effects[player]['effects']:
+            return
+
+        # all abilities
+        queued_ability = a_i['ability']
             
-            self.status_effects[player]['effects'].append('ability_lock')
-            self.status_effects[player]['cd'].append(ALL_ABILITIES[queued_ability]['cd'])
-            self.status_effects[player]['time'].append(pg.time.get_ticks())
+        self.status_effects[player]['effects'].append('ability_lock')
+        self.status_effects[player]['cd'].append(ALL_ABILITIES[queued_ability]['cd'])
+        self.status_effects[player]['time'].append(pg.time.get_ticks())
 
-            # abilities with movement tag
-            if 'movement' in ALL_ABILITIES[queued_ability]['type']:
-                # get the direction of the movement
-                x_dir = cos(a_i['angle'])
-                y_dir = sin(a_i['angle'])
-                x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
-                angle = atan2(y_dir, x_dir)
-                spd_mod = 3+(self.stats[player]['mobility']+self.stats[player]['power'])/100
-                self.vel[player][0] = spd_mod*self.spd[player]*cos(angle)
-                self.vel[player][1] = spd_mod*self.spd[player]*sin(angle)
+        # abilities with movement tag
+        if 'movement' in ALL_ABILITIES[queued_ability]['type']:
+            # get the direction of the movement
+            x_dir = cos(a_i['angle'])
+            y_dir = sin(a_i['angle'])
+            x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
+            angle = atan2(y_dir, x_dir)
+            spd_mod = 3+(self.stats[player]['mobility']+self.stats[player]['power'])/100
+            self.vel[player][0] = spd_mod*self.spd[player]*cos(angle)
+            self.vel[player][1] = spd_mod*self.spd[player]*sin(angle)
 
-                # update the entity hurt box to deal damage
-                movement_hurt_box = []
-                for part in self.creature[player].skeleton:
-                    movement_hurt_box.append([part[0], part[1], part[2]])
-                self.hurt_box[player] = ActiveAbility('movement', movement_hurt_box, 2*self.creature[player].size)
+            # update the entity hurt box to deal damage
+            movement_hurt_box = []
+            for part in self.creature[player].skeleton:
+                movement_hurt_box.append([part[0], part[1], part[2]])
+            
+            self.hurt_box[player] = ActiveAbility('movement', movement_hurt_box, 2*self.creature[player].size)
 
-                # consume energy to use ability
-                energy_usage = 1/2*self.creature[player].num_parts*(spd_mod*self.spd[player])**2/1000
-                self.energy[player]-=energy_usage
+            # consume energy to use ability
+            energy_usage = 1/2*self.creature[player].num_parts*(spd_mod*self.spd[player])**2/1000
+            self.energy[player]-=energy_usage
 
-            if 'strike' in ALL_ABILITIES[queued_ability]['type']:
-                # get the strike direction
-                x_dir = a_i['mx']-WIDTH//2
-                y_dir = a_i['my']-HEIGHT//2
-                x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
-                angle = atan2(y_dir, x_dir)
+        if 'strike' in ALL_ABILITIES[queued_ability]['type']:
+            # get the strike direction
+            x_dir = cos(a_i['angle'])
+            y_dir = sin(a_i['angle'])
+            x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
+            angle = atan2(y_dir, x_dir)
 
-                # update hurtboxes
-                strike_hurt_box = []
-                for i in range(10):
-                    strike_hurt_box.append([self.pos[player][0]+i*2*self.creature[player].size*cos(angle), 
-                                           self.pos[player][1]+i*2*self.creature[player].size*sin(angle),
-                                           self.pos[player][2]])
-                self.hurt_box[player] = ActiveAbility('strike', strike_hurt_box, 2*self.creature[player].size)
+            # update hurtboxes
+            strike_hurt_box = []
+            for i in range(10):
+                strike_hurt_box.append([self.pos[player][0]+i*2*self.creature[player].size*cos(angle), 
+                                       self.pos[player][1]+i*2*self.creature[player].size*sin(angle),
+                                       self.pos[player][2]])
+            self.hurt_box[player] = ActiveAbility('strike', strike_hurt_box, 2*self.creature[player].size)
 
     def collide(self):
         for i in range(len(self.hurt_box)):
@@ -200,7 +206,7 @@ class Entities:
                 for j in range(len(self.creature)):
                     if i!=j and self.creature[j].collide(self.hurt_box[i].get_pos()):
                         # decrease hp
-                        self.health[j]-=1
+                        self.health[j]-=0.1
 
                         # increase the target's aggression score against the attacker
                         self.behaviours[j].aggression[i]+=0.1
@@ -244,7 +250,8 @@ class Entities:
         return power+defense+num_parts
 
     def awareness_calculation(self, intelligence, target_stealth):
-        return max(intelligence-target_stealth, 1000)
+        # return max(intelligence-target_stealth, 1000)
+        return 100*max(intelligence-target_stealth, 1)
 
     ############################# 
     # evolution systems         #

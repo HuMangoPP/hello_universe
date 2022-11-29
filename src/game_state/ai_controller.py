@@ -46,7 +46,6 @@ class AIController:
                             attack_abilities = list(filter(lambda ability: 'attack' in ALL_ABILITIES[ability]['type'], 
                                                 entity.abilities[i]))
                             queued_ability = choice(attack_abilities)
-                            print(queued_ability)
                             ability = {
                                 'ability': queued_ability,
                                 'angle': angles['z']
