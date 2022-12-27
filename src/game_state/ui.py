@@ -1,6 +1,6 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
-from src.settings import BAR_WIDTH, EDGE_PADDING, HEALTH_AND_ENERGY_RADIUS, UI_BG_COLOR, UI_BG_HEIGHT, WIDTH, HEIGHT, STAT_COLORS, GAUGE_COLORS, ABILITY_Y_ALIGN, TRAIT_Y_ALIGN
+from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI
 from src.combat.abilities import ALL_ABILITIES
 
 class UserInterface:
@@ -9,6 +9,7 @@ class UserInterface:
         self.stat_icons = list(ui_sprites['stat_icons'].values())
         self.ability_icons = ui_sprites['ability_icons']
         self.trait_icons = ui_sprites['trait_icons']
+        self.hud_frames = ui_sprites['hud_frames']
     
     def draw_mouse(self, screen):
         mx, my = pg.mouse.get_pos()
@@ -27,77 +28,110 @@ class UserInterface:
         pg.draw.line(screen, 'white', (mx-reticle_line_length, my), (mx-reticle_size-reticle_line_length, my), reticle_width)
 
     def display(self, screen, entities):
-        intelligence = entities.stats[self.player]['intelligence']
-        power = entities.stats[self.player]['power']
-        defense = entities.stats[self.player]['defense']
-        mobility = entities.stats[self.player]['mobility']
-        stealth = entities.stats[self.player]['stealth']
-        
-        stats = [
-            intelligence,
-            power,
-            defense,
-            mobility,
-            stealth
-        ]
 
-        # UI backgrounds
-        pg.draw.rect(screen, UI_BG_COLOR, 
-                        (0, HEIGHT-UI_BG_HEIGHT, WIDTH, UI_BG_HEIGHT))
-        # health bar, taking inspiration from PoE
-        health_bar = pg.Surface((2*HEALTH_AND_ENERGY_RADIUS, 2*HEALTH_AND_ENERGY_RADIUS))
-        pg.draw.circle(health_bar, GAUGE_COLORS[0], 
-                        (HEALTH_AND_ENERGY_RADIUS, 
-                        HEALTH_AND_ENERGY_RADIUS), 
-                        HEALTH_AND_ENERGY_RADIUS)
+        # hp and energy bars
+        self.display_hp(screen, entities)
+        
+        self.display_energy(screen, entities)
+
+        # stats
+        self.display_stats(screen, entities)
+
+        # traits and abilities
+        self.display_traits_and_abilities(screen, entities)
+
+        self.draw_mouse(screen)
+
+    def display_hp(self, screen, entities):
+        # health bar, taking inspiration from Diablo/PoE
+        health_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         health_bar.set_colorkey('black')
         health_ratio = 1-entities.health[self.player]/entities.stats[self.player]['health']
-        pg.draw.rect(health_bar, 'black', (0, 0, 2*HEALTH_AND_ENERGY_RADIUS, health_ratio*HEALTH_AND_ENERGY_RADIUS*2))
-        screen.blit(health_bar, (0, HEIGHT-2*HEALTH_AND_ENERGY_RADIUS))
-        
+        pg.draw.rect(health_bar, 'black', (0, 0, 2*GAUGE_UI['radius'], health_ratio*GAUGE_UI['radius']*2))
+        hp_frame = self.hud_frames['hp_frame']
+        hp_frame.set_colorkey('black')
+        pg.draw.circle(health_bar, GAUGE_UI['colours'][0], 
+                        (GAUGE_UI['radius'], GAUGE_UI['radius']), 
+                        GAUGE_UI['radius'])
+        screen.blit(health_bar, (hp_frame.get_width()/2-GAUGE_UI['radius'], 
+                                HEIGHT-hp_frame.get_height()/2-GAUGE_UI['radius']))
+        screen.blit(hp_frame, (0, HEIGHT-hp_frame.get_height()))
+
+    def display_energy(self, screen, entities):
         # energy bar, similar in style to the health
-        energy_bar = pg.Surface((2*HEALTH_AND_ENERGY_RADIUS, 2*HEALTH_AND_ENERGY_RADIUS))
-        pg.draw.circle(energy_bar, GAUGE_COLORS[1],
-                        (HEALTH_AND_ENERGY_RADIUS,
-                        HEALTH_AND_ENERGY_RADIUS),
-                        HEALTH_AND_ENERGY_RADIUS)
-        # total energy based on power and defense and number of body parts
+        energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
+        energy_bar.set_colorkey('black')
         total_energy_calculation = (entities.stats[self.player]['power']+
                                     entities.stats[self.player]['defense']+
                                     entities.creature[self.player].num_parts+1)
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
+        energy_frame = self.hud_frames['energy_frame']
+        energy_frame.set_colorkey('black')
+        pg.draw.circle(energy_bar, GAUGE_UI['colours'][1],
+                        (GAUGE_UI['radius'], GAUGE_UI['radius']),
+                        GAUGE_UI['radius'])
+        # total energy based on power and defense and number of body parts
 
-        pg.draw.rect(energy_bar, 'black', (0, 0, 2*HEALTH_AND_ENERGY_RADIUS, energy_ratio*HEALTH_AND_ENERGY_RADIUS*2))
+        pg.draw.rect(energy_bar, 'black', (0, 0, 2*GAUGE_UI['radius'], energy_ratio*GAUGE_UI['radius']*2))
+        screen.blit(energy_bar, (WIDTH-energy_frame.get_width()/2-GAUGE_UI['radius'], 
+                                HEIGHT-energy_frame.get_height()/2-GAUGE_UI['radius']))
+        screen.blit(energy_frame, (WIDTH-energy_frame.get_width(), HEIGHT-energy_frame.get_height()))
 
-        energy_bar.set_colorkey('black')
-        screen.blit(energy_bar, (2*HEALTH_AND_ENERGY_RADIUS, HEIGHT-2*HEALTH_AND_ENERGY_RADIUS))
-
+    def display_stats(self, screen, entities):
         # stat bars on the right
-        for i in range(len(stats)):
-            stat_rect = pg.Rect(WIDTH-(len(stats)-i)*BAR_WIDTH-EDGE_PADDING,
-                                HEIGHT-stats[i]-EDGE_PADDING, BAR_WIDTH, stats[i])
-            pg.draw.rect(screen, STAT_COLORS[i], stat_rect)
-            screen.blit(self.stat_icons[i], (WIDTH-(len(stats)-i)*BAR_WIDTH-EDGE_PADDING+BAR_WIDTH/2-self.stat_icons[i].get_width()/2, 
-                                             HEIGHT-EDGE_PADDING+BAR_WIDTH/2-self.stat_icons[i].get_height()/2))
         
-        self.ability_slots(screen, entities)
-        self.trait_slots(screen, entities)
-
-        self.draw_mouse(screen)
+        stats = [
+            entities.stats[self.player]['intelligence'],
+            entities.stats[self.player]['power'],
+            entities.stats[self.player]['defense'],
+            entities.stats[self.player]['mobility'],
+            entities.stats[self.player]['stealth'],
+        ]
+        stats_frame = self.hud_frames['stats_frame']
+        stats_frame.set_colorkey('black')
+        left_edge_pad = self.hud_frames['hp_frame'].get_width()
+        bar_edge_pad = left_edge_pad+STAT_BAR_UI['bar_pad']
+        for i in range(len(stats)):
+            stat_rect = pg.Rect(bar_edge_pad+STAT_BAR_UI['left_pad']+i*STAT_BAR_UI['width'],
+                                HEIGHT-stats[i]-STAT_BAR_UI['bottom_pad'], STAT_BAR_UI['width'], stats[i])
+            pg.draw.rect(screen, STAT_BAR_UI['colours'][i], stat_rect)
+            icon = self.stat_icons[i]
+            screen.blit(icon, (bar_edge_pad+STAT_BAR_UI['left_pad']+(i+0.5)*STAT_BAR_UI['width']-icon.get_width()/2, 
+                                             HEIGHT-STAT_BAR_UI['bottom_pad']+STAT_BAR_UI['frame_pad']))
+        
+        screen.blit(stats_frame, (left_edge_pad+STAT_BAR_UI['left_pad'], HEIGHT-STAT_BAR_UI['bottom_pad']-stats_frame.get_height()+STAT_BAR_UI['frame_pad']))
 
     def ability_slots(self, screen, entities):
         abilities = entities.abilities[self.player]
-
+        frame = self.hud_frames['ability_and_trait_frame']
+        right_pad = self.hud_frames['energy_frame'].get_width()
+        left_edge_pad = WIDTH-right_pad-frame.get_width()-ABILITY_TRAIT_UI['right_pad']
+        icon_edge_pad = left_edge_pad+ABILITY_TRAIT_UI['frame_pad']
         for i in range(len(abilities)):
-            screen.blit(self.ability_icons[abilities[i]], (WIDTH//2 + (i-2)*2*BAR_WIDTH - self.ability_icons[abilities[i]].get_width()/2, 
-                                                           ABILITY_Y_ALIGN - self.ability_icons[abilities[i]].get_height()/2))
+            icon = self.ability_icons[abilities[i]]
+            screen.blit(icon, (icon_edge_pad+i*ABILITY_TRAIT_UI['icon_size'],
+                                HEIGHT-ABILITY_TRAIT_UI['bottom_pad']))
 
     def trait_slots(self, screen, entities):
         traits = entities.traits[self.player].traits
-
+        frame = self.hud_frames['ability_and_trait_frame']
+        right_pad = self.hud_frames['energy_frame'].get_width()
+        left_edge_pad = WIDTH-right_pad-frame.get_width()-ABILITY_TRAIT_UI['right_pad']
+        icon_edge_pad = left_edge_pad+ABILITY_TRAIT_UI['frame_pad']
         for i in range(len(traits)):
-            screen.blit(self.trait_icons[traits[i]], (WIDTH//2+(i-2)*2*BAR_WIDTH - self.trait_icons[traits[i]].get_width()/2,
-                                                      TRAIT_Y_ALIGN - self.trait_icons[traits[i]].get_width()/2))
+            icon = self.trait_icons[traits[i]]
+            screen.blit(icon, (icon_edge_pad+i*ABILITY_TRAIT_UI['icon_size'],
+                                HEIGHT-ABILITY_TRAIT_UI['bottom_pad']-ABILITY_TRAIT_UI['icon_size']))
+
+    def display_traits_and_abilities(self, screen, entities):
+        frame = self.hud_frames['ability_and_trait_frame']
+        frame.set_colorkey('black')
+        right_pad = self.hud_frames['energy_frame'].get_width()
+        left_edge_pad = WIDTH-right_pad-frame.get_width()-ABILITY_TRAIT_UI['right_pad']
+        self.ability_slots(screen, entities)
+        self.trait_slots(screen, entities)
+        screen.blit(frame, (left_edge_pad, 
+                            HEIGHT-ABILITY_TRAIT_UI['bottom_pad']-frame.get_height()/2))
 
     def ability_indicator(self, screen, entities, player, controller, camera):
         ability_num = controller.queued_ability

@@ -70,24 +70,36 @@ MODEL_COLORS = {
 }
 
 
-STAT_COLORS = [
-    'white',
-    'orange',
-    'blue',
-    'green',
-    'grey',
-]
 
-# UI
-EDGE_PADDING = 50
-HEALTH_AND_ENERGY_RADIUS = 75
-GAUGE_COLORS = [
-    'red',
-    'blue'
-]
-BAR_WIDTH = 40
-UI_BG_COLOR = pg.Color(99, 41, 107)
-UI_BG_WDITH = 400
-UI_BG_HEIGHT = 175
-ABILITY_Y_ALIGN = HEIGHT - 50
-TRAIT_Y_ALIGN = HEIGHT - 120
+### UI
+# health and energy
+GAUGE_UI = {
+    'radius': 75,
+    'colours': [
+                'red',
+                'blue'
+                ]
+}
+
+# stats
+STAT_BAR_UI = {
+    'bottom_pad': 50,
+    'left_pad': 20,
+    'width': 64,
+    'bar_pad': 16,
+    'frame_pad': 6,
+    'colours': [
+                'white',
+                'orange',
+                'blue',
+                'green',
+                'grey',
+                ]
+}
+
+ABILITY_TRAIT_UI = {
+    'bottom_pad': 50,
+    'right_pad': 20,
+    'frame_pad': 9,
+    'icon_size': 32,
+}
