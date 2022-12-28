@@ -2,6 +2,7 @@ import pygame as pg
 from random import choice, randint
 from math import atan2, cos, sin, sqrt, pi
 from src.combat.abilities import BASIC_ABILITIES, ALL_ABILITIES, ActiveAbility
+from src.combat.status_effects import BASE_CD
 from src.settings import HEIGHT, WIDTH
 from src.models.creature import Creature
 from src.physics.physics import accelerate, de_accelerate
@@ -231,8 +232,11 @@ class Entities:
                         new_status_effects.append(effect)
                         new_status_effects_time.append(time)
                     else:
-                        if effect=='ability_lock':
+                        if effect == 'ability_lock':
                             self.hurt_box[i] = None
+                            new_status_effects_cd.append(BASE_CD)
+                            new_status_effects.append('ability_cd')
+                            new_status_effects_time.append(pg.time.get_ticks())
                     
                 self.status_effects[i]['cd'] = new_status_effects_cd
                 self.status_effects[i]['effects'] = new_status_effects

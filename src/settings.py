@@ -93,6 +93,8 @@ SUN = {
     'type': 'sun',
 }
 
+ORBIT_RADIUS = 50
+
 CBODIES = [
     {
         'pos': (30, 0),

@@ -3,12 +3,12 @@ from random import choice
 from src.combat.abilities import ALL_ABILITIES
 
 class AIController:
-    def __init__(self, index):
-        self.index = index
+    def __init__(self, non_controllable):
+        self.non_controllable = non_controllable
 
     def movement_input(self, entity, camera):
         for i in range(len(entity.pos)):
-            if i!=self.index:
+            if i!=self.non_controllable:
                 # give the ai controlled creature some 
                 # movement input
                 for j in range(len(entity.pos)):
@@ -30,27 +30,28 @@ class AIController:
                             pass
 
     def ability_input(self, entity, camera):
-        for i in range(len(entity.pos)):
-            if i!=self.index:
+        for i in range(len(entity.abilities)):
+            if i!=self.non_controllable:
                 # give the ai controlled creature some 
                 # ability input
-                for j in range(len(entity.pos)):
-                    dist = self.dist_between(entity.pos[i], entity.pos[j])
-                    awareness = entity.awareness_calculation(entity.stats[i]['intelligence'],
-                                                             entity.stats[j]['stealth']) 
-                    aggression = entity.behaviours[i].aggression[j]
+                for j in range(len(entity.abilities)):
+                    if 'ability_cd' not in entity.status_effects[i]['effects']:
+                        dist = self.dist_between(entity.pos[i], entity.pos[j])
+                        awareness = entity.awareness_calculation(entity.stats[i]['intelligence'],
+                                                                entity.stats[j]['stealth']) 
+                        aggression = entity.behaviours[i].aggression[j]
 
-                    if aggression>0:
-                        if dist<=awareness*aggression/2:
-                            angles = self.angles_between(entity.pos[i], entity.pos[j])
-                            attack_abilities = list(filter(lambda ability: 'attack' in ALL_ABILITIES[ability]['type'], 
-                                                entity.abilities[i]))
-                            queued_ability = choice(attack_abilities)
-                            ability = {
-                                'ability': queued_ability,
-                                'angle': angles['z']
-                            }
-                            entity.use_ability(ability, i, camera)
+                        if aggression>0:
+                            if dist<=awareness*aggression/2:
+                                angles = self.angles_between(entity.pos[i], entity.pos[j])
+                                attack_abilities = list(filter(lambda ability: 'attack' in ALL_ABILITIES[ability]['type'], 
+                                                    entity.abilities[i]))
+                                queued_ability = choice(attack_abilities)
+                                ability = {
+                                    'ability': queued_ability,
+                                    'angle': angles['z']
+                                }
+                                entity.use_ability(ability, i, camera)
     
     def dist_between(self, pos1, pos2):
         return sqrt((pos1[0]-pos2[0])**2+

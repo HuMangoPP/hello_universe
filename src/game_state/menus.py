@@ -1,20 +1,15 @@
-from math import sqrt, sin, pi
+from math import sqrt, sin, cos, pi
+from random import randint, choice
 import pygame as pg
-from src.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, CBODIES, SUN, WIDTH, HEIGHT
+from src.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT
 from src.game_state.camera import Camera
 
 def start_menu(screen, game_data):
 
-    clock = game_data['clock']
-    ui = game_data['ui']
-    font = game_data['font']
-    # include an animation of the solar system as the start menu screen
-    sun = SUN
-    c_bodies = CBODIES
-    camera = Camera(0, 0)
-    camera.update_pos(c_bodies[0]['pos'][0], c_bodies[0]['pos'][1], 0)
-    def draw_solar_system(screen):
+    grav_constant = randint(900, 1100)
 
+    # local functions for updating/render/loading the solar system animation
+    def draw_solar_system(screen):
         # draw the c bodies
         for body in c_bodies:
             pg.draw.circle(screen, CBODY_TEXTURE_KEY[body['type']], 
@@ -23,12 +18,13 @@ def start_menu(screen, game_data):
         pg.draw.circle(screen, CBODY_TEXTURE_KEY[sun['type']],
                         camera.transform_to_screen(sun['pos'][0], sun['pos'][1], 0),
                         sun['size'])
+    
     def update_solar_system():
         for body in c_bodies:
             dx = sun['pos'][0]-body['pos'][0]
             dy = sun['pos'][1]-body['pos'][1]
             dr_sq = dx*dx+dy*dy
-            a = 1000/dr_sq
+            a = grav_constant/dr_sq
             a_x, a_y = a*dx/sqrt(dr_sq), a*dy/sqrt(dr_sq)
             v_x, v_y = body['vel'][0]+a_x, body['vel'][1]+a_y
             body['vel'] = (v_x, v_y)
@@ -36,7 +32,32 @@ def start_menu(screen, game_data):
             body['pos'] = (x, y)
         camera.update_pos(sun['pos'][0], sun['pos'][1], 0)
     
+    def load_solar_system():
+        cbodies = []
+        num_bodies = randint(6, 9)
+        for i in range(num_bodies):
+            angle = randint(1, 360)/180*pi
+            radius = (i+1)*ORBIT_RADIUS
+            cbodies.append({
+                'pos': (radius*cos(angle), radius*sin(angle)),
+                'vel': (sqrt(grav_constant/radius)*sin(-angle), sqrt(grav_constant/radius)*cos(-angle)),
+                'size': randint(3, 10),
+                'type': choice(list(CBODY_TEXTURE_KEY.keys()))
+            })
+
+        return cbodies
+    # ================================ #
+
+    clock = game_data['clock']
+    ui = game_data['ui']
+    font = game_data['font']
+    sun = SUN
+    c_bodies = load_solar_system()
+    camera = Camera(0, 0)
+    camera.update_pos(c_bodies[0]['pos'][0], c_bodies[0]['pos'][1], 0)
     r, g, b = 255, 255, 255
+
+    # main game loop
     while True:
         for event in pg.event.get():
             if event.type==pg.QUIT:
@@ -61,7 +82,7 @@ def start_menu(screen, game_data):
         font.render(screen, 'hello, universe', WIDTH//2, 50, 
                     (r, g, b), 
                     24, 'center')
-        font.render(screen, 'press any key to continue', WIDTH//2, HEIGHT-50,
+        font.render(screen, 'press anywhere to continue', WIDTH//2, HEIGHT-50,
                     (r, g, b),
                     24, 'center')
         update_solar_system()
@@ -94,23 +115,34 @@ def game_menu(screen, game_data):
                 if event.key == pg.K_SPACE:
                     entities.in_species_reproduce(0)
         
+        # refresh screen
         screen.fill('black')
+
+        # player input
         x_i, y_i = controller.movement_input()
         a_i = controller.ability_input(entities)
         entities.use_ability(a_i, player, camera)
         entities.parse_input(x_i, y_i, player, camera)
+
+        # ai controller
         ai_controller.movement_input(entities, camera)
         ai_controller.ability_input(entities, camera)
-        if controller.queued_ability!=-1:
-            ui.ability_indicator(screen, entities, player, controller, camera)
+        
+        # update loop
         entities.update()
         camera.follow_entity(entities, player)
+
+        # drawing
         entities.draw(screen, camera)
+        if controller.queued_ability!=-1:
+            ui.ability_indicator(screen, entities, player, controller, camera)
         ui.display(screen, entities)
 
+        # death
         if entities.kill(player):
             return
 
+        # new generation
         if pg.time.get_ticks() - generation_time > NEW_GEN_TIME:
             generation_time = pg.time.get_ticks()
             generation+=1
