@@ -7,6 +7,7 @@ from src.settings import RES, HEIGHT, WIDTH, BASE_STATS, NEW_GEN_TIME, FPS
 from src.game_state.menus import start_menu
 from src.game_state.ui import UserInterface
 from src.asset_loader import load_assets
+from src.font import Font
 
 
 if __name__ == '__main__':
@@ -15,8 +16,8 @@ if __name__ == '__main__':
     pg.mouse.set_visible(False)
     
     stat_icons = load_assets('./assets/stats', 1.0)
-    ability_icons = load_assets('./assets/abilities', 1.0)
-    trait_icons = load_assets('./assets/traits', 1.0)
+    ability_icons = load_assets('./assets/abilities', 1.5)
+    trait_icons = load_assets('./assets/traits', 1.5)
     hud_frames = load_assets('./assets/hud/', 1.0)
     sprites = {}
     sprites['stat_icons'] = stat_icons
@@ -28,7 +29,7 @@ if __name__ == '__main__':
 
     player = 0
 
-    camera = Camera(WIDTH//2, HEIGHT//2)
+    camera = Camera(0, 0)
     entities = Entities()
     entities.add_new_entity({
         'pos': [0, 0, 20],
@@ -46,6 +47,7 @@ if __name__ == '__main__':
     ai_controller = AIController(player)
 
     ui = UserInterface(player, sprites)
+    font = Font(pg.image.load('./assets/font/font.png'))
 
     game_data = {
         'entities': entities,
@@ -56,5 +58,6 @@ if __name__ == '__main__':
         'ui': ui,
         'clock': clock,
         'sprites': sprites,
+        'font': font,
     }
     start_menu(screen , game_data)

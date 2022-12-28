@@ -1,4 +1,4 @@
-import pygame as pg
+from math import sqrt
 
 RES = WIDTH, HEIGHT = 1280, 720
 OUT_OF_BOUNDS = 100
@@ -72,6 +72,78 @@ MODEL_COLORS = {
 
 
 ### UI
+
+# main menu rendering
+CBODY_TEXTURE_KEY = {
+    'sun': 'yellow',
+    'mercury': 'gray',
+    'venus': 'bisque',
+    'earth': 'green',
+    'mars': 'red',
+    'jupiter': 'chocolate',
+    'saturn': 'cornsilk3',
+    'uranus': 'dodgerblue',
+    'neptune': 'blue',
+}
+
+SUN = {
+    'pos': (0, 0),
+    'vel': (0, 0),
+    'size': 20,
+    'type': 'sun',
+}
+
+CBODIES = [
+    {
+        'pos': (30, 0),
+        'vel': (0, sqrt(100/3)),
+        'size': 2,
+        'type': 'mercury',
+    },
+    {
+        'pos': (60, 0),
+        'vel': (0, sqrt(50/3)),
+        'size': 4,
+        'type': 'venus',
+    },
+    {
+        'pos': (100, 0),
+        'vel': (0, sqrt(10)),
+        'size': 5,
+        'type': 'earth',
+    },
+    {
+        'pos': (200, 0),
+        'vel': (0, sqrt(10/2)),
+        'size': 3,
+        'type': 'mars',
+    },
+    {
+        'pos': (300, 0),
+        'vel': (0, sqrt(10/3)),
+        'size': 10,
+        'type': 'jupiter'
+    },
+    {
+        'pos': (400, 0),
+        'vel': (0, sqrt(10/4)),
+        'size': 8,
+        'type': 'saturn',
+    },
+    {
+        'pos': (550, 0),
+        'vel': (0, sqrt(20/11)),
+        'size': 7,
+        'type': 'uranus',
+    },
+    {
+        'pos': (700, 0),
+        'vel': (0, sqrt(10/7)),
+        'size': 6,
+        'type': 'neptune',
+    },
+]
+
 # health and energy
 GAUGE_UI = {
     'radius': 75,
@@ -98,8 +170,8 @@ STAT_BAR_UI = {
 }
 
 ABILITY_TRAIT_UI = {
-    'bottom_pad': 50,
+    'bottom_pad': 75,
     'right_pad': 20,
     'frame_pad': 9,
-    'icon_size': 32,
+    'icon_size': 48,
 }

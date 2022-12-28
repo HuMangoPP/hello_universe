@@ -75,3 +75,5 @@
 ### 2022-12-27
 
 * created ui/hud sprites
+
+* changed main menu screen; created font + basic solar system model visual

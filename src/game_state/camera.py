@@ -27,10 +27,18 @@ class Camera():
         return (x*self.x_inverse[0]+y*self.y_inverse[0],
                 x*self.x_inverse[1]+y*self.y_inverse[1])
 
-    def update(self, entities, following):
+    def follow_entity(self, entities, following):
         # solved via a system of equations
         # we see that: WIDTH//2 = x - y
         # and          HEIGHT   = x + y
         # to keep the player centered
         self.x = entities.pos[following][0]-(HEIGHT//2+WIDTH//4+entities.pos[following][2])
         self.y = entities.pos[following][1]-(HEIGHT//2-WIDTH//4+entities.pos[following][2])   
+    
+    def update_pos(self, x, y, z):
+        # solved via a system of equations
+        # we see that: WIDTH//2 = x - y
+        # and          HEIGHT   = x + y
+        # to keep the player centered
+        self.x = x-(HEIGHT//2+WIDTH//4+z)
+        self.y = y-(HEIGHT//2-WIDTH//4+z)  
