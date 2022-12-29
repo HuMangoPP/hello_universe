@@ -1,5 +1,5 @@
-from math import atan2, cos, sin, sqrt
-from random import choice
+from math import atan2, cos, sin, sqrt, pi
+from random import choice, randint
 from src.combat.abilities import ALL_ABILITIES
 
 class AIController:
@@ -11,23 +11,30 @@ class AIController:
             if i!=self.non_controllable:
                 # give the ai controlled creature some 
                 # movement input
+                x_i, y_i = 0, 0
                 for j in range(len(entity.pos)):
+                    if i == j:
+                        continue
                     dist = self.dist_between(entity.pos[i], entity.pos[j])
                     awareness = entity.awareness_calculation(entity.stats[i]['intelligence'],
                                                              entity.stats[j]['stealth'])
                     aggression = entity.behaviours[i].aggression[j]
 
-                    if aggression>0:
-                        if dist<=awareness*aggression:
-                            # move towards the target
-                            angles = self.angles_between(entity.pos[i], entity.pos[j])
-                            entity.parse_input(cos(angles['z']), sin(angles['z']), i, camera)
-                        else: 
-                            entity.parse_input(0, 0, i, camera)
-                    else:
-                        if dist<=awareness*abs(aggression):
-                            # move away from the target
+                    if aggression>0 and dist<=awareness*aggression:
+                        # move towards the target
+                        angles = self.angles_between(entity.pos[i], entity.pos[j])
+                        x_i = cos(angles['z'])
+                        y_i = sin(angles['z'])
+                        entity.parse_input(cos(angles['z']), sin(angles['z']), i, camera)
+                    elif aggression<0 and dist<=awareness*abs(aggression):
+                            # follow target?
                             pass
+                if x_i==0 and y_i==0:
+                    x_i, y_i = self.idle_movement()
+                entity.parse_input(x_i, y_i, i, camera)
+
+    def idle_movement(self):
+        return randint(-1, 1), randint(-1, 1)
 
     def ability_input(self, entity, camera):
         for i in range(len(entity.abilities)):

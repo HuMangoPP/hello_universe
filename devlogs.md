@@ -77,3 +77,9 @@
 * created ui/hud sprites
 
 * changed main menu screen; created font + basic solar system model visual
+
+### 2022-12-27
+
+* gave enemies an internal cooldown on using abilities
+
+* enemies now have idle movement (random movement)

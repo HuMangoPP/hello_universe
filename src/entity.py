@@ -116,6 +116,9 @@ class Entities:
         for i in range(len(self.pos)):
             self.pos[i][0]+=self.vel[i][0]
             self.pos[i][1]+=self.vel[i][1]
+            # angle the creature is facing
+            if self.vel[i][0]**2+self.vel[i][1]**2!=0:
+                self.pos[i][3] = atan2(self.vel[i][1], self.vel[i][0])
             self.creature[i].move(self.pos[i])
     
     ############################# 

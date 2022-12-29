@@ -32,7 +32,7 @@ if __name__ == '__main__':
     camera = Camera(0, 0)
     entities = Entities()
     entities.add_new_entity({
-        'pos': [0, 0, 20],
+        'pos': [0, 0, 20, 0],
         'spd': 5,
         'acc': 0.5,
         'body_parts': 5,
