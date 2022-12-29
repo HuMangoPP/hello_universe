@@ -20,15 +20,19 @@ class AIController:
                                                              entity.stats[j]['stealth'])
                     aggression = entity.behaviours[i].aggression[j]
 
+                    # determine the input to send
+                    # TODO: sort input based on priority (aggression score) to see which one should be sent
                     if aggression>0 and dist<=awareness*aggression:
                         # move towards the target
                         angles = self.angles_between(entity.pos[i], entity.pos[j])
                         x_i = cos(angles['z'])
                         y_i = sin(angles['z'])
-                        entity.parse_input(cos(angles['z']), sin(angles['z']), i, camera)
                     elif aggression<0 and dist<=awareness*abs(aggression):
-                            # follow target?
-                            pass
+                        angles = self.angles_between(entity.pos[i], entity.pos[j])+pi
+                        x_i = cos(angles['z'])
+                        y_i = sin (angles['z'])
+                
+                # submit input to the updater
                 if x_i==0 and y_i==0:
                     x_i, y_i = self.idle_movement()
                 entity.parse_input(x_i, y_i, i, camera)

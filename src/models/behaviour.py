@@ -1,3 +1,5 @@
+from random import random, randint
+
 class Behaviour:
     def __init__(self, behaviour_data):
         # float from -1 to 1. 
@@ -24,3 +26,10 @@ class Behaviour:
             self.herding[i:i+1] = [new_score]
         else:
             self.herding.append(new_score)
+
+    def shift(self):
+        for i in range(len(self.aggression)):
+            aggro_score = self.aggression[i]+random()/100*randint(-1, 1)
+            herd_score = self.herding[i]+random()/100*randint(-1, 1)
+            self.update_aggression(i, aggro_score)
+            self.update_herd_behaviour(i, herd_score)

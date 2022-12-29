@@ -279,6 +279,7 @@ class Entities:
     def new_generation(self):
         self.mutate()
         self.regen()
+        self.behaviour_shift()
 
     def inter_species_reproduce(self, i, j):
         # inter-species reproduction allows for reproduction
@@ -366,7 +367,11 @@ class Entities:
             self.traits[i].give_traits(self.creature[i], self.stats[i])
             self.remove_abilities(i)
             self.give_abilities(i)
-    
+
+    def behaviour_shift(self):
+        for behaviour in self.behaviours:
+            behaviour.shift()
+
     def regen(self):
         for i in range(len(self.health)):
             if self.health[i]<self.stats[i]['health']:

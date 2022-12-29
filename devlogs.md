@@ -82,4 +82,8 @@
 
 * gave enemies an internal cooldown on using abilities
 
-* enemies now have idle movement (random movement)
+* creatures now have idle movement (random movement)
+
+* creatures now run away if they have a negative aggression score
+
+* aggression score and herding score are shifted randomly each generation
