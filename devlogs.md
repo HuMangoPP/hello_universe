@@ -91,3 +91,5 @@
 ### 2022-12-29
 
 * began working on the foundations of the world quest system that allows players to make progress
+
+* players will receive quests to unlock traits, abilities, and can upgrade stats / make allocations (go up a level)

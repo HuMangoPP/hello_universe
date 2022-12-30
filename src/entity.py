@@ -366,8 +366,9 @@ class Entities:
 
             # giving creatures traits and abilities based on their new stats
             # self.traits[i].give_traits(self.creature[i], self.stats[i])
-            self.remove_abilities(i)
-            self.give_abilities(i)
+
+            # self.remove_abilities(i)
+            # self.give_abilities(i)
 
     def behaviour_shift(self):
         for behaviour in self.behaviours:
@@ -386,8 +387,18 @@ class Entities:
             self.stats[index]['mbl'],
             self.stats[index]['stl']
         ]
+
+        max_stats = [
+            self.traits[index].max_stats['itl'],
+            self.traits[index].max_stats['pwr'],
+            self.traits[index].max_stats['def'],
+            self.traits[index].max_stats['mbl'],
+            self.traits[index].max_stats['stl'],
+        ]
         return {
             'creature': self.creature[index],
             'traits': self.traits[index],
-            'stats': stats
+            'stats': stats,
+            'abilities': self.abilities[index],
+            'max_stats': max_stats
         }
