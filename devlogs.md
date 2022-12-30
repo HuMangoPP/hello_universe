@@ -78,7 +78,7 @@
 
 * changed main menu screen; created font + basic solar system model visual
 
-### 2022-12-27
+### 2022-12-28
 
 * gave enemies an internal cooldown on using abilities
 
@@ -87,3 +87,7 @@
 * creatures now run away if they have a negative aggression score
 
 * aggression score and herding score are shifted randomly each generation
+
+### 2022-12-29
+
+* began working on the foundations of the world quest system that allows players to make progress

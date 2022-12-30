@@ -33,6 +33,9 @@ class Creature:
             return
         
         ratio_body_to_legs = floor(self.num_parts/(self.legs.num_pair_legs+1))
+
+        if self.legs.num_pair_legs==self.num_parts:
+            ratio_body_to_legs = 1
         self.legs.attached_segments = []
         if ratio_body_to_legs>=1:
             for i in range(len(self.skeleton)):

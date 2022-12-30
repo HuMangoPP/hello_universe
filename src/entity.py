@@ -3,7 +3,7 @@ from random import choice, randint
 from math import atan2, cos, sin, sqrt, pi
 from src.combat.abilities import BASIC_ABILITIES, ALL_ABILITIES, ActiveAbility
 from src.combat.status_effects import BASE_CD
-from src.settings import HEIGHT, WIDTH
+from src.settings import HEIGHT, WIDTH, STAT_GAP
 from src.models.creature import Creature
 from src.physics.physics import accelerate, de_accelerate
 from src.models.traits import Traits
@@ -47,9 +47,9 @@ class Entities:
 
         # game data
         self.stats.append(stats)
-        self.health.append(stats['health'])
-        self.energy.append(self.energy_calculation(stats['power'], 
-                                                   stats['defense'], 
+        self.health.append(stats['hp'])
+        self.energy.append(self.energy_calculation(stats['pwr'], 
+                                                   stats['def'], 
                                                    entity_data['body_parts'])) # energy calculation
         
         self.abilities.append(BASIC_ABILITIES)
@@ -174,7 +174,7 @@ class Entities:
             y_dir = sin(a_i['angle'])
             x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
             angle = atan2(y_dir, x_dir)
-            spd_mod = 3+(self.stats[player]['mobility']+self.stats[player]['power'])/100
+            spd_mod = 3+(self.stats[player]['mbl']+self.stats[player]['pwr'])/100
             self.vel[player][0] = spd_mod*self.spd[player]*cos(angle)
             self.vel[player][1] = spd_mod*self.spd[player]*sin(angle)
 
@@ -300,12 +300,12 @@ class Entities:
             'leg_length': int((self.creature[i].legs.leg_length+self.creature[i].legs.leg_length)/2),
         }
         stats = {
-            'intelligence': (self.stats[i]['intelligence']+self.stats[i]['intelligence'])/2,
-            'power': (self.stats[i]['power']+self.stats[j]['power'])/2,
-            'defense': (self.stats[i]['defense']+self.stats[j]['defense'])/2,
-            'health': (self.stats[i]['health']+self.stats[j]['health'])/2,
-            'mobility': (self.stats[i]['mobility']+self.stats[j]['mobility'])/2,
-            'stealth': (self.stats[i]['stealth']+self.stats[j]['stealth'])/2,
+            'itl': (self.stats[i]['itl']+self.stats[i]['itl'])/2,
+            'pwr': (self.stats[i]['pwr']+self.stats[j]['pwr'])/2,
+            'def': (self.stats[i]['def']+self.stats[j]['def'])/2,
+            'hp': (self.stats[i]['hp']+self.stats[j]['hp'])/2,
+            'mbl': (self.stats[i]['mbl']+self.stats[j]['mbl'])/2,
+            'stl': (self.stats[i]['stl']+self.stats[j]['stl'])/2,
             'min': 0,
             'max': 0,
         }
@@ -328,12 +328,12 @@ class Entities:
         }
 
         stats = {
-            'intelligence': self.stats[i]['intelligence'],
-            'power': self.stats[i]['power'],
-            'defense': self.stats[i]['defense'],
-            'health': self.stats[i]['health'],
-            'mobility': self.stats[i]['mobility'],
-            'stealth': self.stats[i]['stealth'],
+            'itl': self.stats[i]['itl'],
+            'pwr': self.stats[i]['pwr'],
+            'def': self.stats[i]['def'],
+            'hp': self.stats[i]['hp'],
+            'mbl': self.stats[i]['mbl'],
+            'stl': self.stats[i]['stl'],
             'min': self.traits[i].min_stats.copy(),
             'max': self.traits[i].max_stats.copy(),
         }
@@ -349,10 +349,11 @@ class Entities:
             decrease = choice(list(self.stats[i].keys())[:6])
             self.stats[i][increase]+=randint(1, 2)
             self.stats[i][decrease]-=randint(1, 2)
-            if self.stats[i][decrease]<self.traits[i].min_stats[decrease]:
-                self.stats[i][decrease] = self.traits[i].min_stats[decrease]
-            if self.stats[i][increase]>self.traits[i].max_stats[increase]:
-                self.stats[i][increase] = self.traits[i].max_stats[increase]
+
+            if self.stats[i][decrease]<self.traits[i].min_stats[decrease]*STAT_GAP:
+                self.stats[i][decrease] = self.traits[i].min_stats[decrease]*STAT_GAP
+            if self.stats[i][increase]>self.traits[i].max_stats[increase]*STAT_GAP:
+                self.stats[i][increase] = self.traits[i].max_stats[increase]*STAT_GAP
             
             # choosing stats to let creatures "breakthrough"
             breakthrough = choice(list(self.stats[i].keys())[:6])
@@ -364,7 +365,7 @@ class Entities:
                     self.traits[i].change_physiology(self.creature[i], breakthrough)
 
             # giving creatures traits and abilities based on their new stats
-            self.traits[i].give_traits(self.creature[i], self.stats[i])
+            # self.traits[i].give_traits(self.creature[i], self.stats[i])
             self.remove_abilities(i)
             self.give_abilities(i)
 
@@ -374,5 +375,19 @@ class Entities:
 
     def regen(self):
         for i in range(len(self.health)):
-            if self.health[i]<self.stats[i]['health']:
+            if self.health[i]<self.stats[i]['hp']:
                 self.health[i]+=1
+
+    def get_entity_data(self, index):
+        stats = [
+            self.stats[index]['itl'],
+            self.stats[index]['pwr'],
+            self.stats[index]['def'],
+            self.stats[index]['mbl'],
+            self.stats[index]['stl']
+        ]
+        return {
+            'creature': self.creature[index],
+            'traits': self.traits[index],
+            'stats': stats
+        }

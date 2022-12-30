@@ -3,6 +3,7 @@ from random import randint, choice
 import pygame as pg
 from src.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT
 from src.game_state.camera import Camera
+from src.combat.world_event import WorldEvent
 
 def start_menu(screen, game_data):
 
@@ -113,7 +114,8 @@ def game_menu(screen, game_data):
                 if event.key == pg.K_ESCAPE:
                     return
                 if event.key == pg.K_SPACE:
-                    entities.in_species_reproduce(0)
+                    entities.in_species_reproduce(player)
+
         
         # refresh screen
         screen.fill('black')
@@ -147,6 +149,7 @@ def game_menu(screen, game_data):
             generation_time = pg.time.get_ticks()
             generation+=1
             entities.new_generation()
+            WorldEvent(entities.get_entity_data(player))
     
         clock.tick(FPS)
         pg.display.update()

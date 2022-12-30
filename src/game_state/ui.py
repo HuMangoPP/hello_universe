@@ -46,7 +46,7 @@ class UserInterface:
         # health bar, taking inspiration from Diablo/PoE
         health_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         health_bar.set_colorkey('black')
-        health_ratio = 1-entities.health[self.player]/entities.stats[self.player]['health']
+        health_ratio = 1-entities.health[self.player]/entities.stats[self.player]['hp']
         pg.draw.rect(health_bar, 'black', (0, 0, 2*GAUGE_UI['radius'], health_ratio*GAUGE_UI['radius']*2))
         hp_frame = self.hud_frames['hp_frame']
         hp_frame.set_colorkey('black')
@@ -61,8 +61,8 @@ class UserInterface:
         # energy bar, similar in style to the health
         energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         energy_bar.set_colorkey('black')
-        total_energy_calculation = (entities.stats[self.player]['power']+
-                                    entities.stats[self.player]['defense']+
+        total_energy_calculation = (entities.stats[self.player]['pwr']+
+                                    entities.stats[self.player]['def']+
                                     entities.creature[self.player].num_parts+1)
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
         energy_frame = self.hud_frames['energy_frame']
@@ -81,11 +81,11 @@ class UserInterface:
         # stat bars on the right
         
         stats = [
-            entities.stats[self.player]['intelligence'],
-            entities.stats[self.player]['power'],
-            entities.stats[self.player]['defense'],
-            entities.stats[self.player]['mobility'],
-            entities.stats[self.player]['stealth'],
+            entities.stats[self.player]['itl'],
+            entities.stats[self.player]['pwr'],
+            entities.stats[self.player]['def'],
+            entities.stats[self.player]['mbl'],
+            entities.stats[self.player]['stl'],
         ]
         stats_frame = self.hud_frames['stats_frame']
         stats_frame.set_colorkey('black')

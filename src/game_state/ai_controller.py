@@ -16,8 +16,8 @@ class AIController:
                     if i == j:
                         continue
                     dist = self.dist_between(entity.pos[i], entity.pos[j])
-                    awareness = entity.awareness_calculation(entity.stats[i]['intelligence'],
-                                                             entity.stats[j]['stealth'])
+                    awareness = entity.awareness_calculation(entity.stats[i]['itl'],
+                                                             entity.stats[j]['stl'])
                     aggression = entity.behaviours[i].aggression[j]
 
                     # determine the input to send
@@ -28,9 +28,9 @@ class AIController:
                         x_i = cos(angles['z'])
                         y_i = sin(angles['z'])
                     elif aggression<0 and dist<=awareness*abs(aggression):
-                        angles = self.angles_between(entity.pos[i], entity.pos[j])+pi
-                        x_i = cos(angles['z'])
-                        y_i = sin (angles['z'])
+                        angles = self.angles_between(entity.pos[i], entity.pos[j])
+                        x_i = cos(angles['z']+pi)
+                        y_i = sin(angles['z']+pi)
                 
                 # submit input to the updater
                 if x_i==0 and y_i==0:
@@ -46,10 +46,12 @@ class AIController:
                 # give the ai controlled creature some 
                 # ability input
                 for j in range(len(entity.abilities)):
+                    if i==j: continue
+
                     if 'ability_cd' not in entity.status_effects[i]['effects']:
                         dist = self.dist_between(entity.pos[i], entity.pos[j])
-                        awareness = entity.awareness_calculation(entity.stats[i]['intelligence'],
-                                                                entity.stats[j]['stealth']) 
+                        awareness = entity.awareness_calculation(entity.stats[i]['itl'],
+                                                                entity.stats[j]['stl']) 
                         aggression = entity.behaviours[i].aggression[j]
 
                         if aggression>0:

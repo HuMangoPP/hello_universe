@@ -7,49 +7,51 @@ FPS = 60
 NEW_GEN_TIME = 100
 
 BASE_MIN_STATS = {
-    'intelligence': 0,
-    'power': 0,
-    'defense': 0,
-    'mobility': 0,
-    'health': 1,
-    'stealth': 0,
+    'itl': 0,
+    'pwr': 0,
+    'def': 0,
+    'mbl': 0,
+    'hp': 1,
+    'stl': 0,
 }
 
 BASE_MAX_STATS = {
-    'intelligence': 5,
-    'power': 5,
-    'defense': 5,
-    'mobility': 5,
-    'health': 5,
-    'stealth': 5,
+    'itl': 1,
+    'pwr': 1,
+    'def': 1,
+    'mbl': 1,
+    'hp': 1,
+    'stl': 1,
 }
+
+STAT_GAP = 5
 
 BASE_STATS = {
     # intelligence has to do with heavioural traits of entities
     # awareness, vision, breeding/herding behaviour, etc
-    'intelligence': 0,
+    'itl': 0,
     # power has to do with the raw damage output during combat
     # different types of moves/abilities and features that
     # are used during combat
-    'power': 0,
+    'pwr': 0,
     # defense has to do with damage absorption during combat
     # different types of fur/scales/feathers that might make
     # the entity more sturdy/capable of blocking attacks
-    'defense': 0,
+    'def': 0,
     # mobility has to do with the movement/evasiveness during 
     # and outside of combat
     # dodging attacks, running away from other entities to avoid
     # combat, etc
     # stamina and mobility outside of combat
-    'mobility': 0,
+    'mbl': 0,
     # essentially a measure of population size
     # with each generation, health increases randomly
-    'health': 1,
+    'hp': 1,
     # stealth has to do with evasiveness during and outside 
     # of combat
     # dodging attacks/fleeing from combat
     # detection/awareness outside of combat
-    'stealth': 0,
+    'stl': 0,
     # maximum and minimum stats attainable as the current creature
     'min': BASE_MIN_STATS,
     'max': BASE_MAX_STATS,
@@ -68,8 +70,6 @@ MODEL_COLORS = {
     'leg': 'green',
     'foot': 'blue'
 }
-
-
 
 ### UI
 
