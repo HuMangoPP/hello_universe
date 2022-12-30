@@ -356,13 +356,13 @@ class Entities:
                 self.stats[i][increase] = self.traits[i].max_stats[increase]*STAT_GAP
             
             # choosing stats to let creatures "breakthrough"
-            breakthrough = choice(list(self.stats[i].keys())[:6])
-            if self.stats[i][breakthrough] == self.traits[i].max_stats[breakthrough]:
-                # if the chosen stat is at the maximum, "roll" the dice to
-                # see if the creature can breakthrough
-                roll = randint(1,6)
-                if roll==1:
-                    self.traits[i].change_physiology(self.creature[i], breakthrough)
+            # breakthrough = choice(list(self.stats[i].keys())[:6])
+            # if self.stats[i][breakthrough] == self.traits[i].max_stats[breakthrough]:
+            #     # if the chosen stat is at the maximum, "roll" the dice to
+            #     # see if the creature can breakthrough
+            #     roll = randint(1,6)
+            #     if roll==1:
+            #         self.traits[i].change_physiology(self.creature[i], breakthrough)
 
             # giving creatures traits and abilities based on their new stats
             # self.traits[i].give_traits(self.creature[i], self.stats[i])

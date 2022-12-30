@@ -46,8 +46,8 @@ if __name__ == '__main__':
     controller = PlayerController(player)
     ai_controller = AIController(player)
 
-    ui = UserInterface(player, sprites)
     font = Font(pg.image.load('./assets/font/font.png'))
+    ui = UserInterface(player, font, sprites)
 
     game_data = {
         'entities': entities,

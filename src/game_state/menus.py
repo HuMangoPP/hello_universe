@@ -115,7 +115,8 @@ def game_menu(screen, game_data):
                     return
                 if event.key == pg.K_SPACE:
                     entities.in_species_reproduce(player)
-
+                if event.key == pg.K_m:
+                    ui.rec_quests(WorldEvent(entities.get_entity_data(player)))
         
         # refresh screen
         screen.fill('black')
@@ -149,7 +150,6 @@ def game_menu(screen, game_data):
             generation_time = pg.time.get_ticks()
             generation+=1
             entities.new_generation()
-            WorldEvent(entities.get_entity_data(player))
     
         clock.tick(FPS)
         pg.display.update()

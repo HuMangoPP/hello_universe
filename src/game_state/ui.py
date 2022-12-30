@@ -3,14 +3,22 @@ import pygame as pg
 from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI
 from src.combat.abilities import ALL_ABILITIES
 
+QUEST_LINGER_TIME = 1000
+
 class UserInterface:
-    def __init__(self, player, ui_sprites):
+    def __init__(self, player, font, ui_sprites):
+        self.font = font
         self.player = player
         self.stat_icons = list(ui_sprites['stat_icons'].values())
         self.ability_icons = ui_sprites['ability_icons']
         self.trait_icons = ui_sprites['trait_icons']
         self.hud_frames = ui_sprites['hud_frames']
+
+        self.quest_display = (False, pg.time.get_ticks())
     
+    ############################# 
+    # hud and mouse             #
+    ############################# 
     def draw_mouse(self, screen):
         mx, my = pg.mouse.get_pos()
         reticle_size = 10
@@ -41,6 +49,14 @@ class UserInterface:
         self.display_traits_and_abilities(screen, entities)
 
         self.draw_mouse(screen)
+
+        # quest
+        if self.quest_display[0]:
+            self.font.render(screen, 'new quest', 50, 50, (255, 255, 255), 24)
+            self.quest_anim(screen)
+            time = pg.time.get_ticks()
+            if time-self.quest_display[1]>QUEST_LINGER_TIME:
+                self.quest_display = (False, time)
 
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
@@ -162,3 +178,19 @@ class UserInterface:
             # the radius will be calculated using entity stats
             radius = 100
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
+    
+    ############################# 
+    # questing menus            #
+    ############################# 
+    def rec_quests(self, quests):
+        self.quest_display = (True, pg.time.get_ticks())
+
+    def quest_anim(self, screen):
+        circle = pg.Surface((100, 100))
+        pg.draw.circle(circle, (255, 255, 0), (50, 50), 50)
+        circle.set_colorkey((0, 0, 0))
+        circle.set_alpha(100)
+        screen.blit(circle, (WIDTH/2-50, HEIGHT/2-50))
+    ############################# 
+    # interactions menus        #
+    ############################# 

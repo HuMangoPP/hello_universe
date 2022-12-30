@@ -98,12 +98,12 @@ class WorldEvent:
                     'reward': STAT_QUESTS[i],
                     'req': ''
                 })
-            else:
-                all_quests.append({
-                    'type': 'upgrade',
-                    'reward': STAT_QUESTS[i],
-                    'req': '',
-                })
+            # else:
+            #     all_quests.append({
+            #         'type': 'upgrade',
+            #         'reward': STAT_QUESTS[i],
+            #         'req': '',
+            #     })
 
         return all_quests
 
