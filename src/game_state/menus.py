@@ -118,9 +118,9 @@ def game_menu(screen, game_data):
                     entities.in_species_reproduce(player)
                 if event.key == pg.K_TAB:
                     ui.toggle_quests_menu()
-                if event.key == pg.K_m:
                     ui.update_quests(WorldEvent(entities.get_entity_data(player)))
-        ui.input(events)
+                    ui.input(events, entities)
+        ui.input(events, entities)
         # refresh screen
         screen.fill('black')
 

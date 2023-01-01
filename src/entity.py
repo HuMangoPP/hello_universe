@@ -30,6 +30,7 @@ class Entities:
         self.status_effects = []
         self.traits = []
         self.hurt_box = []
+        self.quests = []
 
         self.behaviours = []
     
@@ -60,6 +61,14 @@ class Entities:
         })
         self.traits.append(Traits([], stats['min'], stats['max']))
         self.hurt_box.append(None)
+        self.quests.append({
+            'active': False,
+            'type': '',
+            'reward': '',
+            'goal_type': '',
+            'goal': 0,
+            'progress': 0,
+        })
 
         self.behaviours.append(Behaviour({
             'aggression': entity_data['aggression'],
@@ -354,21 +363,6 @@ class Entities:
                 self.stats[i][decrease] = self.traits[i].min_stats[decrease]*STAT_GAP
             if self.stats[i][increase]>self.traits[i].max_stats[increase]*STAT_GAP:
                 self.stats[i][increase] = self.traits[i].max_stats[increase]*STAT_GAP
-            
-            # choosing stats to let creatures "breakthrough"
-            # breakthrough = choice(list(self.stats[i].keys())[:6])
-            # if self.stats[i][breakthrough] == self.traits[i].max_stats[breakthrough]:
-            #     # if the chosen stat is at the maximum, "roll" the dice to
-            #     # see if the creature can breakthrough
-            #     roll = randint(1,6)
-            #     if roll==1:
-            #         self.traits[i].change_physiology(self.creature[i], breakthrough)
-
-            # giving creatures traits and abilities based on their new stats
-            # self.traits[i].give_traits(self.creature[i], self.stats[i])
-
-            # self.remove_abilities(i)
-            # self.give_abilities(i)
 
     def behaviour_shift(self):
         for behaviour in self.behaviours:
@@ -402,3 +396,18 @@ class Entities:
             'abilities': self.abilities[index],
             'max_stats': max_stats
         }
+    
+    def rec_quest(self, index, quest):
+        if not self.quests[index]['active']:
+            quest['progress'] = 0
+            quest['active'] = False
+            self.quests[index] = quest
+
+            # for now, accepting a quest automatically completes it
+            match self.quests[index]['type']:
+                case 'upgrade':
+                    self.stats[index][self.quests[index]['reward']]+=1
+                    print(f"upgraded {self.quests[index]['reward']}")
+                case 'alloc':
+                    self.traits[index].change_physiology(self.creature[index], self.quests[index]['reward'])
+                    print(f"allocated {self.quests[index]['reward']}")

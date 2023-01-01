@@ -103,3 +103,7 @@
 ### 2023-01-01
 
 * quest card carousel now displays all quests 
+
+* players can accept quests
+
+* players currently autocomplete quests

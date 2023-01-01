@@ -66,7 +66,6 @@ class Traits:
         
     def change_physiology(self, creature, breakthrough):
         self.max_stats[breakthrough]+=1
-        print(f'upgraded {breakthrough} to {self.max_stats[breakthrough]*STAT_GAP}')
         if breakthrough=='def' or breakthrough=='hp':
             creature.change_physiology(1, 0)
             return 

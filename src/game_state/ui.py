@@ -57,9 +57,12 @@ class UserInterface:
         if self.quest_ui['display']:
             self.quest_ui['ui'].display(screen, self.font)
             
-    def input(self, pg_events):
+    def input(self, pg_events, entities):
         if self.quest_ui['display']:
-            self.quest_ui['ui'].input(pg_events)
+            quest = self.quest_ui['ui'].input(pg_events)
+            if quest:
+                entities.rec_quest(self.player, quest)
+                self.toggle_quests_menu()
 
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
@@ -297,4 +300,6 @@ class Quest_UI:
                         self.hover = 0
                 if event.key == pg.K_RETURN:
                     # take quest
-                    pass
+                    return self.quests[self.hover]
+        
+        return None

@@ -5,7 +5,7 @@ class Font:
     def __init__(self, image, padding=1):
         self.image = image
         self.char_key = []
-        self.load_font_key('abcdefghijklmnopqrstuvwxyz1234567890.,;?')
+        self.load_font_key('abcdefghijklmnopqrstuvwxyz1234567890.,;?!_')
         self.char_dict = {}
         self.font_width = self.image.get_width()//len(self.char_key)
         self.font_height = self.image.get_height()
