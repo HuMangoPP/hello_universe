@@ -29,21 +29,21 @@ STAT_GAP = 5
 BASE_STATS = {
     # intelligence has to do with heavioural traits of entities
     # awareness, vision, breeding/herding behaviour, etc
-    'itl': 0,
+    'itl': 5,
     # power has to do with the raw damage output during combat
     # different types of moves/abilities and features that
     # are used during combat
-    'pwr': 0,
+    'pwr': 5,
     # defense has to do with damage absorption during combat
     # different types of fur/scales/feathers that might make
     # the entity more sturdy/capable of blocking attacks
-    'def': 0,
+    'def': 5,
     # mobility has to do with the movement/evasiveness during 
     # and outside of combat
     # dodging attacks, running away from other entities to avoid
     # combat, etc
     # stamina and mobility outside of combat
-    'mbl': 0,
+    'mbl': 5,
     # essentially a measure of population size
     # with each generation, health increases randomly
     'hp': 1,
@@ -51,7 +51,7 @@ BASE_STATS = {
     # of combat
     # dodging attacks/fleeing from combat
     # detection/awareness outside of combat
-    'stl': 0,
+    'stl': 5,
     # maximum and minimum stats attainable as the current creature
     'min': BASE_MIN_STATS,
     'max': BASE_MAX_STATS,
@@ -180,7 +180,16 @@ ABILITY_TRAIT_UI = {
 
 # quests
 QUEST_CARD_UI = {
-    'w': [100, 200, 100],
-    'h': [150, 300, 150],
-    'p': 100,
+    'w': 200,
+    'h': 300,
+    'p': 15,
+    'c': {
+        'alloc': (255, 0, 0),
+        'ability': (0, 255, 0),
+        'trait': (0, 0, 255),
+        'upgrade': (255, 0, 255),
+    },
+    's_ratio': 2,
+    'a_ratio': 2,
+    'f': 12,
 }

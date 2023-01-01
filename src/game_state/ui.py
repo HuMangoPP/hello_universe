@@ -207,6 +207,9 @@ class UserInterface:
     # interactions menus        #
     ############################# 
 
+############################# 
+# questing menus class      #
+############################# 
 class Quest_UI:
     def __init__(self, quests):
         self.quests = quests
@@ -216,21 +219,66 @@ class Quest_UI:
         font.render(screen, 'quests', WIDTH/2, HEIGHT/4, (0, 255, 0), 24, 'center')
         if not self.quests:
             return
-        prev_i = (self.hover-1)%len(self.quests)
-        next_i = (self.hover+1)%len(self.quests)
-        indices = [prev_i, self.hover, next_i]
-        for i in range(3):
-            quest = self.quests[indices[i]]
-            q_type = quest['type']
-            reward = quest['reward']
-            # card carousel
-            pg.draw.rect(screen, (255, 0, 0), 
-                        (WIDTH/2-QUEST_CARD_UI['w'][i]/2+(QUEST_CARD_UI['w'][i]+QUEST_CARD_UI['p'])*(i-1), 
-                        HEIGHT/2-QUEST_CARD_UI['h'][i]/2, 
-                        QUEST_CARD_UI['w'][i], QUEST_CARD_UI['h'][i]))
-            font.render(screen, f'{q_type} {reward}', 
-                        WIDTH/2+(QUEST_CARD_UI['w'][i]+QUEST_CARD_UI['p'])*(i-1), 
-                        HEIGHT/2, (255, 255, 255), 12, 'center')
+
+        # make prev and next auto-balance, so they have the same number of cards?
+        prev = self.quests[:self.hover]
+        next = self.quests[self.hover+1:]
+        next.reverse()
+        gradient = max(len(next), len(prev))
+        # draw the previous cards
+        if gradient!=0:
+            size_ratio = QUEST_CARD_UI['s_ratio']**(1/gradient)
+            alpha_ratio = QUEST_CARD_UI['a_ratio']**(1/gradient)
+            for i in range(len(prev)):
+                # reverse the index
+                rev_i = len(prev)-i
+                # quest type and reward to be displayed
+                q_type = prev[i]['type']
+                reward = prev[i]['reward']
+                # card width, height, padding, font size, alpha
+                w = QUEST_CARD_UI['w']/(size_ratio**rev_i)
+                h = QUEST_CARD_UI['h']/(size_ratio**rev_i)
+                p = QUEST_CARD_UI['p']/(size_ratio**rev_i)
+                f = QUEST_CARD_UI['f']/(size_ratio**rev_i)
+                a = 255/(alpha_ratio**rev_i)
+
+                # make the card
+                card = pg.Surface((w, h))
+                card.fill(QUEST_CARD_UI['c'][q_type])
+                card.set_alpha(a)
+                screen.blit(card, (WIDTH/2-(w+p)*rev_i-w/2, HEIGHT/2-h/2))
+                font.render(screen, f'{q_type} {reward}', 
+                            WIDTH/2-(w+p)*rev_i, HEIGHT/2, (255, 255, 255), f, 'center')
+        
+            for i in range(len(next)):
+                # reverse the index
+                rev_i = len(next)-i
+                # quest type and reward to be displayed
+                q_type = next[i]['type']
+                reward = next[i]['reward']
+                # card width, height, padding, font size, alpha
+                w = QUEST_CARD_UI['w']/(size_ratio**rev_i)
+                h = QUEST_CARD_UI['h']/(size_ratio**rev_i)
+                a = 255/(alpha_ratio**rev_i)
+                p = QUEST_CARD_UI['p']/(size_ratio**rev_i)
+                f = QUEST_CARD_UI['f']/(size_ratio**rev_i)
+
+                # make the card
+                card = pg.Surface((w, h))
+                card.fill(QUEST_CARD_UI['c'][q_type])
+                card.set_alpha(a)
+                screen.blit(card, (WIDTH/2+(w+p)*rev_i-w/2, HEIGHT/2-h/2))
+                font.render(screen, f'{q_type} {reward}', 
+                            WIDTH/2+(w+p)*rev_i, HEIGHT/2, (255, 255, 255), f, 'center')
+        
+        # draw the hovered card
+        q_type = self.quests[self.hover]['type']
+        reward = self.quests[self.hover]['reward']
+        card = pg.Surface((QUEST_CARD_UI['w'], QUEST_CARD_UI['h']))
+        card.fill(QUEST_CARD_UI['c'][q_type])
+        screen.blit(card, (WIDTH/2-QUEST_CARD_UI['w']/2, HEIGHT/2-QUEST_CARD_UI['h']/2))
+        font.render(screen, f'{q_type} {reward}',
+                    WIDTH/2, HEIGHT/2, (255, 255, 255), QUEST_CARD_UI['f'], 'center')
     
     def input(self, pg_events):
         for event in pg_events:
@@ -247,3 +295,6 @@ class Quest_UI:
                         self.hover%=len(self.quests)
                     else:
                         self.hover = 0
+                if event.key == pg.K_RETURN:
+                    # take quest
+                    pass

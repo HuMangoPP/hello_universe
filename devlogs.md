@@ -95,3 +95,11 @@
 * players will receive quests to unlock traits, abilities, and can upgrade stats / make allocations (go up a level)
 
 * began work on ui pinging for new quests
+
+### 2022-12-31
+
+* made ui to view quests, card carousel type display
+
+### 2023-01-01
+
+* quest card carousel now displays all quests 
