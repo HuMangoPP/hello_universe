@@ -106,18 +106,21 @@ def game_menu(screen, game_data):
     generation_time = pg.time.get_ticks()
 
     while True:
-        for event in pg.event.get():
-            if event.type==pg.QUIT:
+        events = pg.event.get()
+        for event in events:
+            if event.type == pg.QUIT:
                 pg.quit()
                 exit()
-            if event.type==pg.KEYDOWN:
+            if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     return
                 if event.key == pg.K_SPACE:
                     entities.in_species_reproduce(player)
+                if event.key == pg.K_TAB:
+                    ui.toggle_quests_menu()
                 if event.key == pg.K_m:
-                    ui.rec_quests(WorldEvent(entities.get_entity_data(player)))
-        
+                    ui.update_quests(WorldEvent(entities.get_entity_data(player)))
+        ui.input(events)
         # refresh screen
         screen.fill('black')
 

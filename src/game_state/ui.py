@@ -1,6 +1,6 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
-from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI
+from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI, QUEST_CARD_UI
 from src.combat.abilities import ALL_ABILITIES
 
 QUEST_LINGER_TIME = 1000
@@ -14,7 +14,10 @@ class UserInterface:
         self.trait_icons = ui_sprites['trait_icons']
         self.hud_frames = ui_sprites['hud_frames']
 
-        self.quest_display = (False, pg.time.get_ticks())
+        self.quest_ui = {
+            'display': False,
+            'ui': Quest_UI([])
+        }
     
     ############################# 
     # hud and mouse             #
@@ -51,12 +54,12 @@ class UserInterface:
         self.draw_mouse(screen)
 
         # quest
-        if self.quest_display[0]:
-            self.font.render(screen, 'new quest', 50, 50, (255, 255, 255), 24)
-            self.quest_anim(screen)
-            time = pg.time.get_ticks()
-            if time-self.quest_display[1]>QUEST_LINGER_TIME:
-                self.quest_display = (False, time)
+        if self.quest_ui['display']:
+            self.quest_ui['ui'].display(screen, self.font)
+            
+    def input(self, pg_events):
+        if self.quest_ui['display']:
+            self.quest_ui['ui'].input(pg_events)
 
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
@@ -182,8 +185,16 @@ class UserInterface:
     ############################# 
     # questing menus            #
     ############################# 
-    def rec_quests(self, quests):
-        self.quest_display = (True, pg.time.get_ticks())
+    def toggle_quests_menu(self):
+        self.quest_ui = {
+            'display': not self.quest_ui['display'],
+            'ui': self.quest_ui['ui']
+        }
+    def update_quests(self, world_event):
+        self.quest_ui = {
+            'display': self.quest_ui['display'],
+            'ui': Quest_UI(world_event.quests)
+        }
 
     def quest_anim(self, screen):
         circle = pg.Surface((100, 100))
@@ -191,6 +202,48 @@ class UserInterface:
         circle.set_colorkey((0, 0, 0))
         circle.set_alpha(100)
         screen.blit(circle, (WIDTH/2-50, HEIGHT/2-50))
+
     ############################# 
     # interactions menus        #
     ############################# 
+
+class Quest_UI:
+    def __init__(self, quests):
+        self.quests = quests
+        self.hover = 0
+    
+    def display(self, screen, font):
+        font.render(screen, 'quests', WIDTH/2, HEIGHT/4, (0, 255, 0), 24, 'center')
+        if not self.quests:
+            return
+        prev_i = (self.hover-1)%len(self.quests)
+        next_i = (self.hover+1)%len(self.quests)
+        indices = [prev_i, self.hover, next_i]
+        for i in range(3):
+            quest = self.quests[indices[i]]
+            q_type = quest['type']
+            reward = quest['reward']
+            # card carousel
+            pg.draw.rect(screen, (255, 0, 0), 
+                        (WIDTH/2-QUEST_CARD_UI['w'][i]/2+(QUEST_CARD_UI['w'][i]+QUEST_CARD_UI['p'])*(i-1), 
+                        HEIGHT/2-QUEST_CARD_UI['h'][i]/2, 
+                        QUEST_CARD_UI['w'][i], QUEST_CARD_UI['h'][i]))
+            font.render(screen, f'{q_type} {reward}', 
+                        WIDTH/2+(QUEST_CARD_UI['w'][i]+QUEST_CARD_UI['p'])*(i-1), 
+                        HEIGHT/2, (255, 255, 255), 12, 'center')
+    
+    def input(self, pg_events):
+        for event in pg_events:
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RIGHT:
+                    if self.quests:
+                        self.hover+=1
+                        self.hover%=len(self.quests)
+                    else:
+                        self.hover = 0
+                if event.key == pg.K_LEFT:
+                    if self.quests:
+                        self.hover-=1
+                        self.hover%=len(self.quests)
+                    else:
+                        self.hover = 0

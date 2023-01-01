@@ -177,3 +177,10 @@ ABILITY_TRAIT_UI = {
     'frame_pad': 9,
     'icon_size': 48,
 }
+
+# quests
+QUEST_CARD_UI = {
+    'w': [100, 200, 100],
+    'h': [150, 300, 150],
+    'p': 100,
+}
