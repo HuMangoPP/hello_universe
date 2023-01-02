@@ -107,3 +107,5 @@
 * players can accept quests
 
 * players currently autocomplete quests
+
+* players can upgrade stat/allocate stats/get traits/get abilities

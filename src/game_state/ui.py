@@ -193,6 +193,7 @@ class UserInterface:
             'display': not self.quest_ui['display'],
             'ui': self.quest_ui['ui']
         }
+    
     def update_quests(self, world_event):
         self.quest_ui = {
             'display': self.quest_ui['display'],
@@ -219,7 +220,7 @@ class Quest_UI:
         self.hover = 0
     
     def display(self, screen, font):
-        font.render(screen, 'quests', WIDTH/2, HEIGHT/4, (0, 255, 0), 24, 'center')
+        font.render(screen, 'quests_', WIDTH/2, HEIGHT/4, (0, 255, 0), 24, 'center')
         if not self.quests:
             return
 

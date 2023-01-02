@@ -5,7 +5,7 @@ class Font:
     def __init__(self, image, padding=1):
         self.image = image
         self.char_key = []
-        self.load_font_key('abcdefghijklmnopqrstuvwxyz1234567890.,;?!_')
+        self.load_font_key('abcdefghijklmnopqrstuvwxyz1234567890.,;-?!_')
         self.char_dict = {}
         self.font_width = self.image.get_width()//len(self.char_key)
         self.font_height = self.image.get_height()
@@ -51,5 +51,4 @@ class Font:
                 letter = pg.transform.scale(coloured_letter, (size, scaled_height))
                 letter.set_colorkey((0, 0, 0))
                 screen.blit(letter, (x-size//2, y-scaled_height//2))
-            
             x+=size+scaled_padding

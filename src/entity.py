@@ -272,18 +272,8 @@ class Entities:
     ############################# 
     # evolution systems         #
     ############################# 
-    def remove_abilities(self, index):
-        pass
-
-    def give_abilities(self, index):
-        if 'wings' in self.traits[index].traits and 'fly' not in self.abilities[index]:
-            self.abilities[index].append('fly')
-        
-        if 'head_weapon' in self.traits[index].traits and 'rush' not in self.abilities[index]:
-            self.abilities[index].append('rush')
-
-        if 'leg_weapon' in self.traits[index].traits and 'slash' not in self.abilities[index]:
-            self.abilities[index].append('slash')
+    def give_abilities(self, index, ability):
+        self.abilities[index].append(ability)
 
     def new_generation(self):
         self.mutate()
@@ -411,3 +401,7 @@ class Entities:
                 case 'alloc':
                     self.traits[index].change_physiology(self.creature[index], self.quests[index]['reward'])
                     print(f"allocated {self.quests[index]['reward']}")
+                case 'trait':
+                    self.traits[index].give_traits(self.creature[index], self.quests[index]['reward'])
+                case 'ability':
+                    self.give_abilities(index, self.quests[index]['reward'])
