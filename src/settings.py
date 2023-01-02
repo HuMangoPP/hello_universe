@@ -193,3 +193,11 @@ QUEST_CARD_UI = {
     'a_ratio': 2,
     'f': 12,
 }
+
+# interactions
+INTERACTION_WHEEL_UI = {
+    'out_r': 200,
+    'in_r': 75,
+    'c': (255, 255, 255), 
+    'a': 50
+}

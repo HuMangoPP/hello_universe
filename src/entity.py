@@ -15,24 +15,31 @@ class Entities:
     ############################# 
     def __init__(self):
         # physical/render data
-        self.pos = []
-        self.vel = []
-        self.spd = []
-        self.acc = []
-        self.creature = []
+        self.pos                : list[list[float, float, float, float]] = []
+        self.vel                : list[list[float]] = []
+        self.spd                : list[float] = []
+        self.acc                : list[float] = []
+        self.creature           : list[Creature] = []
 
         # game data
-        self.stats = []
-        self.health = [] # the entity's current health
-        self.energy = [] # the entitiy's current energy level
+        self.stats              : list[dict[str, int]] = []
+        self.health             : list[float] = [] 
+        self.energy             : list[float] = [] 
 
-        self.abilities = []
-        self.status_effects = []
-        self.traits = []
-        self.hurt_box = []
-        self.quests = []
+        self.abilities          : list[list[str]] = []
+        self.status_effects     : list[dict['effects': list[str], 
+                                            'cd': list[int],
+                                            'time': list[int]]] = []
+        self.traits             : list[Traits] = []
+        self.hurt_box           : list[ActiveAbility] = []
+        self.quests             : list[dict['active': bool,
+                                            'progress': float,
+                                            'reward': str,
+                                            'type': str,
+                                            'req_type': str,
+                                            'req': int]]= []
 
-        self.behaviours = []
+        self.behaviours         : list[Behaviour] = []
     
     def add_new_entity(self, entity_data, stats):
         # physical/render data
@@ -82,7 +89,7 @@ class Entities:
     ############################# 
     # draw, update, movement    #
     ############################# 
-    def draw(self, screen, camera):
+    def draw(self, screen, camera) -> None:
         for i in range(len(self.creature)):
             # if self.creature[i].draw(screen, camera) and self.hurt_box[i]:
             #     self.hurt_box[i].draw(screen, camera)
@@ -133,7 +140,7 @@ class Entities:
     ############################# 
     # combat systems            #
     ############################# 
-    def kill(self, player):
+    def kill(self, player, corpses):
         remove = []
         for i in range(len(self.health)):
             if self.health[i]<=0:
@@ -144,6 +151,12 @@ class Entities:
 
         for j in range(len(remove)-1, -1, -1):
             i = remove[j]
+            corpse_data = {
+                'pos': self.pos[i],
+                'nutrients': 100,
+                'creature': self.creature[i]
+            }
+            corpses.add_new_corpse(corpse_data)
             self.pos[i:i+1] = []
             self.vel[i:i+1] = []
             self.spd[i:i+1] = []
@@ -275,6 +288,12 @@ class Entities:
     def give_abilities(self, index, ability):
         self.abilities[index].append(ability)
 
+    def give_traits(self, index, trait):
+        self.traits[index].give_traits(self.creature[index], trait)
+
+    def allocate_stat(self, index, stat):
+        self.stats[index]['max'][stat]+=1
+
     def new_generation(self):
         self.mutate()
         self.regen()
@@ -394,14 +413,15 @@ class Entities:
             self.quests[index] = quest
 
             # for now, accepting a quest automatically completes it
+            reward = self.quests[index]['reward']
             match self.quests[index]['type']:
                 case 'upgrade':
-                    self.stats[index][self.quests[index]['reward']]+=1
-                    print(f"upgraded {self.quests[index]['reward']}")
+                    self.stats[index][reward]+=1
+                    print(f"upgraded {reward}")
                 case 'alloc':
-                    self.traits[index].change_physiology(self.creature[index], self.quests[index]['reward'])
-                    print(f"allocated {self.quests[index]['reward']}")
+                    self.allocate_stat(index, reward)
+                    print(f"allocated {reward}")
                 case 'trait':
-                    self.traits[index].give_traits(self.creature[index], self.quests[index]['reward'])
+                    self.give_traits(index, reward)
                 case 'ability':
-                    self.give_abilities(index, self.quests[index]['reward'])
+                    self.give_abilities(index, reward)

@@ -8,6 +8,7 @@ from src.game_state.menus import start_menu
 from src.game_state.ui import UserInterface
 from src.asset_loader import load_assets
 from src.font import Font
+from src.corpse import Corpses
 
 
 if __name__ == '__main__':
@@ -31,6 +32,7 @@ if __name__ == '__main__':
 
     camera = Camera(0, 0)
     entities = Entities()
+    corpses = Corpses()
     entities.add_new_entity({
         'pos': [0, 0, 20, 0],
         'spd': 5,
@@ -59,5 +61,6 @@ if __name__ == '__main__':
         'clock': clock,
         'sprites': sprites,
         'font': font,
+        'corpses': corpses,
     }
     start_menu(screen , game_data)

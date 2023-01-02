@@ -95,12 +95,14 @@ def start_menu(screen, game_data):
 
 def game_menu(screen, game_data):
     entities = game_data['entities']
+    corpses = game_data['corpses']
     controller = game_data['controller']
     ai_controller = game_data['ai']
     camera = game_data['camera']
     player = game_data['player']
     ui = game_data['ui']
     clock = game_data['clock']
+    font = game_data['font']
 
     generation = 0
     generation_time = pg.time.get_ticks()
@@ -120,6 +122,11 @@ def game_menu(screen, game_data):
                     ui.toggle_quests_menu()
                     ui.update_quests(WorldEvent(entities.get_entity_data(player)))
                     ui.input(events, entities)
+                if event.key == pg.K_f:
+                    ui.toggle_interactions_menu()
+                if event.key == pg.K_DELETE:
+                    entities.health[player] = -100
+                    
         ui.input(events, entities)
         # refresh screen
         screen.fill('black')
@@ -145,7 +152,8 @@ def game_menu(screen, game_data):
         ui.display(screen, entities)
 
         # death
-        if entities.kill(player):
+        if entities.kill(player, corpses):
+            game_over(screen, font, clock, entities, camera, ui)
             return
 
         # new generation
@@ -157,3 +165,34 @@ def game_menu(screen, game_data):
         clock.tick(FPS)
         pg.display.update()
         pg.display.set_caption(f'{clock.get_fps()}, {len(entities.pos)}')
+
+def game_over(screen, font, clock, entities, camera, ui):
+
+    black_screen = pg.Surface((WIDTH, HEIGHT))
+    black_screen.fill('black')
+    screen_alpha = 0
+    text_alpha = 0
+    time_delay = 2000
+
+    while True:
+        black_screen.set_alpha(screen_alpha)
+
+        screen.fill('black')
+        entities.draw(screen, camera)
+        ui.display(screen, entities)
+
+        screen.blit(black_screen, (0, 0))
+        font.render(screen, 'you died', WIDTH/2, HEIGHT/2, (255, 0, 0), 50, 'center', text_alpha)
+
+        if screen_alpha == 255:
+            text_alpha+=5
+        else:
+            screen_alpha+=5
+        if text_alpha < 255:
+            time = pg.time.get_ticks()
+        
+        if pg.time.get_ticks()-time>time_delay:
+            return
+
+        pg.display.update()
+        clock.tick(FPS)

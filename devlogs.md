@@ -109,3 +109,7 @@
 * players currently autocomplete quests
 
 * players can upgrade stat/allocate stats/get traits/get abilities
+
+* death screen and entity death
+
+* began working on player interaction with corpses (dead entities)

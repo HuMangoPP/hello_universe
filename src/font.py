@@ -30,7 +30,7 @@ class Font:
             white.set_colorkey((0, 0, 0))
             self.char_dict[self.char_key[i]] = white
     
-    def render(self, screen, text, x, y, colour, size=0, style='left'):
+    def render(self, screen, text, x, y, colour, size=0, style='left', alpha = 255):
         if size==0:
             size = self.font_width
         
@@ -50,5 +50,6 @@ class Font:
                 coloured_letter.blit(letter, (0, 0))
                 letter = pg.transform.scale(coloured_letter, (size, scaled_height))
                 letter.set_colorkey((0, 0, 0))
+                letter.set_alpha(alpha)
                 screen.blit(letter, (x-size//2, y-scaled_height//2))
             x+=size+scaled_padding

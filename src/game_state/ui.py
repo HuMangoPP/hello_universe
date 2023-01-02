@@ -1,6 +1,6 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
-from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI, QUEST_CARD_UI
+from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
 from src.combat.abilities import ALL_ABILITIES
 
 QUEST_LINGER_TIME = 1000
@@ -17,6 +17,11 @@ class UserInterface:
         self.quest_ui = {
             'display': False,
             'ui': Quest_UI([])
+        }
+
+        self.interaction_ui = {
+            'display': False,
+            'ui': Interaction_UI([])
         }
     
     ############################# 
@@ -56,13 +61,20 @@ class UserInterface:
         # quest
         if self.quest_ui['display']:
             self.quest_ui['ui'].display(screen, self.font)
-            
+        
+        # interactions
+        if self.interaction_ui['display']:
+            self.interaction_ui['ui'].display(screen, self.font)
+
     def input(self, pg_events, entities):
         if self.quest_ui['display']:
             quest = self.quest_ui['ui'].input(pg_events)
             if quest:
                 entities.rec_quest(self.player, quest)
                 self.toggle_quests_menu()
+        
+        if self.interaction_ui['display']:
+            self.interaction_ui['ui'].input()
 
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
@@ -210,7 +222,12 @@ class UserInterface:
     ############################# 
     # interactions menus        #
     ############################# 
-
+    def toggle_interactions_menu(self):
+        self.interaction_ui = {
+            'display': not self.interaction_ui['display'],
+            'ui': self.interaction_ui['ui']
+        }
+    
 ############################# 
 # questing menus class      #
 ############################# 
@@ -304,3 +321,18 @@ class Quest_UI:
                     return self.quests[self.hover]
         
         return None
+
+############################# 
+# interactions menus class  #
+#############################
+
+class Interaction_UI:
+    def __init__(self, options):
+        self.options = options
+        self.mouse_angle = 0
+    
+    def display(self, screen, font):
+        pass
+
+    def input(self):
+        pass

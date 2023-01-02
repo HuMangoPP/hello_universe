@@ -59,6 +59,7 @@ class WorldEvent:
         all_quests = []
         stats = self.entity_data['stats']
         
+        # obtain trait quests
         for quest in TRAIT_QUESTS.keys():
             misc_req = TRAIT_QUESTS[quest]['misc_req']
             stat_req = TRAIT_QUESTS[quest]['stat_req']
@@ -74,9 +75,10 @@ class WorldEvent:
                     'type': 'trait',
                     'reward': quest,
                     'req_type': '',
-                    'req': '',
+                    'req': 0,
                 })
         
+        # obtain ability quests
         for quest in ABILITY_QUESTS.keys():
             trait_req = ABILITY_QUESTS[quest]['trait_req']
             meets_trait_req = True
@@ -88,9 +90,10 @@ class WorldEvent:
                     'type': 'ability',
                     'reward': quest,
                     'req_type': '',
-                    'req': '',
+                    'req': 0,
                 })
         
+        # stat upgrade / allocation quests
         for i in range(len(STAT_QUESTS)):
             max_stats = self.entity_data['max_stats']
             if stats[i]==max_stats[i]*STAT_GAP:
@@ -98,16 +101,17 @@ class WorldEvent:
                     'type': 'alloc',
                     'reward': STAT_QUESTS[i],
                     'req_type': '',
-                    'req': '',
+                    'req': 0,
                 })
             else:
                 all_quests.append({
                     'type': 'upgrade',
                     'reward': STAT_QUESTS[i],
                     'req_type': '',
-                    'req': '',
+                    'req': 0,
                 })
 
+        
         return all_quests
 
     def update(self):
