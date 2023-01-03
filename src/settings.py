@@ -44,14 +44,14 @@ BASE_STATS = {
     # combat, etc
     # stamina and mobility outside of combat
     'mbl': 5,
-    # essentially a measure of population size
-    # with each generation, health increases randomly
-    'hp': 1,
     # stealth has to do with evasiveness during and outside 
     # of combat
     # dodging attacks/fleeing from combat
     # detection/awareness outside of combat
     'stl': 5,
+    # essentially a measure of population size
+    # with each generation, health increases randomly
+    'hp': 10,
     # maximum and minimum stats attainable as the current creature
     'min': BASE_MIN_STATS,
     'max': BASE_MAX_STATS,

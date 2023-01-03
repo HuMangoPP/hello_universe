@@ -21,7 +21,7 @@ class UserInterface:
 
         self.interaction_ui = {
             'display': False,
-            'ui': Interaction_UI([])
+            'ui': Interaction_UI()
         }
     
     ############################# 
@@ -66,7 +66,7 @@ class UserInterface:
         if self.interaction_ui['display']:
             self.interaction_ui['ui'].display(screen, self.font)
 
-    def input(self, pg_events, entities):
+    def input(self, pg_events, entities, corpses):
         if self.quest_ui['display']:
             quest = self.quest_ui['ui'].input(pg_events)
             if quest:
@@ -74,19 +74,23 @@ class UserInterface:
                 self.toggle_quests_menu()
         
         if self.interaction_ui['display']:
-            self.interaction_ui['ui'].input()
+            self.interaction_ui['ui'].detection(entities.pos[self.player], corpses)
+            consume = self.interaction_ui['ui'].input(pg_events)
+            if consume!=None:
+                entities.consume(self.player, consume, corpses)
+        
 
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
         health_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         health_bar.set_colorkey('black')
         health_ratio = 1-entities.health[self.player]/entities.stats[self.player]['hp']
-        pg.draw.rect(health_bar, 'black', (0, 0, 2*GAUGE_UI['radius'], health_ratio*GAUGE_UI['radius']*2))
         hp_frame = self.hud_frames['hp_frame']
         hp_frame.set_colorkey('black')
         pg.draw.circle(health_bar, GAUGE_UI['colours'][0], 
                         (GAUGE_UI['radius'], GAUGE_UI['radius']), 
                         GAUGE_UI['radius'])
+        pg.draw.rect(health_bar, 'black', (0, 0, 2*GAUGE_UI['radius'], health_ratio*GAUGE_UI['radius']*2))
         screen.blit(health_bar, (hp_frame.get_width()/2-GAUGE_UI['radius'], 
                                 HEIGHT-hp_frame.get_height()/2-GAUGE_UI['radius']))
         screen.blit(hp_frame, (0, HEIGHT-hp_frame.get_height()))
@@ -327,12 +331,37 @@ class Quest_UI:
 #############################
 
 class Interaction_UI:
-    def __init__(self, options):
-        self.options = options
-        self.mouse_angle = 0
+    def __init__(self):
+        self.active = False
+        self.in_range = []
     
     def display(self, screen, font):
-        pass
+        ping = pg.Surface((100, 100))
+        ping.set_colorkey((0, 0, 0))
+        ping.set_alpha(100)
 
-    def input(self):
-        pass
+        if self.active: 
+            pg.draw.circle(ping, (255, 255, 0), (50, 50), 50)
+        else:
+            pg.draw.circle(ping, (0, 255, 255), (50, 50), 50)
+
+        screen.blit(ping, (WIDTH/2-50, HEIGHT/2-50))
+
+    def detection(self, pos, corpses):
+        self.in_range = []
+        for i, corpse_pos in enumerate(corpses.pos):
+            dr_sq = (corpse_pos[0]-pos[0])**2 + (corpse_pos[1]-pos[1])**2
+            if dr_sq <= 50**2:
+                self.active = True
+                self.in_range.append(i)
+            else:
+                self.active = False
+    
+    def input(self, pg_event):
+        for event in pg_event:
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RETURN:
+                    if self.in_range:
+                        return self.in_range[0]
+        
+        return None

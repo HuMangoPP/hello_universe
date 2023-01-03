@@ -121,13 +121,13 @@ def game_menu(screen, game_data):
                 if event.key == pg.K_TAB:
                     ui.toggle_quests_menu()
                     ui.update_quests(WorldEvent(entities.get_entity_data(player)))
-                    ui.input(events, entities)
+                    ui.input(events, entities, corpses)
                 if event.key == pg.K_f:
                     ui.toggle_interactions_menu()
                 if event.key == pg.K_DELETE:
                     entities.health[player] = -100
                     
-        ui.input(events, entities)
+        ui.input(events, entities, corpses)
         # refresh screen
         screen.fill('black')
 
@@ -144,9 +144,11 @@ def game_menu(screen, game_data):
         # update loop
         entities.update()
         camera.follow_entity(entities, player)
+        corpses.update()
 
         # drawing
         entities.draw(screen, camera)
+        corpses.draw(screen, camera)
         if controller.queued_ability!=-1:
             ui.ability_indicator(screen, entities, player, controller, camera)
         ui.display(screen, entities)
@@ -175,19 +177,25 @@ def game_over(screen, font, clock, entities, camera, ui):
     time_delay = 2000
 
     while True:
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                exit()
+    
         black_screen.set_alpha(screen_alpha)
 
         screen.fill('black')
         entities.draw(screen, camera)
         ui.display(screen, entities)
-
+        
         screen.blit(black_screen, (0, 0))
         font.render(screen, 'you died', WIDTH/2, HEIGHT/2, (255, 0, 0), 50, 'center', text_alpha)
 
-        if screen_alpha == 255:
-            text_alpha+=5
+        if screen_alpha >= 255:
+            text_alpha+=3
         else:
-            screen_alpha+=5
+            screen_alpha+=3
         if text_alpha < 255:
             time = pg.time.get_ticks()
         

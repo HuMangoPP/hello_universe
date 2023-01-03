@@ -96,6 +96,7 @@ class Entities:
             self.creature[i].draw(screen, camera)
 
     def update(self):
+        self.spend_energy()
         self.move()
         self.status_effect_cds()
         self.active_abilities()
@@ -140,6 +141,18 @@ class Entities:
     ############################# 
     # combat systems            #
     ############################# 
+    def spend_energy(self):
+        for i in range(len(self.energy)):
+            spd_sq = self.vel[i][0]**2 + self.vel[i][1]**2 + self.vel[i][2]**2
+            energy_spent = 1/2000*self.creature[i].num_parts*spd_sq
+            if self.energy[i]<=0:
+                self.health[i]-=energy_spent
+            else:
+                self.energy[i]-=energy_spent
+            total_energy = self.energy_calculation(self.stats[i]['pwr'], self.stats[i]['def'], self.creature[i].num_parts)
+            if self.energy[i]>total_energy:
+                self.energy[i] = total_energy
+
     def kill(self, player, corpses):
         remove = []
         for i in range(len(self.health)):
@@ -151,8 +164,10 @@ class Entities:
 
         for j in range(len(remove)-1, -1, -1):
             i = remove[j]
+            pos = self.pos[i]
+            pos[2] = 0
             corpse_data = {
-                'pos': self.pos[i],
+                'pos': pos,
                 'nutrients': 100,
                 'creature': self.creature[i]
             }
@@ -232,15 +247,10 @@ class Entities:
                 for j in range(len(self.creature)):
                     if i!=j and self.creature[j].collide(self.hurt_box[i].get_pos()):
                         # decrease hp
-                        self.health[j]-=0.1
+                        self.health[j]-=10
 
                         # increase the target's aggression score against the attacker
                         self.behaviours[j].aggression[i]+=0.1
-
-    def consume(self, index, target):
-        energy_calculation = 0
-        self.energy[index]+=energy_calculation
-        pass
 
     def status_effect_cds(self):
         for i in range(len(self.status_effects)):
@@ -282,6 +292,11 @@ class Entities:
         # return max(intelligence-target_stealth, 1000)
         return 100*max(intelligence-target_stealth, 1)
 
+    def consume(self, index, target_index, corpses):
+        self.energy[index] += corpses.nutrients[target_index]
+        corpses.nutrients[target_index] = 0
+        print(f'consumed')
+
     ############################# 
     # evolution systems         #
     ############################# 
@@ -296,7 +311,7 @@ class Entities:
 
     def new_generation(self):
         self.mutate()
-        self.regen()
+        # self.regen()
         self.behaviour_shift()
 
     def inter_species_reproduce(self, i, j):
@@ -363,8 +378,8 @@ class Entities:
         # choose a random stat to decrease and increase
         for i in range(len(self.stats)):
             # increasing and decreasing stats
-            increase = choice(list(self.stats[i].keys())[:6])
-            decrease = choice(list(self.stats[i].keys())[:6])
+            increase = choice(list(self.stats[i].keys())[:5])
+            decrease = choice(list(self.stats[i].keys())[:5])
             self.stats[i][increase]+=randint(1, 2)
             self.stats[i][decrease]-=randint(1, 2)
 

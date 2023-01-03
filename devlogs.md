@@ -113,3 +113,11 @@
 * death screen and entity death
 
 * began working on player interaction with corpses (dead entities)
+
+### 2023-01-02
+
+* entities now spend energy to move around
+
+* entities can consume corpses to regain energy
+
+* if an entity has no energy, then using energy drains hp
