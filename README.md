@@ -14,4 +14,4 @@ Let's see if I can coke up a way to animate these creatures procedurally without
 
 [PyGame Installation](https://www.pygame.org/wiki/GettingStarted)
 
-Download and unzip the repository. Run ```python main.py``` or ```python3 main.py``` or simply the file ```main.py``` from the root directory. Otherwise, the assets won't load properly.
+Download and unzip the repository. Run ```python main.py``` or ```python3 main.py``` or simply the file ```main.py``` from the root directory. Otherwise, the assets won't load properly and also because I don't know how to use packages.
