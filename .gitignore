@@ -1,3 +1,4 @@
 *.kra
-__pycache__
+**/__pycache__
 planning.png
+py_tasks.json

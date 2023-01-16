@@ -1,5 +1,5 @@
 import pygame as pg
-from math import atan2, sqrt, cos, sin, floor, tan, pi
+from math import atan2, sqrt, cos, sin, floor
 from src.models.legs import Legs
 from src.physics.physics import collide
 from src.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH

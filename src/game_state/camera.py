@@ -1,44 +1,24 @@
 from src.settings import WIDTH, HEIGHT
+import numpy as np
 
 class Camera():
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, x, y, z):
+        self.pos = np.array([x, y, z])
 
-        self.x_transform = [1, 0.5]
-        self.y_transform = [-1, 0.5]
-        self.x_inverse = [0.5, -0.5]
-        self.y_inverse = [1, 1]
-
-    def world_to_screen(self, x, y, z):
-        return (x*self.x_transform[0]+y*self.y_transform[0],
-                x*self.x_transform[1]+y*self.y_transform[1]-z)
-
-    def camera_to_screen(self):
-        return (self.x*self.x_transform[0]+self.y*self.y_transform[0],
-                self.x*self.x_transform[1]+self.y*self.y_transform[1])
+        self.transform = np.array([[1, 0.5, 0], [-1, 0.5, 0], [0, -1, 1]]).transpose()
+        self.inverse = np.linalg.inv(self.transform)
+        self.collapse_z = np.array([[1, 0], [0, 1], [0, 0]]).transpose()
 
     def transform_to_screen(self, x, y, z):
-        x_pos, y_pos = self.world_to_screen(x, y, z)
-        camera_x, camera_y = self.camera_to_screen()
-        return (x_pos-camera_x, y_pos-camera_y)
+        return self.collapse_z.dot(self.transform.dot(np.array([x, y, z])-self.pos))+np.array([WIDTH//2, HEIGHT//2])
 
     def screen_to_world(self, x, y):
-        return (x*self.x_inverse[0]+y*self.y_inverse[0],
-                x*self.x_inverse[1]+y*self.y_inverse[1])
+        return self.collapse_z.dot(self.inverse.dot(np.array([x, y, 0])))
 
     def follow_entity(self, entities, following):
-        # solved via a system of equations
-        # we see that: WIDTH//2 = x - y
-        # and          HEIGHT   = x + y
-        # to keep the player centered
-        self.x = entities.pos[following][0]-(HEIGHT//2+WIDTH//4+entities.pos[following][2])
-        self.y = entities.pos[following][1]-(HEIGHT//2-WIDTH//4+entities.pos[following][2])   
+        self.update_pos(entities.pos[following][0],
+                        entities.pos[following][1],
+                        entities.pos[following][2])
     
     def update_pos(self, x, y, z):
-        # solved via a system of equations
-        # we see that: WIDTH//2 = x - y
-        # and          HEIGHT   = x + y
-        # to keep the player centered
-        self.x = x-(HEIGHT//2+WIDTH//4+z)
-        self.y = y-(HEIGHT//2-WIDTH//4+z)  
+        self.pos = np.array([x, y, z])  

@@ -15,36 +15,29 @@ class Entities:
     ############################# 
     def __init__(self):
         # physical/render data
-        self.pos                : list[list[float, float, float, float]] = []
-        self.vel                : list[list[float]] = []
-        self.spd                : list[float] = []
-        self.acc                : list[float] = []
-        self.creature           : list[Creature] = []
+        self.pos = []            
+        self.vel = []  
+        self.spd = []     
+        self.acc = []          
+        self.creature = []      
 
         # game data
-        self.stats              : list[dict[str, int]] = []
-        self.health             : list[float] = [] 
-        self.energy             : list[float] = [] 
+        self.stats = [] 
+        self.health = []
+        self.energy = []    
 
-        self.abilities          : list[list[str]] = []
-        self.status_effects     : list[dict['effects': list[str], 
-                                            'cd': list[int],
-                                            'time': list[int]]] = []
-        self.traits             : list[Traits] = []
-        self.hurt_box           : list[ActiveAbility] = []
-        self.quests             : list[dict['active': bool,
-                                            'progress': float,
-                                            'reward': str,
-                                            'type': str,
-                                            'req_type': str,
-                                            'req': int]]= []
+        self.abilities = []      
+        self.status_effects = []   
+        self.traits = []        
+        self.hurt_box = []      
+        self.quests = []           
 
-        self.behaviours         : list[Behaviour] = []
+        self.behaviours = []    
     
     def add_new_entity(self, entity_data, stats):
         # physical/render data
-        self.pos.append(entity_data['pos'])
-        self.vel.append([0, 0, 0])
+        self.pos.append(entity_data['pos']) # [x, y, z, a]
+        self.vel.append([0, 0, 0])          # [x, y, z]
         self.spd.append(entity_data['spd'])
         self.acc.append(entity_data['acc'])
         self.creature.append(Creature(entity_data['body_parts'], 
@@ -95,10 +88,10 @@ class Entities:
             #     self.hurt_box[i].draw(screen, camera)
             self.creature[i].draw(screen, camera)
 
-    def update(self):
-        self.spend_energy()
-        self.move()
-        self.status_effect_cds()
+    def update(self, dt):
+        self.spend_energy(dt)
+        self.move(dt)
+        self.status_effect_cds(dt)
         self.active_abilities()
         self.collide()
 
@@ -129,10 +122,10 @@ class Entities:
                 self.vel[player][0]*=ratio
                 self.vel[player][1]*=ratio
     
-    def move(self):
+    def move(self, dt):
         for i in range(len(self.pos)):
-            self.pos[i][0]+=self.vel[i][0]
-            self.pos[i][1]+=self.vel[i][1]
+            self.pos[i][0]+=self.vel[i][0]*dt
+            self.pos[i][1]+=self.vel[i][1]*dt
             # angle the creature is facing
             if self.vel[i][0]**2+self.vel[i][1]**2!=0:
                 self.pos[i][3] = atan2(self.vel[i][1], self.vel[i][0])
@@ -141,14 +134,14 @@ class Entities:
     ############################# 
     # combat systems            #
     ############################# 
-    def spend_energy(self):
+    def spend_energy(self, dt):
         for i in range(len(self.energy)):
             spd_sq = self.vel[i][0]**2 + self.vel[i][1]**2 + self.vel[i][2]**2
             energy_spent = 1/2000*self.creature[i].num_parts*spd_sq
             if self.energy[i]<=0:
-                self.health[i]-=energy_spent
+                self.health[i]-=energy_spent*dt
             else:
-                self.energy[i]-=energy_spent
+                self.energy[i]-=energy_spent*dt
             total_energy = self.energy_calculation(self.stats[i]['pwr'], self.stats[i]['def'], self.creature[i].num_parts)
             if self.energy[i]>total_energy:
                 self.energy[i] = total_energy
@@ -188,21 +181,21 @@ class Entities:
 
         return False
 
-    def use_ability(self, a_i, player, camera):
-        # no input // only for player
+    def use_ability(self, a_i, index, camera):
+        # no input 
         if a_i['ability']==-1:
             return
         
         # prevent spamming
-        if 'ability_lock' in self.status_effects[player]['effects']:
+        if 'ability_lock' in self.status_effects[index]['effects']:
             return
 
         # all abilities
         queued_ability = a_i['ability']
             
-        self.status_effects[player]['effects'].append('ability_lock')
-        self.status_effects[player]['cd'].append(ALL_ABILITIES[queued_ability]['cd'])
-        self.status_effects[player]['time'].append(pg.time.get_ticks())
+        self.status_effects[index]['effects'].append('ability_lock')
+        self.status_effects[index]['cd'].append(ALL_ABILITIES[queued_ability]['cd'])
+        self.status_effects[index]['time'].append(pg.time.get_ticks())
 
         # abilities with movement tag
         if 'movement' in ALL_ABILITIES[queued_ability]['type']:
@@ -211,20 +204,20 @@ class Entities:
             y_dir = sin(a_i['angle'])
             x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
             angle = atan2(y_dir, x_dir)
-            spd_mod = 3+(self.stats[player]['mbl']+self.stats[player]['pwr'])/100
-            self.vel[player][0] = spd_mod*self.spd[player]*cos(angle)
-            self.vel[player][1] = spd_mod*self.spd[player]*sin(angle)
+            spd_mod = 3+(self.stats[index]['mbl']+self.stats[index]['pwr'])/100
+            self.vel[index][0] = spd_mod*self.spd[index]*cos(angle)
+            self.vel[index][1] = spd_mod*self.spd[index]*sin(angle)
 
             # update the entity hurt box to deal damage
             movement_hurt_box = []
-            for part in self.creature[player].skeleton:
+            for part in self.creature[index].skeleton:
                 movement_hurt_box.append([part[0], part[1], part[2]])
             
-            self.hurt_box[player] = ActiveAbility('movement', movement_hurt_box, 2*self.creature[player].size)
+            self.hurt_box[index] = ActiveAbility('movement', movement_hurt_box, 2*self.creature[index].size)
 
             # consume energy to use ability
-            energy_usage = 1/2*self.creature[player].num_parts*(spd_mod*self.spd[player])**2/1000
-            self.energy[player]-=energy_usage
+            energy_usage = 1/2*self.creature[index].num_parts*(spd_mod*self.spd[index])**2/1000
+            self.energy[index]-=energy_usage
 
         if 'strike' in ALL_ABILITIES[queued_ability]['type']:
             # get the strike direction
@@ -236,10 +229,10 @@ class Entities:
             # update hurtboxes
             strike_hurt_box = []
             for i in range(10):
-                strike_hurt_box.append([self.pos[player][0]+i*2*self.creature[player].size*cos(angle), 
-                                       self.pos[player][1]+i*2*self.creature[player].size*sin(angle),
-                                       self.pos[player][2]])
-            self.hurt_box[player] = ActiveAbility('strike', strike_hurt_box, 2*self.creature[player].size)
+                strike_hurt_box.append([self.pos[index][0]+i*2*self.creature[index].size*cos(angle), 
+                                       self.pos[index][1]+i*2*self.creature[index].size*sin(angle),
+                                       self.pos[index][2]])
+            self.hurt_box[index] = ActiveAbility('strike', strike_hurt_box, 2*self.creature[index].size)
 
     def collide(self):
         for i in range(len(self.hurt_box)):
@@ -252,17 +245,20 @@ class Entities:
                         # increase the target's aggression score against the attacker
                         self.behaviours[j].aggression[i]+=0.1
 
-    def status_effect_cds(self):
+    def status_effect_cds(self, dt):
+        # entity loop
         for i in range(len(self.status_effects)):
             if self.status_effects[i]['effects']:
                 new_status_effects_cd = []
                 new_status_effects = []
                 new_status_effects_time = []
+                # status loop
                 for j in range(len(self.status_effects[i]['effects'])):
                     effect = self.status_effects[i]['effects'][j]
                     cd = self.status_effects[i]['cd'][j]
                     time = self.status_effects[i]['time'][j]
-                    if pg.time.get_ticks()-time<cd:
+                    cd-=dt
+                    if cd>0:
                         new_status_effects_cd.append(cd)
                         new_status_effects.append(effect)
                         new_status_effects_time.append(time)

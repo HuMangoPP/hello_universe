@@ -1,8 +1,5 @@
 def accelerate(direction, acceleration, current_speed):
-    if direction>0:
-        current_speed+=direction*acceleration
-    elif direction<0:
-        current_speed+=direction*acceleration
+    current_speed+=direction*acceleration
     
     return current_speed
 

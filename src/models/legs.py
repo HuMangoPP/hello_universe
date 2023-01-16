@@ -1,6 +1,7 @@
 import pygame as pg
-from math import atan2, sqrt, pi, sin, cos, acos, tan
+from math import sqrt, pi, sin, cos
 from src.settings import MODEL_COLORS
+import numpy as np
 
 class Legs:
     ############################# 
@@ -181,28 +182,31 @@ class Legs:
         # distance from foot to body segment
         dist = self.dist_foot_to_body(foot_pos, body_seg_pos)
         # vector pointing from body to foot
-        body_to_foot_dir = [foot_pos[0]-body_seg_pos[0],
-                            foot_pos[1]-body_seg_pos[1],
-                            foot_pos[2]-body_seg_pos[2]]
-        # vector that the body is point in on the xy plane
-        facing_dir = [cos(body_seg_pos[3]),
-                      sin(body_seg_pos[3]),
-                      0]
-        # take the cross product of these two vectors to find the direction of the bend
-        bend_vec = [
-            neg*(body_to_foot_dir[1]*facing_dir[2]-body_to_foot_dir[2]*facing_dir[1]),
-            neg*(body_to_foot_dir[2]*facing_dir[0]-body_to_foot_dir[0]*facing_dir[2]),
-            neg*(body_to_foot_dir[0]*facing_dir[1]-body_to_foot_dir[1]*facing_dir[0]),
+        body_to_foot_dir = [
+            foot_pos[0]-body_seg_pos[0],
+            foot_pos[1]-body_seg_pos[1],
+            foot_pos[2]-body_seg_pos[2]
         ]
-        # normalize the joint vector
-        size = sqrt(bend_vec[0]**2+bend_vec[1]**2+bend_vec[2]**2)
+        # vector that the body is point in on the xy plane
+        facing_dir = [
+            cos(body_seg_pos[3]),
+            sin(body_seg_pos[3]),
+            0
+        ]
+        # take the cross product of these two vectors and normalize
+        # to find the direction that the joint should be perpendicular to the 
+        # body-foot disp and the facing direction
+        bend_vec = [
+            body_to_foot_dir[1]*facing_dir[2]-body_to_foot_dir[2]*facing_dir[1],
+            body_to_foot_dir[2]*facing_dir[0]-body_to_foot_dir[0]*facing_dir[2],
+            body_to_foot_dir[0]*facing_dir[1]-body_to_foot_dir[1]*facing_dir[0],
+        ]
+        bend_vec = np.cross(np.array(body_to_foot_dir), np.array(facing_dir))
+        norm = np.linalg.norm(bend_vec)
         bend_dir = bend_vec
-        if size!=0:
-            bend_dir = [
-                bend_vec[0]/size,
-                bend_vec[1]/size,
-                bend_vec[2]/size
-            ]
+        if norm !=0:
+            bend_dir = neg*bend_vec/norm
+            
         # find the tail of the joint vector
         bend_root = [
             body_seg_pos[0]+(foot_pos[0]-body_seg_pos[0])/2,
@@ -215,11 +219,7 @@ class Legs:
         # absolute value to account for floating point arithmetic
         joint_vec_size = sqrt(abs(joint_vec_size))
         # now calculate the position of the joint
-        joint_pos = [
-            bend_root[0]+joint_vec_size*bend_dir[0],
-            bend_root[1]+joint_vec_size*bend_dir[1],
-            bend_root[2]+joint_vec_size*bend_dir[2],
-        ]
+        joint_pos = np.array(bend_root) + joint_vec_size*bend_dir
 
-        return joint_pos[0], joint_pos[1], joint_pos[2]
+        return joint_pos
         

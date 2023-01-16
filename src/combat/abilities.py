@@ -42,7 +42,7 @@ ALL_ABILITIES = {
         'cd': 500,
     },
     'bite': {
-        'type': ['attack', 'skillshot', 'strike'],
+        'type': ['attack', 'target'],
         'damage_modifiers': ['critical', 'bleed'],
         'cd': 500,
     },

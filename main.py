@@ -1,17 +1,16 @@
 import pygame as pg
 from src.game_state.ai_controller import AIController
-from src.entity import Entities
+from src.entities import Entities
 from src.game_state.player_controller import PlayerController
 from src.game_state.camera import Camera
-from src.settings import RES, HEIGHT, WIDTH, BASE_STATS, NEW_GEN_TIME, FPS
+from src.settings import RES, BASE_STATS
 from src.game_state.menus import start_menu
 from src.game_state.ui import UserInterface
 from src.asset_loader import load_assets
 from src.font import Font
 from src.corpse import Corpses
 
-
-if __name__ == '__main__':
+def main():
     pg.init()
     screen = pg.display.set_mode(RES)
     pg.mouse.set_visible(False)
@@ -30,13 +29,13 @@ if __name__ == '__main__':
 
     player = 0
 
-    camera = Camera(0, 0)
+    camera = Camera(0, 0, 0)
     entities = Entities()
     corpses = Corpses()
     entities.add_new_entity({
         'pos': [0, 0, 20, 0],
         'spd': 5,
-        'acc': 0.5,
+        'acc': 1,
         'body_parts': 5,
         'size': 5,
         'num_legs': 2,
@@ -63,4 +62,7 @@ if __name__ == '__main__':
         'font': font,
         'corpses': corpses,
     }
-    start_menu(screen , game_data)
+    start_menu(screen, game_data)
+
+if __name__ == '__main__':
+    main()

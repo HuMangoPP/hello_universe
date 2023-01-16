@@ -54,7 +54,7 @@ def start_menu(screen, game_data):
     font = game_data['font']
     sun = SUN
     c_bodies = load_solar_system()
-    camera = Camera(0, 0)
+    camera = Camera(0, 0, 0)
     camera.update_pos(c_bodies[0]['pos'][0], c_bodies[0]['pos'][1], 0)
     r, g, b = 255, 255, 255
 
@@ -130,6 +130,7 @@ def game_menu(screen, game_data):
         ui.input(events, entities, corpses)
         # refresh screen
         screen.fill('black')
+        dt = clock.tick()/15
 
         # player input
         x_i, y_i = controller.movement_input()
@@ -142,7 +143,7 @@ def game_menu(screen, game_data):
         ai_controller.ability_input(entities, camera)
         
         # update loop
-        entities.update()
+        entities.update(dt)
         camera.follow_entity(entities, player)
         corpses.update()
 
@@ -164,9 +165,8 @@ def game_menu(screen, game_data):
             generation+=1
             entities.new_generation()
     
-        clock.tick(FPS)
         pg.display.update()
-        pg.display.set_caption(f'{clock.get_fps()}, {len(entities.pos)}')
+        pg.display.set_caption(f'{clock.get_fps()}, {dt}')
 
 def game_over(screen, font, clock, entities, camera, ui):
 
