@@ -11,10 +11,10 @@ class Corpses:
         self.nutrients.append(corpse_data['nutrients'])
         self.creature.append(corpse_data['creature'])
     
-    def draw(self, screen, camera):
+    def render(self, screen, camera):
         for pos in self.pos:
             x, y, z = pos[0], pos[1], pos[2]
-            pg.draw.circle(screen, (255, 0, 0), camera.transform_to_screen(x, y, z), 10)
+            pg.draw.circle(screen, (255, 0, 0), camera.transform_to_screen([x, y, z]), 10)
     
     def update(self):
         self.remove()

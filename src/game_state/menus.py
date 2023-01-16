@@ -14,10 +14,10 @@ def start_menu(screen, game_data):
         # draw the c bodies
         for body in c_bodies:
             pg.draw.circle(screen, CBODY_TEXTURE_KEY[body['type']], 
-                            camera.transform_to_screen(body['pos'][0], body['pos'][1], 0), 
+                            camera.transform_to_screen(body['pos'][0:3]), 
                             body['size'])
         pg.draw.circle(screen, CBODY_TEXTURE_KEY[sun['type']],
-                        camera.transform_to_screen(sun['pos'][0], sun['pos'][1], 0),
+                        camera.transform_to_screen(sun['pos'][0:3]),
                         sun['size'])
     
     def update_solar_system():
@@ -28,10 +28,10 @@ def start_menu(screen, game_data):
             a = grav_constant/dr_sq
             a_x, a_y = a*dx/sqrt(dr_sq), a*dy/sqrt(dr_sq)
             v_x, v_y = body['vel'][0]+a_x, body['vel'][1]+a_y
-            body['vel'] = (v_x, v_y)
+            body['vel'] = [v_x, v_y, 0]
             x, y = body['pos'][0]+v_x, body['pos'][1]+v_y
-            body['pos'] = (x, y)
-        camera.update_pos(sun['pos'][0], sun['pos'][1], 0)
+            body['pos'] = [x, y, 0]
+        camera.update_pos(sun['pos'][0:3])
     
     def load_solar_system():
         cbodies = []
@@ -40,8 +40,8 @@ def start_menu(screen, game_data):
             angle = randint(1, 360)/180*pi
             radius = (i+1)*ORBIT_RADIUS
             cbodies.append({
-                'pos': (radius*cos(angle), radius*sin(angle)),
-                'vel': (sqrt(grav_constant/radius)*sin(-angle), sqrt(grav_constant/radius)*cos(-angle)),
+                'pos': [radius*cos(angle), radius*sin(angle), 0],
+                'vel': [sqrt(grav_constant/radius)*sin(-angle), sqrt(grav_constant/radius)*cos(-angle)],
                 'size': randint(3, 10),
                 'type': choice(list(CBODY_TEXTURE_KEY.keys()))
             })
@@ -55,7 +55,7 @@ def start_menu(screen, game_data):
     sun = SUN
     c_bodies = load_solar_system()
     camera = Camera(0, 0, 0)
-    camera.update_pos(c_bodies[0]['pos'][0], c_bodies[0]['pos'][1], 0)
+    camera.update_pos(c_bodies[0]['pos'][0:3])
     r, g, b = 255, 255, 255
 
     # main game loop
@@ -133,13 +133,11 @@ def game_menu(screen, game_data):
         dt = clock.tick()/15
 
         # player input
-        x_i, y_i = controller.movement_input()
-        a_i = controller.ability_input(entities)
-        entities.use_ability(a_i, player, camera)
-        entities.parse_input(x_i, y_i, player, camera)
+        entities.parse_input(controller.movement_input(), camera, dt)
+        entities.use_ability(controller.ability_input(entities), camera)
 
         # ai controller
-        ai_controller.movement_input(entities, camera)
+        ai_controller.movement_input(entities, camera, dt)
         ai_controller.ability_input(entities, camera)
         
         # update loop
@@ -148,8 +146,8 @@ def game_menu(screen, game_data):
         corpses.update()
 
         # drawing
-        entities.draw(screen, camera)
-        corpses.draw(screen, camera)
+        entities.render(screen, camera)
+        corpses.render(screen, camera)
         if controller.queued_ability!=-1:
             ui.ability_indicator(screen, entities, player, controller, camera)
         ui.display(screen, entities)
@@ -186,7 +184,7 @@ def game_over(screen, font, clock, entities, camera, ui):
         black_screen.set_alpha(screen_alpha)
 
         screen.fill('black')
-        entities.draw(screen, camera)
+        entities.render(screen, camera)
         ui.display(screen, entities)
         
         screen.blit(black_screen, (0, 0))

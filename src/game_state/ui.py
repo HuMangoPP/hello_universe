@@ -174,7 +174,7 @@ class UserInterface:
     def ability_indicator(self, screen, entities, player, controller, camera):
         ability_num = controller.queued_ability
         ability_key = entities.abilities[player][ability_num]
-        x, y = camera.transform_to_screen(entities.pos[player][0], entities.pos[player][1], entities.pos[player][2])
+        x, y = camera.transform_to_screen(entities.pos[player][0:3])
 
         if 'skillshot' in ALL_ABILITIES[ability_key]['type']:
             mx, my = pg.mouse.get_pos()

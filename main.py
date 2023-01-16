@@ -35,7 +35,7 @@ def main():
     entities.add_new_entity({
         'pos': [0, 0, 20, 0],
         'spd': 5,
-        'acc': 1,
+        'acc': 0.5,
         'body_parts': 5,
         'size': 5,
         'num_legs': 2,

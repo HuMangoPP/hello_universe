@@ -61,13 +61,13 @@ class Creature:
         self.legs.num_pair_legs+=legs
         self.give_legs()
 
-    def draw(self, screen, camera):
-        x, y = camera.transform_to_screen(self.head[0], self.head[1], self.head[2])
+    def render(self, screen, camera):
+        x, y = camera.transform_to_screen(self.head[0:3])
         if x>WIDTH+OUT_OF_BOUNDS or x<-OUT_OF_BOUNDS or y>HEIGHT+OUT_OF_BOUNDS or y<-OUT_OF_BOUNDS:
             return False 
         pg.draw.circle(screen, MODEL_COLORS['head'], (x, y), self.size)
         for i in range(self.num_parts):
-            x, y = camera.transform_to_screen(self.skeleton[i][0], self.skeleton[i][1], self.skeleton[i][2])
+            x, y = camera.transform_to_screen(self.skeleton[i][0:3])
             pg.draw.circle(screen, MODEL_COLORS['skeleton'], (x, y), self.size)
             pg.draw.circle(screen, MODEL_COLORS['hurt_box'], (x, y), self.size, 1)
         self.legs.draw(screen, self.skeleton, camera)

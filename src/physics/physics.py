@@ -1,19 +1,14 @@
-def accelerate(direction, acceleration, current_speed):
-    current_speed+=direction*acceleration
-    
-    return current_speed
-
-def de_accelerate(acceleration, current_speed):
-    if current_speed>0:
-        current_speed-=acceleration
-        if current_speed<0:
-            return 0
-    elif current_speed<0:
-        current_speed+=acceleration
-        if current_speed>0:
-            return 0
-    
-    return current_speed
+def new_vel(a, v, dir, dt):
+    if dir>0:
+        return v+a*dt
+    elif dir<0:
+        return v-a*dt
+    elif v>a*dt:
+        return v-a*dt
+    elif v<-a*dt:
+        return v+a*dt
+    else:
+        return 0
 
 def collide(p1, p2):
     sq_dist = (p1[0]-p2[0])**2

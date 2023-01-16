@@ -87,8 +87,8 @@ CBODY_TEXTURE_KEY = {
 }
 
 SUN = {
-    'pos': (0, 0),
-    'vel': (0, 0),
+    'pos': [0, 0, 0],
+    'vel': [0, 0],
     'size': 20,
     'type': 'sun',
 }

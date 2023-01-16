@@ -6,7 +6,7 @@ class AIController:
     def __init__(self, non_controllable):
         self.non_controllable = non_controllable
 
-    def movement_input(self, entity, camera):
+    def movement_input(self, entity, camera, dt):
         for i in range(len(entity.pos)):
             if i!=self.non_controllable:
                 # give the ai controlled creature some 
@@ -35,7 +35,11 @@ class AIController:
                 # submit input to the updater
                 if x_i==0 and y_i==0:
                     x_i, y_i = self.idle_movement()
-                entity.parse_input(x_i, y_i, i, camera)
+                entity.parse_input({
+                    'i': i,
+                    'x': x_i,
+                    'y': y_i
+                }, camera, dt)
 
     def idle_movement(self):
         return randint(-1, 1), randint(-1, 1)
@@ -61,10 +65,11 @@ class AIController:
                                                     entity.abilities[i]))
                                 queued_ability = choice(attack_abilities)
                                 ability = {
+                                    'i': i,
                                     'ability': queued_ability,
                                     'angle': angles['z']
                                 }
-                                entity.use_ability(ability, i, camera)
+                                entity.use_ability(ability, camera)
     
     def dist_between(self, pos1, pos2):
         return sqrt((pos1[0]-pos2[0])**2+

@@ -27,7 +27,11 @@ class PlayerController():
             horizontal_input = 1
         
 
-        return horizontal_input, vertical_input
+        return {
+            'i': self.index,
+            'x': horizontal_input,
+            'y': vertical_input
+        }
     
     def ability_input(self, entity):
         keys = pg.key.get_pressed()
@@ -40,6 +44,7 @@ class PlayerController():
         if pg.mouse.get_pressed()[0] and self.queued_ability!=-1:
             angle = atan2(pg.mouse.get_pos()[1]-HEIGHT//2, pg.mouse.get_pos()[0]-WIDTH//2)
             ability = {
+                'i': self.index,
                 'ability': entity.abilities[self.index][self.queued_ability],
                 'angle': angle,
             }
@@ -50,4 +55,8 @@ class PlayerController():
         if pg.mouse.get_pressed()[2] and self.queued_ability!=-1:
             self.queued_ability = -1
         
-        return {'ability': -1}
+        return {
+            'i': self.index,
+            'ability': -1,
+            'angle': 0,
+        }

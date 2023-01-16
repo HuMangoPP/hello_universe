@@ -41,16 +41,12 @@ class Legs:
         for i in range(self.num_pair_legs):
             screen_pos = []
             # foot pos
-            screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i][0], 
-                                                         self.feet_pos[2*i][1], 
-                                                         self.feet_pos[2*i][2]))
+            screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i][0:3]))
             # joint pos
             joint_x, joint_y, joint_z = self.calculate_leg_joint_pos(self.feet_pos[2*i], skeleton[self.attached_segments[i]], -1)
-            screen_pos.append(camera.transform_to_screen(joint_x, joint_y, joint_z))
+            screen_pos.append(camera.transform_to_screen([joint_x, joint_y, joint_z]))
             # body pos
-            screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0],
-                                                         skeleton[self.attached_segments[i]][1],
-                                                         skeleton[self.attached_segments[i]][2]))
+            screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0:3]))
             # draw the feet
             pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
             pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
@@ -61,16 +57,12 @@ class Legs:
             # other leg of pair
             screen_pos = []
             # foot pos
-            screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i+1][0], 
-                                                         self.feet_pos[2*i+1][1], 
-                                                         self.feet_pos[2*i+1][2]))
+            screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i+1][0:3]))
             # joint pos
             joint_x, joint_y, joint_z = self.calculate_leg_joint_pos(self.feet_pos[2*i+1], skeleton[self.attached_segments[i]], 1)
-            screen_pos.append(camera.transform_to_screen(joint_x, joint_y, joint_z))
+            screen_pos.append(camera.transform_to_screen([joint_x, joint_y, joint_z]))
             # body pos
-            screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0],
-                                                         skeleton[self.attached_segments[i]][1],
-                                                         skeleton[self.attached_segments[i]][2]))
+            screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0:3]))
             pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
             pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
                                           screen_pos[1])

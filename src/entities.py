@@ -4,8 +4,8 @@ from math import atan2, cos, sin, sqrt, pi
 from src.combat.abilities import BASIC_ABILITIES, ALL_ABILITIES, ActiveAbility
 from src.combat.status_effects import BASE_CD
 from src.settings import HEIGHT, WIDTH, STAT_GAP
+from src.physics.physics import new_vel
 from src.models.creature import Creature
-from src.physics.physics import accelerate, de_accelerate
 from src.models.traits import Traits
 from src.models.behaviour import Behaviour
 
@@ -82,46 +82,38 @@ class Entities:
     ############################# 
     # draw, update, movement    #
     ############################# 
-    def draw(self, screen, camera) -> None:
+    def render(self, screen, camera):
         for i in range(len(self.creature)):
-            # if self.creature[i].draw(screen, camera) and self.hurt_box[i]:
-            #     self.hurt_box[i].draw(screen, camera)
-            self.creature[i].draw(screen, camera)
+            self.creature[i].render(screen, camera)
 
     def update(self, dt):
         self.spend_energy(dt)
         self.move(dt)
-        self.status_effect_cds(dt)
+        self.status_effect_cds()
         self.active_abilities()
         self.collide()
 
-    def parse_input(self, x_i, y_i, player, camera):
-        if 'ability_lock' in self.status_effects[player]['effects']:
+    def parse_input(self, mv_input, camera, dt):
+
+        index = mv_input['i']
+        x_i = mv_input['x']
+        y_i = mv_input['y']
+        if 'ability_lock' in self.status_effects[index]['effects']:
             x_i, y_i = 0, 0
 
         # entity movement
         x_dir, y_dir = camera.screen_to_world(x_i, y_i)
-        if x_dir==0:
-            self.vel[player][0] = de_accelerate(self.acc[player], self.vel[player][0])
-        else:
-            self.vel[player][0] = accelerate(x_dir,
-                                                 self.acc[player],
-                                                 self.vel[player][0])
-        
-        if y_dir==0:
-            self.vel[player][1] = de_accelerate(self.acc[player], self.vel[player][1])
-        else:
-            self.vel[player][1] = accelerate(y_dir,
-                                                 self.acc[player],
-                                                 self.vel[player][1])
-        
-        if 'ability_lock' not in self.status_effects[player]['effects']:
-            if self.vel[player][0]**2 + self.vel[player][1]**2 > self.spd[player]**2:
+        self.vel[index][0] = new_vel(self.acc[index], self.vel[index][0], x_dir, dt)
+        self.vel[index][1] = new_vel(self.acc[index], self.vel[index][1], y_dir, dt)
+
+        if 'ability_lock' not in self.status_effects[index]['effects']:
+            if self.vel[index][0]**2 + self.vel[index][1]**2 > self.spd[index]**2:
                 # normalize the speed
-                ratio = sqrt(self.spd[player]**2/(self.vel[player][0]**2 + self.vel[player][1]**2))
-                self.vel[player][0]*=ratio
-                self.vel[player][1]*=ratio
-    
+                ratio = sqrt(self.spd[index]**2/(self.vel[index][0]**2 + self.vel[index][1]**2))
+                self.vel[index][0]*=ratio
+                self.vel[index][1]*=ratio
+
+        
     def move(self, dt):
         for i in range(len(self.pos)):
             self.pos[i][0]+=self.vel[i][0]*dt
@@ -181,9 +173,12 @@ class Entities:
 
         return False
 
-    def use_ability(self, a_i, index, camera):
+    def use_ability(self, abl_input, camera):
+        a_i = abl_input['ability']
+        index = abl_input['i']
+        input_angle =  abl_input['angle']
         # no input 
-        if a_i['ability']==-1:
+        if a_i==-1:
             return
         
         # prevent spamming
@@ -191,7 +186,7 @@ class Entities:
             return
 
         # all abilities
-        queued_ability = a_i['ability']
+        queued_ability = a_i
             
         self.status_effects[index]['effects'].append('ability_lock')
         self.status_effects[index]['cd'].append(ALL_ABILITIES[queued_ability]['cd'])
@@ -200,8 +195,8 @@ class Entities:
         # abilities with movement tag
         if 'movement' in ALL_ABILITIES[queued_ability]['type']:
             # get the direction of the movement
-            x_dir = cos(a_i['angle'])
-            y_dir = sin(a_i['angle'])
+            x_dir = cos(input_angle)
+            y_dir = sin(input_angle)
             x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
             angle = atan2(y_dir, x_dir)
             spd_mod = 3+(self.stats[index]['mbl']+self.stats[index]['pwr'])/100
@@ -245,7 +240,7 @@ class Entities:
                         # increase the target's aggression score against the attacker
                         self.behaviours[j].aggression[i]+=0.1
 
-    def status_effect_cds(self, dt):
+    def status_effect_cds(self):
         # entity loop
         for i in range(len(self.status_effects)):
             if self.status_effects[i]['effects']:
@@ -257,8 +252,7 @@ class Entities:
                     effect = self.status_effects[i]['effects'][j]
                     cd = self.status_effects[i]['cd'][j]
                     time = self.status_effects[i]['time'][j]
-                    cd-=dt
-                    if cd>0:
+                    if pg.time.get_ticks()-time<cd:
                         new_status_effects_cd.append(cd)
                         new_status_effects.append(effect)
                         new_status_effects_time.append(time)
