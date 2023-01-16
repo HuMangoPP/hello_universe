@@ -1,4 +1,4 @@
-from random import random, randint
+from random import uniform, randint
 
 class Behaviour:
     def __init__(self, behaviour_data):
@@ -29,7 +29,7 @@ class Behaviour:
 
     def shift(self):
         for i in range(len(self.aggression)):
-            aggro_score = self.aggression[i]+random()/100*randint(-1, 1)
-            herd_score = self.herding[i]+random()/100*randint(-1, 1)
+            aggro_score = self.aggression[i]+uniform(0, 1)/100*randint(-1, 1)
+            herd_score = self.herding[i]+uniform(0, 1)/100*randint(-1, 1)
             self.update_aggression(i, aggro_score)
             self.update_herd_behaviour(i, herd_score)

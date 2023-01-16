@@ -141,7 +141,7 @@ def game_menu(screen, game_data):
         ai_controller.ability_input(entities, camera)
         
         # update loop
-        entities.update(dt)
+        entities.update(camera, dt)
         camera.follow_entity(entities, player)
         corpses.update()
 

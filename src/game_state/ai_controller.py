@@ -34,7 +34,6 @@ class AIController:
     def detect_food(self, corpses, entities, index):
         for i in range(len(corpses.pos)):
             dist = self.dist_between(entities.pos[index], corpses.pos[i])
-            print(dist)
             awareness = 500
             if self.corpse_interact(entities, corpses, index, i, dist):
                 continue

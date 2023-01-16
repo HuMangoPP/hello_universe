@@ -82,11 +82,14 @@ class Entities:
     ############################# 
     def render(self, screen, camera):
         for i in range(len(self.creature)):
-            self.creature[i].render(screen, camera)
+            dx = self.pos[i][0]-camera.pos[0]
+            dy = self.pos[i][1]-camera.pos[1]
+            if sqrt(dx**2+dy**2)<=WIDTH/2:
+                self.creature[i].render(screen, camera)
 
-    def update(self, dt):
+    def update(self, camera, dt):
         self.spend_energy(dt)
-        self.move(dt)
+        self.move(camera, dt)
         self.status_effect_cds()
         self.active_abilities()
         self.collide()
@@ -112,14 +115,20 @@ class Entities:
                 self.vel[index][1]*=ratio
 
         
-    def move(self, dt):
+    def move(self, camera, dt):
         for i in range(len(self.pos)):
             self.pos[i][0]+=self.vel[i][0]*dt
             self.pos[i][1]+=self.vel[i][1]*dt
             # angle the creature is facing
             if self.vel[i][0]**2+self.vel[i][1]**2!=0:
                 self.pos[i][3] = atan2(self.vel[i][1], self.vel[i][0])
-            self.creature[i].move(self.pos[i])
+            
+            # check if the entity is in bounds to
+            # see if updating the model is necessary
+            dx = self.pos[i][0]-camera.pos[0]
+            dy = self.pos[i][1]-camera.pos[1]
+            if sqrt(dx**2+dy**2)<=WIDTH/2:
+                self.creature[i].move(self.pos[i])
     
     ############################# 
     # combat systems            #
