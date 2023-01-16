@@ -49,9 +49,7 @@ class Entities:
         # game data
         self.stats.append(stats)
         self.health.append(stats['hp'])
-        self.energy.append(self.energy_calculation(stats['pwr'], 
-                                                   stats['def'], 
-                                                   entity_data['body_parts'])) # energy calculation
+        self.energy.append(self.energy_calculation(len(self.stats)-1)) # energy calculation
         
         self.abilities.append(BASIC_ABILITIES)
         self.status_effects.append({
@@ -128,13 +126,14 @@ class Entities:
     ############################# 
     def spend_energy(self, dt):
         for i in range(len(self.energy)):
-            spd_sq = self.vel[i][0]**2 + self.vel[i][1]**2 + self.vel[i][2]**2
-            energy_spent = 1/2000*self.creature[i].num_parts*spd_sq
+            spd_sq = (self.vel[i][0]**2 + self.vel[i][1]**2 + self.vel[i][2]**2)/1000
+            mass = self.creature[i].num_parts*self.creature[i].size/10
+            energy_spent = 1/2*mass*spd_sq
             if self.energy[i]<=0:
                 self.health[i]-=energy_spent*dt
             else:
                 self.energy[i]-=energy_spent*dt
-            total_energy = self.energy_calculation(self.stats[i]['pwr'], self.stats[i]['def'], self.creature[i].num_parts)
+            total_energy = self.energy_calculation(i)
             if self.energy[i]>total_energy:
                 self.energy[i] = total_energy
 
@@ -216,8 +215,8 @@ class Entities:
 
         if 'strike' in ALL_ABILITIES[queued_ability]['type']:
             # get the strike direction
-            x_dir = cos(a_i['angle'])
-            y_dir = sin(a_i['angle'])
+            x_dir = cos(input_angle)
+            y_dir = sin(input_angle)
             x_dir, y_dir = camera.screen_to_world(x_dir, y_dir)
             angle = atan2(y_dir, x_dir)
 
@@ -275,12 +274,12 @@ class Entities:
                     movement_hurt_box.append([part[0], part[1], part[2]])
                 self.hurt_box[i].update(movement_hurt_box, 2*self.creature[i].size)
 
-    def energy_calculation(self, power, defense, num_parts):
-        return power+defense+num_parts
+    def energy_calculation(self, i):
+        return self.stats[i]['pwr']+self.stats[i]['def']+self.creature[i].num_parts+1
 
-    def awareness_calculation(self, intelligence, target_stealth):
+    def awareness_calculation(self, index, target):
         # return max(intelligence-target_stealth, 1000)
-        return 100*max(intelligence-target_stealth, 1)
+        return 100*max(self.stats[index]['itl']-self.stats[target]['stl'], 0)
 
     def consume(self, index, target_index, corpses):
         self.energy[index] += corpses.nutrients[target_index]
@@ -301,8 +300,9 @@ class Entities:
 
     def new_generation(self):
         self.mutate()
-        # self.regen()
+        self.regen()
         self.behaviour_shift()
+        self.in_species_reproduce()
 
     def inter_species_reproduce(self, i, j):
         # inter-species reproduction allows for reproduction
@@ -334,34 +334,43 @@ class Entities:
         }
         self.add_new_entity(entity_data, stats)
 
-    def in_species_reproduce(self, i):
+    def calculate_performance(self):
+        # for i in range(self.pos):
+        #     # here we will calculate the performance of the creature during the generation
+        #     pass
+
+        return [0]
+
+    def in_species_reproduce(self):
         # in-species reproduction allows for reproduction in-species
         # has the possibility of generating new mutations and traits
-        i = 0
-        entity_data = {
-            'pos': self.pos[i].copy(),
-            'spd': self.spd[i],
-            'acc': self.acc[i],
-            'body_parts': int(self.creature[i].num_parts),
-            'size': int(self.creature[i].size),
-            'num_legs': int(self.creature[i].legs.num_pair_legs),
-            'leg_length': int(self.creature[i].legs.leg_length),
-            'aggression': self.behaviours[i].aggression.copy(),
-            'herd': self.behaviours[i].herding.copy(),
-        }
 
-        stats = {
-            'itl': self.stats[i]['itl'],
-            'pwr': self.stats[i]['pwr'],
-            'def': self.stats[i]['def'],
-            'hp': self.stats[i]['hp'],
-            'mbl': self.stats[i]['mbl'],
-            'stl': self.stats[i]['stl'],
-            'min': self.traits[i].min_stats.copy(),
-            'max': self.traits[i].max_stats.copy(),
-        }
+        next_gen = self.calculate_performance()
+        for i in next_gen:
+            entity_data = {
+                'pos': self.pos[i].copy(),
+                'spd': self.spd[i],
+                'acc': self.acc[i],
+                'body_parts': int(self.creature[i].num_parts),
+                'size': int(self.creature[i].size),
+                'num_legs': int(self.creature[i].legs.num_pair_legs),
+                'leg_length': int(self.creature[i].legs.leg_length),
+                'aggression': self.behaviours[i].aggression.copy(),
+                'herd': self.behaviours[i].herding.copy(),
+            }
 
-        self.add_new_entity(entity_data, stats)
+            stats = {
+                'itl': self.stats[i]['itl'],
+                'pwr': self.stats[i]['pwr'],
+                'def': self.stats[i]['def'],
+                'hp': self.stats[i]['hp'],
+                'mbl': self.stats[i]['mbl'],
+                'stl': self.stats[i]['stl'],
+                'min': self.traits[i].min_stats.copy(),
+                'max': self.traits[i].max_stats.copy(),
+            }
+
+            self.add_new_entity(entity_data, stats)
 
     def mutate(self):
         # mutation is completely random
@@ -384,8 +393,7 @@ class Entities:
 
     def regen(self):
         for i in range(len(self.health)):
-            if self.health[i]<self.stats[i]['hp']:
-                self.health[i]+=1
+            self.health[i] = self.stats[i]['hp']
 
     def get_entity_data(self, index):
         stats = [
@@ -428,5 +436,7 @@ class Entities:
                     print(f"allocated {reward}")
                 case 'trait':
                     self.give_traits(index, reward)
+                    print(f'gained {reward}')
                 case 'ability':
                     self.give_abilities(index, reward)
+                    print(f'gained {reward}')

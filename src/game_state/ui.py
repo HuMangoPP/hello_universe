@@ -99,9 +99,7 @@ class UserInterface:
         # energy bar, similar in style to the health
         energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         energy_bar.set_colorkey('black')
-        total_energy_calculation = (entities.stats[self.player]['pwr']+
-                                    entities.stats[self.player]['def']+
-                                    entities.creature[self.player].num_parts+1)
+        total_energy_calculation = entities.energy_calculation(self.player)
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
         energy_frame = self.hud_frames['energy_frame']
         energy_frame.set_colorkey('black')

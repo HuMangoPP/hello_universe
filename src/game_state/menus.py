@@ -117,11 +117,11 @@ def game_menu(screen, game_data):
                 if event.key == pg.K_ESCAPE:
                     return
                 if event.key == pg.K_SPACE:
-                    entities.in_species_reproduce(player)
-                if event.key == pg.K_TAB:
-                    ui.toggle_quests_menu()
-                    ui.update_quests(WorldEvent(entities.get_entity_data(player)))
-                    ui.input(events, entities, corpses)
+                    entities.in_species_reproduce()
+                # if event.key == pg.K_TAB:
+                #     ui.toggle_quests_menu()
+                #     ui.update_quests(WorldEvent(entities.get_entity_data(player)))
+                #     ui.input(events, entities, corpses)
                 if event.key == pg.K_f:
                     ui.toggle_interactions_menu()
                 if event.key == pg.K_DELETE:
@@ -137,7 +137,7 @@ def game_menu(screen, game_data):
         entities.use_ability(controller.ability_input(entities), camera)
 
         # ai controller
-        ai_controller.movement_input(entities, camera, dt)
+        ai_controller.movement_input(entities, corpses, camera, dt)
         ai_controller.ability_input(entities, camera)
         
         # update loop
@@ -162,6 +162,10 @@ def game_menu(screen, game_data):
             generation_time = pg.time.get_ticks()
             generation+=1
             entities.new_generation()
+            ai_controller.accept_quests(entities)
+            ui.toggle_quests_menu()
+            ui.update_quests(WorldEvent(entities.get_entity_data(player)))
+            ui.input(events, entities, corpses)
     
         pg.display.update()
         pg.display.set_caption(f'{clock.get_fps()}, {dt}')
