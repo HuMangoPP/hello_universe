@@ -104,15 +104,16 @@ class Entities:
 
         # entity movement
         x_dir, y_dir = camera.screen_to_world(x_i, y_i)
+
         self.vel[index][0] = new_vel(self.acc[index], self.vel[index][0], x_dir, dt)
         self.vel[index][1] = new_vel(self.acc[index], self.vel[index][1], y_dir, dt)
 
         if 'ability_lock' not in self.status_effects[index]['effects']:
             if self.vel[index][0]**2 + self.vel[index][1]**2 > self.spd[index]**2:
                 # normalize the speed
-                ratio = sqrt(self.spd[index]**2/(self.vel[index][0]**2 + self.vel[index][1]**2))
-                self.vel[index][0]*=ratio
-                self.vel[index][1]*=ratio
+                angle = atan2(y_dir, x_dir)
+                self.vel[index][0] = self.spd[index]*cos(angle)
+                self.vel[index][1] = self.spd[index]*sin(angle)
 
         
     def move(self, camera, dt):

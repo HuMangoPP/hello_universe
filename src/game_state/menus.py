@@ -151,6 +151,7 @@ def game_menu(screen, game_data):
         if controller.queued_ability!=-1:
             ui.ability_indicator(screen, entities, player, controller, camera)
         ui.display(screen, entities)
+        # ui.arrow_to_corpse(screen, entities, player, corpses, camera)
 
         # death
         if entities.kill(player, corpses):

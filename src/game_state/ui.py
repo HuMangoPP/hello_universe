@@ -199,6 +199,15 @@ class UserInterface:
             radius = 100
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
     
+    def arrow_to_corpse(self, screen, entities, player, corpses, camera):
+        for i in range(len(corpses.pos)):
+            dx = corpses.pos[i][0]-entities.pos[player][0]
+            dy = corpses.pos[i][1]-entities.pos[player][1]
+            angle = atan2(dy, dx)
+            x, y = camera.dir_transform([cos(angle), sin(angle), 0])
+            x, y = camera.screen_to_world(x, y)
+            pg.draw.line(screen, (255, 0, 0), (WIDTH/2, HEIGHT/2), (WIDTH/2+50*x, HEIGHT/2+50*y))
+
     ############################# 
     # questing menus            #
     ############################# 
