@@ -1,7 +1,7 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
 from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
-from src.combat.abilities import ALL_ABILITIES
+from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS
 
 QUEST_LINGER_TIME = 1000
 
@@ -169,10 +169,10 @@ class UserInterface:
         screen.blit(frame, (left_edge_pad, 
                             HEIGHT-ABILITY_TRAIT_UI['bottom_pad']-frame.get_height()/2))
 
-    def ability_indicator(self, screen, entities, player, controller, camera):
+    def ability_indicator(self, screen, entities, controller, camera):
         ability_num = controller.queued_ability
-        ability_key = entities.abilities[player][ability_num]
-        x, y = camera.transform_to_screen(entities.pos[player][0:3])
+        ability_key = entities.abilities[self.player][ability_num]
+        x, y = camera.transform_to_screen(entities.pos[self.player][0:3])
 
         if 'skillshot' in ALL_ABILITIES[ability_key]['type']:
             mx, my = pg.mouse.get_pos()
@@ -196,7 +196,7 @@ class UserInterface:
         if 'aoe' in ALL_ABILITIES[ability_key]['type']:
             # aoe range
             # the radius will be calculated using entity stats
-            radius = 100
+            radius = entities.stat_calc(self.player, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS])
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
     
     def arrow_to_corpse(self, screen, entities, player, corpses, camera):

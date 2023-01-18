@@ -149,7 +149,7 @@ def game_menu(screen, game_data):
         entities.render(screen, camera)
         corpses.render(screen, camera)
         if controller.queued_ability!=-1:
-            ui.ability_indicator(screen, entities, player, controller, camera)
+            ui.ability_indicator(screen, entities, controller, camera)
         ui.display(screen, entities)
         # ui.arrow_to_corpse(screen, entities, player, corpses, camera)
 
