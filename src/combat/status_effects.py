@@ -5,7 +5,7 @@ STATUS_EFFECTS = [
     'bleeding', # dot and reduce mobility
     'poisoned', # dot and reduced mobility / make same as bleeding?
     'stunned', # reduced mobility
-    ''
+    'intimidated', # causes enemies to run away
 ]
 
 BASE_CD = 1000

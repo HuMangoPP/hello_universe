@@ -10,7 +10,12 @@ class Camera():
         self.collapse_z = np.array([[1, 0], [0, 1], [0, 0]]).transpose()
 
     def transform_to_screen(self, pos):
-        return self.collapse_z.dot(self.transform.dot(np.array(pos)-self.pos))+np.array([WIDTH//2, HEIGHT//2])
+        # returns the full transformation with the shift to the center of the screen
+        return self.dir_transform(np.array(pos)-self.pos)+np.array([WIDTH//2, HEIGHT//2])
+
+    def dir_transform(self, pos):
+        # returns the transformation but without a shift to the center of the screen
+        return self.collapse_z.dot(self.transform.dot(np.array(pos)))
 
     def screen_to_world(self, x, y):
         return self.collapse_z.dot(self.inverse.dot(np.array([x, y, 0])))

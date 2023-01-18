@@ -141,7 +141,7 @@ def game_menu(screen, game_data):
         ai_controller.ability_input(entities, camera)
         
         # update loop
-        entities.update(dt)
+        entities.update(camera, dt)
         camera.follow_entity(entities, player)
         corpses.update()
 
@@ -149,8 +149,9 @@ def game_menu(screen, game_data):
         entities.render(screen, camera)
         corpses.render(screen, camera)
         if controller.queued_ability!=-1:
-            ui.ability_indicator(screen, entities, player, controller, camera)
+            ui.ability_indicator(screen, entities, controller, camera)
         ui.display(screen, entities)
+        # ui.arrow_to_corpse(screen, entities, player, corpses, camera)
 
         # death
         if entities.kill(player, corpses):

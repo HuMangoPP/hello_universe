@@ -23,6 +23,9 @@ class AIController:
                     x_i, y_i = x, y
 
                 # submit input to the updater
+                x, y = self.check_intimidated(entities, i)
+                if x or y:
+                    x_i, y_i = x, y
                 if x_i==0 and y_i==0:
                     x_i, y_i = self.idle_movement()
                 entities.parse_input({
@@ -34,7 +37,6 @@ class AIController:
     def detect_food(self, corpses, entities, index):
         for i in range(len(corpses.pos)):
             dist = self.dist_between(entities.pos[index], corpses.pos[i])
-            print(dist)
             awareness = 500
             if self.corpse_interact(entities, corpses, index, i, dist):
                 continue
@@ -60,7 +62,15 @@ class AIController:
                     angles = self.angles_between(entities.pos[index], entities.pos[i])
                     return cos(angles['z']+pi), sin(angles['z']+pi)
         return 0, 0
-            
+    
+    def check_intimidated(self, entities, index):
+        status_effects = entities.status_effects[index]
+        for i in range(len(status_effects['effects'])):
+            if status_effects['effects'][i] == 'intimidated':
+                angles = self.angles_between(entities.pos[index], entities.pos[status_effects['source'][i]])
+                return cos(angles['z']+pi), sin(angles['z']+pi)
+        
+        return 0, 0
 
     def idle_movement(self):
         return randint(-1, 1), randint(-1, 1)
