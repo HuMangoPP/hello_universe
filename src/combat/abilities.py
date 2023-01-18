@@ -23,37 +23,37 @@ SPECIAL_ABILITIES = [
 ALL_ABILITIES = {
     'advance': {
         'type': ['attack', 'skillshot', 'movement'],
-        'damage_modifiers': [],
+        'modifiers': [],
         'cd': 500,
     },
     'intimidate': {
         'type': ['utility', 'aoe', 'debuff'],
-        'damage_modifiers': ['weakened', 'intimidated'],
+        'modifiers': ['weakened', 'intimidated'],
         'cd': 500,
     },
     'rush': {
         'type': ['attack', 'skillshot', 'movement'],
-        'damage_modifiers': ['stunned'],
+        'modifiers': ['stunned'],
         'cd': 500,
     },
     'hit': {
         'type': ['attack', 'skillshot', 'strike'],
-        'damage_modifiers': ['stunned'],
+        'modifiers': ['stunned'],
         'cd': 500,
     },
     'bite': {
         'type': ['attack', 'target'],
-        'damage_modifiers': ['bleeding'],
+        'modifiers': ['bleeding'],
         'cd': 500,
     },
     'slash': {
         'type': ['attack', 'skillshot', 'strike'],
-        'damage_modifiers': ['bleeding'],
+        'modifiers': ['bleeding'],
         'cd': 500,
     },
     'fly': {
         'type': ['utility', 'skillshot', 'movement'],
-        'damage_modifiers': [],
+        'modifiers': [],
         'cd': 500,
     }
 }
@@ -61,9 +61,9 @@ ALL_ABILITIES = {
 BASE_AOE_RADIUS = 500
 
 class ActiveAbility:
-    def __init__(self, type, pos, range):
+    def __init__(self, type, pos, modifiers, range):
         self.type = type
-        self.effects = []
+        self.modifiers = modifiers
         self.damaging = False
         self.update(pos, range)
     

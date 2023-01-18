@@ -227,7 +227,9 @@ class Entities:
             for part in self.creature[index].skeleton:
                 movement_hurt_box.append([part[0], part[1], part[2]])
             
-            self.hurt_box[index] = ActiveAbility('movement', movement_hurt_box, 2*self.creature[index].size)
+            self.hurt_box[index] = ActiveAbility('movement', movement_hurt_box, 
+                                                ALL_ABILITIES[queued_ability]['modifiers'],
+                                                2*self.creature[index].size)
 
             # consume energy to use ability
             energy_usage = 1/2*self.creature[index].num_parts*(spd_mod*self.spd[index])**2/1000
@@ -248,10 +250,12 @@ class Entities:
                                        self.pos[index][2]])
             self.hurt_box[index] = ActiveAbility('strike', strike_hurt_box, 2*self.creature[index].size)
 
+
+
         if 'aoe' in ALL_ABILITIES[queued_ability]['type']:
             all_collide = self.aoe_collide(index, self.stat_calc(index, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS]))
             print(all_collide)
-            for modifier in ALL_ABILITIES[queued_ability]['damage_modifiers']:
+            for modifier in ALL_ABILITIES[queued_ability]['modifiers']:
                 time = pg.time.get_ticks()
                 for j in all_collide:
                     self.status_effects[j]['effects'].append(modifier)
@@ -271,15 +275,21 @@ class Entities:
         return all_collided
 
     def collide(self):
-        for i in range(len(self.hurt_box)):
-            if self.hurt_box[i]:
-                for j in range(len(self.creature)):
-                    if i!=j and self.creature[j].collide(self.hurt_box[i].get_pos()):
+        for source in range(len(self.hurt_box)):
+            if self.hurt_box[source]:
+                time = pg.time.get_ticks()
+                for target in range(len(self.creature)):
+                    if source!=target and self.creature[target].collide(self.hurt_box[source].get_pos()):
                         # decrease hp
-                        self.health[j]-=10
-
+                        self.health[target]-=10
+                        for modifier in self.hurt_box[source].modifiers:
+                            self.status_effects[target]['effects'].append(modifier)
+                            self.status_effects[target]['cd'].append(BASE_CD)
+                            self.status_effects[target]['time'].append(time)
+                            self.status_effects[target]['source'].append(source)
+                        print(self.status_effects[target])
                         # increase the target's aggression score against the attacker
-                        self.behaviours[j].aggression[i]+=0.1
+                        self.behaviours[target].aggression[source]+=0.1
 
     def status_effect_cds(self):
         # entity loop
