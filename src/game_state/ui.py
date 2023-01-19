@@ -1,6 +1,6 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
-from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ABILITY_TRAIT_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
+from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ATS_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
 from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS
 
 QUEST_LINGER_TIME = 1000
@@ -13,6 +13,7 @@ class UserInterface:
         self.ability_icons = ui_sprites['ability_icons']
         self.trait_icons = ui_sprites['trait_icons']
         self.hud_frames = ui_sprites['hud_frames']
+        self.status_icons = ui_sprites['status_effect_icons']
 
         self.quest_ui = {
             'display': False,
@@ -56,6 +57,9 @@ class UserInterface:
         # traits and abilities
         self.display_traits_and_abilities(screen, entities)
 
+        # status effects
+        self.display_statuses(screen, entities)
+
         self.draw_mouse(screen)
 
         # quest
@@ -79,7 +83,6 @@ class UserInterface:
             if consume!=None:
                 entities.consume(self.player, consume, corpses)
         
-
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
         health_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
@@ -141,33 +144,33 @@ class UserInterface:
         abilities = entities.abilities[self.player]
         frame = self.hud_frames['ability_and_trait_frame']
         right_pad = self.hud_frames['energy_frame'].get_width()
-        left_edge_pad = WIDTH-right_pad-frame.get_width()-ABILITY_TRAIT_UI['right_pad']
-        icon_edge_pad = left_edge_pad+ABILITY_TRAIT_UI['frame_pad']
+        left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
+        icon_edge_pad = left_edge_pad+ATS_UI['frame_pad']
         for i in range(len(abilities)):
             icon = self.ability_icons[abilities[i]]
-            screen.blit(icon, (icon_edge_pad+i*ABILITY_TRAIT_UI['icon_size'],
-                                HEIGHT-ABILITY_TRAIT_UI['bottom_pad']))
+            screen.blit(icon, (icon_edge_pad+i*ATS_UI['icon_size'],
+                                HEIGHT-ATS_UI['bottom_pad']))
 
     def trait_slots(self, screen, entities):
         traits = entities.traits[self.player].traits
         frame = self.hud_frames['ability_and_trait_frame']
         right_pad = self.hud_frames['energy_frame'].get_width()
-        left_edge_pad = WIDTH-right_pad-frame.get_width()-ABILITY_TRAIT_UI['right_pad']
-        icon_edge_pad = left_edge_pad+ABILITY_TRAIT_UI['frame_pad']
+        left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
+        icon_edge_pad = left_edge_pad+ATS_UI['frame_pad']
         for i in range(len(traits)):
             icon = self.trait_icons[traits[i]]
-            screen.blit(icon, (icon_edge_pad+i*ABILITY_TRAIT_UI['icon_size'],
-                                HEIGHT-ABILITY_TRAIT_UI['bottom_pad']-ABILITY_TRAIT_UI['icon_size']))
+            screen.blit(icon, (icon_edge_pad+i*ATS_UI['icon_size'],
+                                HEIGHT-ATS_UI['bottom_pad']-ATS_UI['icon_size']))
 
     def display_traits_and_abilities(self, screen, entities):
         frame = self.hud_frames['ability_and_trait_frame']
         frame.set_colorkey('black')
         right_pad = self.hud_frames['energy_frame'].get_width()
-        left_edge_pad = WIDTH-right_pad-frame.get_width()-ABILITY_TRAIT_UI['right_pad']
+        left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
         self.ability_slots(screen, entities)
         self.trait_slots(screen, entities)
         screen.blit(frame, (left_edge_pad, 
-                            HEIGHT-ABILITY_TRAIT_UI['bottom_pad']-frame.get_height()/2))
+                            HEIGHT-ATS_UI['bottom_pad']-frame.get_height()/2))
 
     def ability_indicator(self, screen, entities, controller, camera):
         ability_num = controller.queued_ability
@@ -199,6 +202,15 @@ class UserInterface:
             radius = entities.stat_calc(self.player, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS])
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
     
+    def display_statuses(self, screen, entities):
+        frame = self.hud_frames['ability_and_trait_frame']
+        status_effects = entities.status_effects[self.player]
+        right_pad = WIDTH-self.hud_frames['energy_frame'].get_width()-2*ATS_UI['right_pad']
+        bottom_pad = HEIGHT-frame.get_height()-ATS_UI['bottom_pad']
+        for i in range(len(status_effects['effects'])):
+            icon = self.status_icons[status_effects['effects'][i]]
+            screen.blit(icon, (-(i+1)*icon.get_width()+right_pad, bottom_pad))
+
     def arrow_to_corpse(self, screen, entities, player, corpses, camera):
         for i in range(len(corpses.pos)):
             dx = corpses.pos[i][0]-entities.pos[player][0]

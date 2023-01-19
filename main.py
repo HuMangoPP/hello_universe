@@ -19,11 +19,13 @@ def main():
     ability_icons = load_assets('./assets/abilities', 1.5)
     trait_icons = load_assets('./assets/traits', 1.5)
     hud_frames = load_assets('./assets/hud/', 1.0)
+    status_effect_icons = load_assets('./assets/status_effects', 2.0)
     sprites = {}
     sprites['stat_icons'] = stat_icons
     sprites['ability_icons'] = ability_icons
     sprites['trait_icons'] = trait_icons
     sprites['hud_frames'] = hud_frames
+    sprites['status_effect_icons'] = status_effect_icons
 
     clock = pg.time.Clock()
 

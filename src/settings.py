@@ -171,7 +171,7 @@ STAT_BAR_UI = {
                 ]
 }
 
-ABILITY_TRAIT_UI = {
+ATS_UI = {
     'bottom_pad': 75,
     'right_pad': 20,
     'frame_pad': 9,
