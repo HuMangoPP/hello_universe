@@ -31,7 +31,8 @@ class CombatSystem:
         # all abilities
         queued_ability = a_i
         
-        self.apply_status(index, index, 'ability_lock', pg.time.get_ticks())
+        for side_effect in ALL_ABILITIES[queued_ability]['side_effects']:
+            self.apply_status(index, index, side_effect, pg.time.get_ticks())
 
         # abilities with movement tag
         if 'movement' in ALL_ABILITIES[queued_ability]['type']:
@@ -70,7 +71,9 @@ class CombatSystem:
                 strike_hurt_box.append([self.entities.pos[index][0]+i*2*self.entities.creature[index].size*cos(angle), 
                                        self.entities.pos[index][1]+i*2*self.entities.creature[index].size*sin(angle),
                                        self.entities.pos[index][2]])
-            self.entities.hurt_box[index] = ActiveAbility('strike', strike_hurt_box, 2*self.entities.creature[index].size)
+            self.entities.hurt_box[index] = ActiveAbility('strike', strike_hurt_box, 
+                                                        ALL_ABILITIES[queued_ability]['modifiers'],
+                                                        2*self.entities.creature[index].size)
 
 
 
@@ -78,7 +81,6 @@ class CombatSystem:
             self.aoe_collide(index, 
                             self.entities.stat_calculation(index, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS]),
                             ALL_ABILITIES[queued_ability])
-
 
     def collide(self):
         for source in range(len(self.entities.hurt_box)):
@@ -121,33 +123,22 @@ class CombatSystem:
         # entity loop
         for i in range(len(self.entities.status_effects)):
             if self.entities.status_effects[i]['effects']:
-                new_status_effects_cd = []
-                new_status_effects = []
-                new_status_effects_time = []
-                new_status_effects_source = []
                 # status loop
-                for j in range(len(self.entities.status_effects[i]['effects'])):
-                    effect = self.entities.status_effects[i]['effects'][j]
-                    cd = self.entities.status_effects[i]['cd'][j]
-                    time = self.entities.status_effects[i]['time'][j]
-                    source = self.entities.status_effects[i]['source'][j]
-                    if pg.time.get_ticks()-time<cd:
-                        new_status_effects_cd.append(cd)
-                        new_status_effects.append(effect)
-                        new_status_effects_time.append(time)
-                        new_status_effects_source.append(source)
-                    else:
-                        if effect == 'ability_lock':
-                            self.entities.hurt_box[i] = None
-                            new_status_effects_cd.append(BASE_CD)
-                            new_status_effects.append('ability_cd')
-                            new_status_effects_time.append(pg.time.get_ticks())
-                            new_status_effects_source.append(i)
-                    
-                self.entities.status_effects[i]['cd'] = new_status_effects_cd
-                self.entities.status_effects[i]['effects'] = new_status_effects
-                self.entities.status_effects[i]['time'] = new_status_effects_time
-                self.entities.status_effects[i]['source'] = new_status_effects_source
+                num_effects = len(self.entities.status_effects[i]['effects'])
+                for j in range(num_effects):
+                    effect = self.entities.status_effects[i]['effects'][0]
+                    cd = self.entities.status_effects[i]['cd'][0]
+                    time = self.entities.status_effects[i]['time'][0]
+                    source = self.entities.status_effects[i]['source'][0]
+                    self.entities.status_effects[i]['effects'][0:1] = []
+                    self.entities.status_effects[i]['cd'][0:1] = []
+                    self.entities.status_effects[i]['time'][0:1] = []
+                    self.entities.status_effects[i]['source'][0:1] = []
+                    if pg.time.get_ticks()-time<cd or effect in ['underwater', 'in_air']:
+                        self.apply_status(source, i, effect, time)
+                    elif effect == 'ability_lock':
+                        self.entities.hurt_box[i] = None
+                        self.apply_status(source, i, 'ability_cd', pg.time.get_ticks())
 
     def active_abilities(self):
         for i in range(len(self.entities.hurt_box)):

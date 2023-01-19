@@ -126,7 +126,10 @@ class Entities:
             dx = self.pos[i][0]-camera.pos[0]
             dy = self.pos[i][1]-camera.pos[1]
             if sqrt(dx**2+dy**2)<=WIDTH/2:
-                self.creature[i].move(self.pos[i])
+                self.creature[i].move(self.pos[i], {
+                    'effects': self.status_effects[i]['effects'], 
+                    'time': self.status_effects[i]['time']
+                })
     
     def spend_energy(self, dt):
         for i in range(len(self.energy)):
@@ -182,6 +185,9 @@ class Entities:
         corpses.nutrients[target_index] = 0
         print(f'consumed')
     
+    def scavenge(self, index, target_index, corpses):
+        ...
+
     def stat_calculation(self, index, stats_to_calc, constants):
         calc = 0
         for stat_to_calc in stats_to_calc:

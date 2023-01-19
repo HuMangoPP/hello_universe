@@ -375,11 +375,17 @@ class Interaction_UI:
     def input(self, pg_event):
         for event in pg_event:
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_RETURN:
+                if event.key == pg.K_j:
                     if self.in_range!=-1:
                         return {
                             'type': 'consume',
-                            'index': self.in_range
+                            'index': self.in_range,
+                        }
+                if event.key == pg.K_k:
+                    if self.range!=-1:
+                        return {
+                            'type': 'scavenge',
+                            'index': self.in_range,
                         }
         
         return {

@@ -1,5 +1,5 @@
 import pygame as pg
-from math import sqrt, pi, sin, cos
+from math import sqrt, pi, sin, cos, exp
 from src.util.settings import MODEL_COLORS
 import numpy as np
 
@@ -101,7 +101,7 @@ class Legs:
         self.feet_pos[2*i] = self.step_pos[2*i]
         self.feet_pos[2*i+1] = self.step_pos[2*i+1]
 
-    def move_feet(self, skeleton):
+    def move_feet(self, skeleton, effects):
         # update the step pos: where the feet should be 
         # it took a step
         for i in range(self.num_pair_legs):
@@ -118,6 +118,7 @@ class Legs:
                                     z]
         
         # update the renderable feet pos as neceessary
+        abilities = effects['effects']
         for i in range(self.num_pair_legs):
             if self.attached_segments[i] in self.arm_attachments:
                 self.move_arms(skeleton, i)
@@ -131,6 +132,30 @@ class Legs:
                 if self.dist_foot_to_body(self.feet_pos[2*i+1], skeleton[self.attached_segments[i]]) >= self.leg_length:
                     # same for the other foot
                     self.feet_pos[2*i+1] = self.step_pos[2*i+1]
+
+        for i in range(len(abilities)):
+            if abilities[i] in ['underwater', 'in_air', 'swing']:
+                self.ability_animate(skeleton, abilities[i], effects['time'][i])
+
+    def ability_animate(self, skeleton, ability, time):
+        if ability == 'swing':
+            # use the time to model the trajectory of the swing
+            index = self.attached_segments[0]
+            angle = skeleton[index][3]
+            elev_angle = pi/6
+            x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
+            t = 3 / (1 + exp(-(pg.time.get_ticks()-time-100)/10))
+
+            para = self.leg_length/2*(1-cos(t))
+            perp = sqrt(self.leg_length**2-para**2)
+            pos_0 = [x+para*cos(angle)+perp*cos(pi/2+angle)*cos(elev_angle),
+                     y+para*sin(angle)+perp*sin(pi/2+angle)*cos(elev_angle),
+                     z+perp*sin(elev_angle)]
+            pos_1 = [x+para*cos(angle)+perp*cos(-pi/2+angle)*cos(elev_angle),
+                     y+para*sin(angle)+perp*sin(-pi/2+angle)*cos(elev_angle),
+                     z+perp*sin(elev_angle)]
+            self.feet_pos[0] = pos_0
+            self.feet_pos[1] = pos_1
 
     ############################# 
     # evolution systems         #
