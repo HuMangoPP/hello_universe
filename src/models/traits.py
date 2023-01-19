@@ -9,6 +9,7 @@ ALL_TRAITS = [
     'arms', # arm, modified leg
     'head_appendage', # tongue or trunk
     'body_armour', # scales or fur or feathers
+    'gills' # gills, specialize for aquatic gameplay
 ]
 
 class Traits:

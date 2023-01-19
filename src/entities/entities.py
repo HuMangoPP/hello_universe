@@ -128,9 +128,6 @@ class Entities:
             if sqrt(dx**2+dy**2)<=WIDTH/2:
                 self.creature[i].move(self.pos[i])
     
-    ############################# 
-    # combat systems            #
-    ############################# 
     def spend_energy(self, dt):
         for i in range(len(self.energy)):
             spd_sq = (self.vel[i][0]**2 + self.vel[i][1]**2 + self.vel[i][2]**2)/1000

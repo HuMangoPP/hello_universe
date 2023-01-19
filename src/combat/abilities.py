@@ -14,6 +14,7 @@ SPECIAL_ABILITIES = [
     'hit', # with legs/arm/tail
     'rush' # upgraded version of advance with antlers/horn/corn
     'fly', # for flying creatures -> basically increase z value
+    'swim', # for swimming creatures -> decrease z value and move in water
     'swim', # for creatures that can swim -> decrease z value
     'run', # begin running for creatures that can run -> faster top speed
     'throw', # with arm/leg/tongue with high mobility -> must be able to grapple
@@ -52,6 +53,11 @@ ALL_ABILITIES = {
         'cd': 500,
     },
     'fly': {
+        'type': ['utility', 'skillshot', 'movement'],
+        'modifiers': [],
+        'cd': 500,
+    },
+    'swim': {
         'type': ['utility', 'skillshot', 'movement'],
         'modifiers': [],
         'cd': 500,
