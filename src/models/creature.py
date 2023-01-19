@@ -1,8 +1,8 @@
 import pygame as pg
 from math import atan2, sqrt, cos, sin, floor
 from src.models.legs import Legs
-from src.physics.physics import collide
-from src.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
+from src.util.physics import collide
+from src.util.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
 
 class Creature:
     def __init__(self, num_parts, pos, size, num_pair_legs, leg_length):

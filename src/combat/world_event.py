@@ -1,4 +1,4 @@
-from src.settings import STAT_GAP
+from src.util.settings import STAT_GAP
 
 EVENT_REQ = [
     'kill', # pwr stat increase / trait / ability

@@ -1,6 +1,6 @@
 import pygame as pg
 from math import sqrt, pi, sin, cos
-from src.settings import MODEL_COLORS
+from src.util.settings import MODEL_COLORS
 import numpy as np
 
 class Legs:

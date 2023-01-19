@@ -1,4 +1,4 @@
-from src.settings import STAT_GAP
+from src.util.settings import STAT_GAP
 
 MAX_NUM_TRAITS = 5
 

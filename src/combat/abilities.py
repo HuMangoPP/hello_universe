@@ -1,5 +1,5 @@
 import pygame as pg
-from src.settings import MODEL_COLORS
+from src.util.settings import MODEL_COLORS
 
 MAX_NUM_ABILITIES = 5
 

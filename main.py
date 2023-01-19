@@ -1,14 +1,18 @@
 import pygame as pg
 from src.game_state.ai_controller import AIController
-from src.entities import Entities
 from src.game_state.player_controller import PlayerController
 from src.game_state.camera import Camera
-from src.settings import RES, BASE_STATS
 from src.game_state.menus import start_menu
 from src.game_state.ui import UserInterface
-from src.asset_loader import load_assets
-from src.font import Font
-from src.corpse import Corpses
+
+from src.entities.entities import Entities
+from src.entities.corpse import Corpses
+from src.entities.evo_system import EvoSystem
+from src.entities.combat_system import CombatSystem
+
+from src.util.settings import RES, BASE_STATS
+from src.util.asset_loader import load_assets
+from src.util.font import Font
 
 def main():
     pg.init()
@@ -33,7 +37,6 @@ def main():
 
     camera = Camera(0, 0, 0)
     entities = Entities()
-    corpses = Corpses()
     entities.add_new_entity({
         'pos': [0, 0, 20, 0],
         'spd': 5,
@@ -45,6 +48,9 @@ def main():
         'aggression': [],
         'herd': [],
     }, BASE_STATS)
+    corpses = Corpses()
+    evo_system = EvoSystem(entities)
+    combat_system = CombatSystem(entities, camera)
     
     controller = PlayerController(player)
     ai_controller = AIController(player)
@@ -63,6 +69,8 @@ def main():
         'sprites': sprites,
         'font': font,
         'corpses': corpses,
+        'evo_system': evo_system,
+        'combat_system': combat_system,
     }
     start_menu(screen, game_data)
 

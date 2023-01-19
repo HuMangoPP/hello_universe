@@ -1,6 +1,6 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
-from src.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ATS_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
+from src.util.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ATS_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
 from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS
 
 QUEST_LINGER_TIME = 1000
@@ -70,18 +70,18 @@ class UserInterface:
         if self.interaction_ui['display']:
             self.interaction_ui['ui'].display(screen, self.font)
 
-    def input(self, pg_events, entities, corpses):
+    def input(self, pg_events, entities, corpses, evo_system):
         if self.quest_ui['display']:
             quest = self.quest_ui['ui'].input(pg_events)
             if quest:
-                entities.rec_quest(self.player, quest)
+                evo_system.rec_quest(self.player, quest)
                 self.toggle_quests_menu()
         
         if self.interaction_ui['display']:
             self.interaction_ui['ui'].detection(entities.pos[self.player], corpses)
-            consume = self.interaction_ui['ui'].input(pg_events)
-            if consume!=None:
-                entities.consume(self.player, consume, corpses)
+            interact = self.interaction_ui['ui'].input(pg_events)
+            if interact['type'] == 'consume':
+                entities.consume(self.player, interact['index'], corpses)
         
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
@@ -102,7 +102,7 @@ class UserInterface:
         # energy bar, similar in style to the health
         energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         energy_bar.set_colorkey('black')
-        total_energy_calculation = entities.energy_calculation(self.player)
+        total_energy_calculation = entities.stat_calculation(self.player, ['def', 'pwr'], [100])
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
         energy_frame = self.hud_frames['energy_frame']
         energy_frame.set_colorkey('black')
@@ -199,7 +199,7 @@ class UserInterface:
         if 'aoe' in ALL_ABILITIES[ability_key]['type']:
             # aoe range
             # the radius will be calculated using entity stats
-            radius = entities.stat_calc(self.player, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS])
+            radius = entities.stat_calculation(self.player, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS])
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
     
     def display_statuses(self, screen, entities):
@@ -351,15 +351,14 @@ class Quest_UI:
 
 class Interaction_UI:
     def __init__(self):
-        self.active = False
-        self.in_range = []
+        self.in_range = -1
     
     def display(self, screen, font):
         ping = pg.Surface((100, 100))
         ping.set_colorkey((0, 0, 0))
         ping.set_alpha(100)
 
-        if self.active: 
+        if self.in_range == -1: 
             pg.draw.circle(ping, (255, 255, 0), (50, 50), 50)
         else:
             pg.draw.circle(ping, (0, 255, 255), (50, 50), 50)
@@ -367,20 +366,22 @@ class Interaction_UI:
         screen.blit(ping, (WIDTH/2-50, HEIGHT/2-50))
 
     def detection(self, pos, corpses):
-        self.in_range = []
+        self.in_range = -1
         for i, corpse_pos in enumerate(corpses.pos):
             dr_sq = (corpse_pos[0]-pos[0])**2 + (corpse_pos[1]-pos[1])**2
             if dr_sq <= 50**2:
-                self.active = True
-                self.in_range.append(i)
-            else:
-                self.active = False
+                self.in_range = i
     
     def input(self, pg_event):
         for event in pg_event:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_RETURN:
-                    if self.in_range:
-                        return self.in_range[0]
+                    if self.in_range!=-1:
+                        return {
+                            'type': 'consume',
+                            'index': self.in_range
+                        }
         
-        return None
+        return {
+            'type': None
+        }

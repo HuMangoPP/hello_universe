@@ -50,7 +50,7 @@ class AIController:
         for i in range(len(entities.pos)):
             if i != index:
                 dist = self.dist_between(entities.pos[i], entities.pos[index])
-                awareness = entities.awareness_calculation(index, i)
+                awareness = entities.interact_calculation(index, ['itl'], i, ['stl'], [100])
                 aggression = entities.behaviours[index].aggression[i]
                 # determine the input to send
                 # TODO: sort input based on priority (aggression score) to see which one should be sent
@@ -75,7 +75,7 @@ class AIController:
     def idle_movement(self):
         return randint(-1, 1), randint(-1, 1)
 
-    def ability_input(self, entities, camera):
+    def ability_input(self, entities, combat_systemm):
         for i in range(len(entities.abilities)):
             if i!=self.non_controllable:
                 # give the ai controlled creature some 
@@ -85,7 +85,7 @@ class AIController:
 
                     if 'ability_cd' not in entities.status_effects[i]['effects']:
                         dist = self.dist_between(entities.pos[i], entities.pos[j])
-                        awareness = entities.awareness_calculation(i, j) 
+                        awareness = entities.interact_calculation(i, ['itl'], j, ['stl'], [100])
                         aggression = entities.behaviours[i].aggression[j]
 
                         if aggression>0:
@@ -99,9 +99,9 @@ class AIController:
                                     'ability': queued_ability,
                                     'angle': angles['z']
                                 }
-                                entities.use_ability(ability, camera)
+                                combat_systemm.use_ability(ability)
     
-    def accept_quests(self, entities):
+    def accept_quests(self, entities, evo_system):
         for i in range(len(entities.stats)):
             if i != self.non_controllable:
 
@@ -110,14 +110,14 @@ class AIController:
                 alloc_quests = list(filter(lambda quest : quest['type'] == 'alloc', quests))
                 upg_quests = list(filter(lambda quest : quest['type'] == 'upgrade', quests))
                 if abl_tr_quests:
-                    entities.rec_quest(i, abl_tr_quests[0])
+                    evo_system.rec_quest(i, abl_tr_quests[0])
                 elif alloc_quests:
-                    entities.rec_quest(i, alloc_quests[0])
+                    evo_system.rec_quest(i, alloc_quests[0])
                 else:
-                    entities.rec_quest(i, upg_quests[0])
+                    evo_system.rec_quest(i, upg_quests[0])
 
     def corpse_interact(self, entities, corpses, index, target, dist):
-        if entities.energy[index]<entities.energy_calculation(index)/2:
+        if entities.energy[index]<entities.stat_calculation(index, ['def'], [100])/2:
             if dist<=100:
                 entities.consume(index, target, corpses)
                 return True
