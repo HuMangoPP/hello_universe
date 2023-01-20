@@ -176,6 +176,7 @@ ATS_UI = {
     'right_pad': 20,
     'frame_pad': 9,
     'icon_size': 48,
+    'reg_pad': 10,
 }
 
 # quests

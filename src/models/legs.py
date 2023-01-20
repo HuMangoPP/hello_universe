@@ -141,7 +141,7 @@ class Legs:
             self.ability_animate(skeleton, abilities[i], effects['time'][i])
 
     def ability_animate(self, skeleton, ability, time):
-        if ability == 'swing':
+        if ability == 'strike':
             # use the time to model the trajectory of the swing
             leg_length = self.leg_length*3/4
             index = self.attached_segments[0]
