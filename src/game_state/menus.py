@@ -1,7 +1,7 @@
 from math import sqrt, sin, cos, pi
 from random import randint, choice
 import pygame as pg
-from src.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT
+from src.util.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT
 from src.game_state.camera import Camera
 from src.combat.world_event import WorldEvent
 
@@ -96,11 +96,15 @@ def start_menu(screen, game_data):
 def game_menu(screen, game_data):
     entities = game_data['entities']
     corpses = game_data['corpses']
+    evo_system = game_data['evo_system']
+    combat_system = game_data['combat_system']
+
     controller = game_data['controller']
     ai_controller = game_data['ai']
     camera = game_data['camera']
     player = game_data['player']
     ui = game_data['ui']
+
     clock = game_data['clock']
     font = game_data['font']
 
@@ -117,7 +121,7 @@ def game_menu(screen, game_data):
                 if event.key == pg.K_ESCAPE:
                     return
                 if event.key == pg.K_SPACE:
-                    entities.in_species_reproduce()
+                    evo_system.in_species_reproduce()
                 # if event.key == pg.K_TAB:
                 #     ui.toggle_quests_menu()
                 #     ui.update_quests(WorldEvent(entities.get_entity_data(player)))
@@ -127,23 +131,24 @@ def game_menu(screen, game_data):
                 if event.key == pg.K_DELETE:
                     entities.health[player] = -100
                     
-        ui.input(events, entities, corpses)
+        ui.input(events, entities, corpses, evo_system)
         # refresh screen
         screen.fill('black')
         dt = clock.tick()/15
 
         # player input
         entities.parse_input(controller.movement_input(), camera, dt)
-        entities.use_ability(controller.ability_input(entities), camera)
+        combat_system.use_ability(controller.ability_input(entities))
 
         # ai controller
         ai_controller.movement_input(entities, corpses, camera, dt)
-        ai_controller.ability_input(entities, camera)
+        ai_controller.ability_input(entities, combat_system)
         
         # update loop
         entities.update(camera, dt)
         camera.follow_entity(entities, player)
         corpses.update()
+        combat_system.update(entities, camera)
 
         # drawing
         entities.render(screen, camera)
@@ -160,13 +165,20 @@ def game_menu(screen, game_data):
 
         # new generation
         if pg.time.get_ticks() - generation_time > NEW_GEN_TIME:
+            # update the generation
             generation_time = pg.time.get_ticks()
             generation+=1
-            entities.new_generation()
-            ai_controller.accept_quests(entities)
+
+            # call the evo systems to operate on entities
+            evo_system.new_generation(entities)
+
+            # tell the ai to accept the new quests for the ais
+            ai_controller.accept_quests(entities, evo_system)
+
+            # allow the player to accept new quests
             ui.toggle_quests_menu()
             ui.update_quests(WorldEvent(entities.get_entity_data(player)))
-            ui.input(events, entities, corpses)
+            ui.input(events, entities, corpses, evo_system)
     
         pg.display.update()
         pg.display.set_caption(f'{clock.get_fps()}, {dt}')

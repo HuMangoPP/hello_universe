@@ -1,7 +1,7 @@
 from math import atan2, sqrt
 import pygame as pg
 
-from src.settings import HEIGHT, WIDTH
+from src.util.settings import HEIGHT, WIDTH
 
 class PlayerController():
     def __init__(self, index):

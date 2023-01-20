@@ -1,4 +1,4 @@
-from src.settings import WIDTH, HEIGHT
+from src.util.settings import WIDTH, HEIGHT
 import numpy as np
 
 class Camera():

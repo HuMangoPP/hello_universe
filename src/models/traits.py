@@ -1,4 +1,4 @@
-from src.settings import STAT_GAP
+from src.util.settings import STAT_GAP
 
 MAX_NUM_TRAITS = 5
 
@@ -9,6 +9,7 @@ ALL_TRAITS = [
     'arms', # arm, modified leg
     'head_appendage', # tongue or trunk
     'body_armour', # scales or fur or feathers
+    'gills' # gills, specialize for aquatic gameplay
 ]
 
 class Traits:

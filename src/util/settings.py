@@ -19,7 +19,7 @@ BASE_MAX_STATS = {
     'itl': 1,
     'pwr': 1,
     'def': 1,
-    'mbl': 1,
+    'mbl': 10,
     'hp': 1,
     'stl': 1,
 }
@@ -43,7 +43,7 @@ BASE_STATS = {
     # dodging attacks, running away from other entities to avoid
     # combat, etc
     # stamina and mobility outside of combat
-    'mbl': 5,
+    'mbl': 50,
     # stealth has to do with evasiveness during and outside 
     # of combat
     # dodging attacks/fleeing from combat
@@ -171,7 +171,7 @@ STAT_BAR_UI = {
                 ]
 }
 
-ABILITY_TRAIT_UI = {
+ATS_UI = {
     'bottom_pad': 75,
     'right_pad': 20,
     'frame_pad': 9,

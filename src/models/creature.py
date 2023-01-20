@@ -1,8 +1,8 @@
 import pygame as pg
 from math import atan2, sqrt, cos, sin, floor
 from src.models.legs import Legs
-from src.physics.physics import collide
-from src.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
+from src.util.physics import collide
+from src.util.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
 
 class Creature:
     def __init__(self, num_parts, pos, size, num_pair_legs, leg_length):
@@ -73,7 +73,7 @@ class Creature:
         self.legs.draw(screen, self.skeleton, camera)
         return True
 
-    def move(self, pos):
+    def move(self, pos, effects):
         self.head = pos
         if self.skeleton:
             dist = self.dist_between_segment(self.skeleton[0], self.head)
@@ -89,8 +89,8 @@ class Creature:
                 self.skeleton[i][1]+=(dist-2*self.size)*sin(angle)
                 self.skeleton[i][3] = angle
             
-            self.legs.move_feet(self.skeleton)
-    
+            self.legs.move_feet(self.skeleton, effects)
+
     def upright(self):
         torso_segment = self.legs.get_torso_start()
         for i in range(torso_segment, -1, -1):
