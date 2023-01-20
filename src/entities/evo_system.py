@@ -54,7 +54,7 @@ class EvoSystem:
         self.entities.abilities[index].append(ability)
 
     def give_traits(self, index, trait):
-        self.entities.traits[index].give_traits(self.creature[index], trait)
+        self.entities.traits[index].give_traits(self.entities.creature[index], trait)
 
     def allocate_stat(self, index, stat):
         self.entities.stats[index]['max'][stat]+=1

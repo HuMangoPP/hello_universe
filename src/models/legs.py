@@ -104,6 +104,8 @@ class Legs:
     def move_feet(self, skeleton, effects):
         # update the step pos: where the feet should be 
         # it took a step
+        abilities = effects['effects']
+
         for i in range(self.num_pair_legs):
             index = self.attached_segments[i]
             x, y, z = skeleton[index][0], skeleton[index][1], 0          
@@ -111,20 +113,22 @@ class Legs:
             
             leg_length_left = sqrt(self.leg_length**2-skeleton[index][2]**2)
             self.step_pos[2*i] = [x+leg_length_left*cos(self.step_bend+angle), 
-                                  y+leg_length_left*sin(self.step_bend+angle), 
-                                  z]
+                                y+leg_length_left*sin(self.step_bend+angle), 
+                                z]
             self.step_pos[2*i+1] = [x+leg_length_left*cos(-self.step_bend+angle), 
                                     y+leg_length_left*sin(-self.step_bend+angle), 
                                     z]
         
         # update the renderable feet pos as neceessary
-        abilities = effects['effects']
         for i in range(self.num_pair_legs):
             if self.attached_segments[i] in self.arm_attachments:
                 self.move_arms(skeleton, i)
             elif self.attached_segments[i] in self.wing_attachments: 
                 self.move_wings(skeleton, i)
-            else: 
+            elif 'in_air' in abilities:
+                self.feet_pos[2*i] = skeleton[index][:3]
+                self.feet_pos[2*i+1]= skeleton[index][:3]
+            else:
                 if self.dist_foot_to_body(self.feet_pos[2*i], skeleton[self.attached_segments[i]]) >= self.leg_length:
                     # if the distance from the foot to the body segment
                     # is greater than the length of the leg, take a step
@@ -134,20 +138,21 @@ class Legs:
                     self.feet_pos[2*i+1] = self.step_pos[2*i+1]
 
         for i in range(len(abilities)):
-            if abilities[i] in ['underwater', 'in_air', 'swing']:
-                self.ability_animate(skeleton, abilities[i], effects['time'][i])
+            self.ability_animate(skeleton, abilities[i], effects['time'][i])
 
     def ability_animate(self, skeleton, ability, time):
         if ability == 'swing':
             # use the time to model the trajectory of the swing
+            leg_length = self.leg_length*3/4
             index = self.attached_segments[0]
+            x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
             angle = skeleton[index][3]
             elev_angle = pi/6
-            x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
+
             t = 3 / (1 + exp(-(pg.time.get_ticks()-time-100)/10))
 
-            para = self.leg_length/2*(1-cos(t))
-            perp = sqrt(self.leg_length**2-para**2)
+            para = leg_length/2*(1-cos(t))
+            perp = sqrt(leg_length**2-para**2)*sin(t)
             pos_0 = [x+para*cos(angle)+perp*cos(pi/2+angle)*cos(elev_angle),
                      y+para*sin(angle)+perp*sin(pi/2+angle)*cos(elev_angle),
                      z+perp*sin(elev_angle)]
@@ -156,7 +161,37 @@ class Legs:
                      z+perp*sin(elev_angle)]
             self.feet_pos[0] = pos_0
             self.feet_pos[1] = pos_1
+        
+        if ability == 'in_air':
+            # use a sine wave to model the wing flap
+            index = 0
+            for i in range(len(self.attached_segments)):
+                if self.attached_segments[i] == self.wing_attachments[0]:
+                    index = i
+                    break
+            
+            skeleton_index = self.attached_segments[index]
+            x, y, z = skeleton[skeleton_index][0], skeleton[skeleton_index][1], skeleton[skeleton_index][2]
+            angle = skeleton[skeleton_index][3]
 
+            t = (pg.time.get_ticks()-time)/100
+            perp = self.leg_length*2/3
+            up = sqrt(self.leg_length**2-perp)*sin(t)
+
+            pos_0 = [x+perp*cos(pi/2+angle),
+                    y+perp*sin(pi/2+angle),
+                    z+up]
+            pos_1 = [x+perp*cos(-pi/2+angle),
+                    y+perp*sin(-pi/2+angle),
+                    z+up]
+            
+            self.feet_pos[2*index] = pos_0
+            self.feet_pos[2*index+1] = pos_1
+
+        
+        if ability == 'underwater':
+            # use a sine wave to model the fin flutter
+            ... 
     ############################# 
     # evolution systems         #
     ############################# 

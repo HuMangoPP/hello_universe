@@ -137,7 +137,8 @@ class Entities:
             mass = self.creature[i].num_parts*self.creature[i].size/10
             energy_spent = 1/2*mass*spd_sq
             if self.energy[i]<=0:
-                self.health[i]-=energy_spent*dt
+                # self.health[i]-=energy_spent*dt
+                ...
             else:
                 self.energy[i]-=energy_spent*dt
             total_energy = self.stat_calculation(i, ['def', 'pwr'], [100])

@@ -30,9 +30,6 @@ class CombatSystem:
 
         # all abilities
         queued_ability = a_i
-        
-        for side_effect in ALL_ABILITIES[queued_ability]['side_effects']:
-            self.apply_status(index, index, side_effect, pg.time.get_ticks())
 
         # abilities with movement tag
         if 'movement' in ALL_ABILITIES[queued_ability]['type']:
@@ -75,12 +72,26 @@ class CombatSystem:
                                                         ALL_ABILITIES[queued_ability]['modifiers'],
                                                         2*self.entities.creature[index].size)
 
-
-
         if 'aoe' in ALL_ABILITIES[queued_ability]['type']:
             self.aoe_collide(index, 
                             self.entities.stat_calculation(index, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS]),
                             ALL_ABILITIES[queued_ability])
+        
+        toggled = []
+        if 'toggle' in ALL_ABILITIES[queued_ability]['type']:
+            for toggle in ALL_ABILITIES[queued_ability]['side_effects']:
+                for j in range(len(self.entities.status_effects[index]['effects'])-1, -1, -1):
+                    if self.entities.status_effects[index]['effects'][j] == toggle:
+                        toggled.append(toggle)
+                        self.entities.status_effects[index]['effects'][j:j+1] = []
+                        self.entities.status_effects[index]['cd'][j:j+1] = []
+                        self.entities.status_effects[index]['time'][j:j+1] = []
+                        self.entities.status_effects[index]['source'][j:j+1] = []
+
+
+        for side_effect in ALL_ABILITIES[queued_ability]['side_effects']:
+            if side_effect not in toggled:
+                self.apply_status(index, index, side_effect, pg.time.get_ticks())
 
     def collide(self):
         for source in range(len(self.entities.hurt_box)):

@@ -7,6 +7,7 @@ BASIC_ABILITIES = [
     'advance', # basic charging move // body slam
     'intimidate', # basic intimidation move
     'hit',
+    'fly',
 ]
 
 SPECIAL_ABILITIES = [
@@ -60,13 +61,13 @@ ALL_ABILITIES = {
         'cd': 500,
     },
     'fly': {
-        'type': ['utility', 'skillshot', 'movement'],
+        'type': ['utility', 'skillshot', 'movement', 'toggle'],
         'modifiers': [],
         'side_effects': ['ability_lock', 'in_air'],
         'cd': 500,
     },
     'swim': {
-        'type': ['utility', 'skillshot', 'movement'],
+        'type': ['utility', 'skillshot', 'movement', 'toggle'],
         'modifiers': [],
         'side_effects': ['ability_lock', 'underwater'],
         'cd': 500,
