@@ -45,7 +45,7 @@ ALL_ABILITIES = {
     'hit': {
         'type': ['attack', 'skillshot', 'strike'],
         'modifiers': ['stunned'],
-        'side_effects': ['ability_lock', 'swing'],
+        'side_effects': ['ability_lock', 'strike'],
         'cd': 500,
     },
     'bite': {
@@ -57,7 +57,7 @@ ALL_ABILITIES = {
     'slash': { # should this be different from hit or should they be comined and the bleeding attribute given with the claw trait?
         'type': ['attack', 'skillshot', 'strike'],
         'modifiers': ['bleeding'],
-        'side_effects': ['ability_lock', 'swing'],
+        'side_effects': ['ability_lock', 'strike'],
         'cd': 500,
     },
     'fly': {

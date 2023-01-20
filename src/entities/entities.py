@@ -205,9 +205,13 @@ class Entities:
 
     # TODO: figure out how to format this to take into account other calculations like
     # maybe size/num_parts/etc
-    def detailed_calculation(self, index, stats_to_calc, others_to_calc, constants):
-        calc = 0
-        calc += self.stat_calculation(index, stats_to_calc, constants)
+    def detailed_calculation(self, index, stats_to_calc, constants, fns):
+        calc = self.stat_calculation(index, stats_to_calc, constants)
+        for fn in fns:
+            calc = fn(calc)
+        
+        print(calc)
+        return calc
 
 
     def get_entity_data(self, index):

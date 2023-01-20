@@ -167,10 +167,10 @@ class UserInterface:
         frame.set_colorkey('black')
         right_pad = self.hud_frames['energy_frame'].get_width()
         left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
+        screen.blit(frame, (left_edge_pad, 
+                    HEIGHT-ATS_UI['bottom_pad']-frame.get_height()/2))
         self.ability_slots(screen, entities)
         self.trait_slots(screen, entities)
-        screen.blit(frame, (left_edge_pad, 
-                            HEIGHT-ATS_UI['bottom_pad']-frame.get_height()/2))
 
     def ability_indicator(self, screen, entities, controller, camera):
         ability_num = controller.queued_ability
@@ -209,7 +209,7 @@ class UserInterface:
         bottom_pad = HEIGHT-frame.get_height()-ATS_UI['bottom_pad']
         for i in range(len(status_effects['effects'])):
             icon = self.status_icons[status_effects['effects'][i]]
-            screen.blit(icon, (-(i+1)*icon.get_width()+right_pad, bottom_pad))
+            screen.blit(icon, (-(i+0.5)*(icon.get_width()+ATS_UI['reg_pad'])+right_pad, bottom_pad))
 
     def arrow_to_corpse(self, screen, entities, player, corpses, camera):
         for i in range(len(corpses.pos)):
