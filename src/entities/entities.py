@@ -87,6 +87,8 @@ class Entities:
             dy = self.pos[i][1]-camera.pos[1]
             if sqrt(dx**2+dy**2)<=WIDTH/2:
                 self.creature[i].render(screen, camera)
+            if self.hurt_box[i]:
+                self.hurt_box[i].render(screen, camera)
 
     def update(self, camera, dt):
         self.spend_energy(dt)

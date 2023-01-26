@@ -7,7 +7,7 @@ BASIC_ABILITIES = [
     'advance', # basic charging move // body slam
     'intimidate', # basic intimidation move
     'hit',
-    'fly',
+    'swim',
 ]
 
 SPECIAL_ABILITIES = [
@@ -95,7 +95,7 @@ class ActiveAbility:
 
         return all_pos
 
-    def draw(self, screen, camera):
+    def render(self, screen, camera):
         for pos in self.pos:
-            x, y = camera.transform_to_screen(pos[0], pos[1], pos[2])
+            x, y = camera.transform_to_screen(pos)
             pg.draw.circle(screen, MODEL_COLORS['hit_box'], (x, y), self.range, 1)

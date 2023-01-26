@@ -125,9 +125,9 @@ class Legs:
                 self.move_arms(skeleton, i)
             elif self.attached_segments[i] in self.wing_attachments: 
                 self.move_wings(skeleton, i)
-            elif 'in_air' in abilities:
-                self.feet_pos[2*i] = skeleton[index][:3]
-                self.feet_pos[2*i+1]= skeleton[index][:3]
+            elif 'in_air' in abilities or 'underwater' in abilities:
+                self.feet_pos[2*i] = skeleton[self.attached_segments[i]][:3]
+                self.feet_pos[2*i+1] = skeleton[self.attached_segments[i]][:3]
             else:
                 if self.dist_foot_to_body(self.feet_pos[2*i], skeleton[self.attached_segments[i]]) >= self.leg_length:
                     # if the distance from the foot to the body segment
@@ -191,7 +191,25 @@ class Legs:
         
         if ability == 'underwater':
             # use a sine wave to model the fin flutter
-            ... 
+            index = len(self.attached_segments)-1
+            
+            skeleton_index = self.attached_segments[-1]
+            x, y, z = skeleton[skeleton_index][0], skeleton[skeleton_index][1], skeleton[skeleton_index][2]
+            angle = skeleton[skeleton_index][3]
+
+            t = (pg.time.get_ticks()-time)/100
+            para = -self.leg_length*3/4
+            up = sqrt(self.leg_length**2-para)*sin(t)
+
+            pos_0 = [x+para*cos(angle),
+                    y+para*sin(angle),
+                    z+up]
+            pos_1 = [x+para*cos(angle),
+                    y+para*sin(angle),
+                    z+up]
+            
+            self.feet_pos[2*index] = pos_0
+            self.feet_pos[2*index+1] = pos_1
     ############################# 
     # evolution systems         #
     ############################# 

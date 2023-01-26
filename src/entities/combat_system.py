@@ -1,4 +1,5 @@
 import pygame as pg
+import numpy as np
 from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS, ActiveAbility
 from src.combat.status_effects import BASE_CD
 
@@ -61,14 +62,11 @@ class CombatSystem:
             y_dir = sin(input_angle)
             x_dir, y_dir = self.camera.screen_to_world(x_dir, y_dir)
             angle = atan2(y_dir, x_dir)
+            self.entities.vel[index][0] = self.entities.spd[index]*cos(angle)
+            self.entities.vel[index][1] = self.entities.spd[index]*sin(angle)
 
             # update hurtboxes
-            strike_hurt_box = []
-            for i in range(10):
-                strike_hurt_box.append([self.entities.pos[index][0]+i*2*self.entities.creature[index].size*cos(angle), 
-                                       self.entities.pos[index][1]+i*2*self.entities.creature[index].size*sin(angle),
-                                       self.entities.pos[index][2]])
-            self.entities.hurt_box[index] = ActiveAbility('strike', strike_hurt_box, 
+            self.entities.hurt_box[index] = ActiveAbility('strike', [], 
                                                         ALL_ABILITIES[queued_ability]['modifiers'],
                                                         2*self.entities.creature[index].size)
 
@@ -158,3 +156,17 @@ class CombatSystem:
                 for part in self.entities.creature[i].skeleton:
                     movement_hurt_box.append([part[0], part[1], part[2]])
                 self.entities.hurt_box[i].update(movement_hurt_box, 2*self.entities.creature[i].size)
+            
+            if self.entities.hurt_box[i] and self.entities.hurt_box[i].type == 'strike':
+                strike_hurt_box = []
+                pos_1 = np.array(self.entities.creature[i].legs.feet_pos[0])
+                pos_2 = np.array(self.entities.creature[i].legs.feet_pos[1])
+                foot_index = self.entities.creature[i].legs.attached_segments[0]
+                skeleton_part = np.array(self.entities.creature[i].skeleton[foot_index][:3])
+                dir_1 = (pos_1 - skeleton_part) / 5
+                dir_2 = (pos_2 - skeleton_part) / 5
+                for j in range(5):
+                    strike_hurt_box.append(skeleton_part + dir_1 * j)
+                    strike_hurt_box.append(skeleton_part + dir_2 * j)
+                
+                self.entities.hurt_box[i].update(strike_hurt_box, 2*self.entities.creature[i].size)
