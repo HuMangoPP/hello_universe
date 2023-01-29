@@ -175,7 +175,7 @@ def game_menu(screen, game_data):
 
             # allow the player to accept new quests
             ui.toggle_quests_menu()
-            ui.update_quests(WorldEvent(entities.get_entity_data(player)))
+            ui.update_quests(WorldEvent(entities, player))
             ui.input(events, entities, corpses, evo_system)
     
         pg.display.update()

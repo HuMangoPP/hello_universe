@@ -51,13 +51,14 @@ ABILITY_QUESTS = {
 STAT_QUESTS = ['itl', 'pwr', 'def', 'mbl', 'stl']
 
 class WorldEvent:
-    def __init__(self, entity_data):
-        self.entity_data = entity_data
-        self.quests = self.generate_quest()
+    def __init__(self, entities, index):
+        self.quests = self.generate_quest(entities, index)
     
-    def generate_quest(self):
+    def generate_quest(self, entities, index):
+        entity_data = entities.get_entity_data(index)
         all_quests = []
-        stats = self.entity_data['stats']
+        stats = entity_data['stats']
+        max_stats = entity_data['max_stats']
         
         # obtain trait quests
         for quest in TRAIT_QUESTS.keys():
@@ -65,9 +66,9 @@ class WorldEvent:
             stat_req = TRAIT_QUESTS[quest]['stat_req']
             meets_misc_req = True
             meets_stat_req = True
-            self.entity_data['trait'] = quest
+            entity_data['trait'] = quest
             for req in misc_req:
-                meets_misc_req = meets_misc_req and TRAIT_REQS[req](self.entity_data)
+                meets_misc_req = meets_misc_req and TRAIT_REQS[req](entity_data)
             for i in range(len(stat_req)):
                 meets_stat_req = meets_stat_req and stats[i]>=stat_req[i]*STAT_GAP
             if meets_misc_req and meets_stat_req:
@@ -83,7 +84,7 @@ class WorldEvent:
             trait_req = ABILITY_QUESTS[quest]['trait_req']
             meets_trait_req = True
             for req in trait_req:
-                meets_trait_req = meets_trait_req and req in self.entity_data['traits'].traits and quest not in self.entity_data['abilities']
+                meets_trait_req = meets_trait_req and req in entity_data['traits'].traits and quest not in entity_data['abilities']
             
             if meets_trait_req:
                 all_quests.append({
@@ -93,9 +94,27 @@ class WorldEvent:
                     'req': 0,
                 })
         
+        # new body part quests
+        # body part
+        max_body_parts = entities.max_calc(index, preset='max_body_parts')
+        if entity_data['creature'].num_parts < max_body_parts:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'body',
+                'req_type': '',
+                'req': 0,
+            })
+        
+        if entity_data['creature'].legs.num_pair_legs < entity_data['creature'].num_parts:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'leg',
+                'req_type': '',
+                'req': 0,
+            })
+
         # stat upgrade / allocation quests
         for i in range(len(STAT_QUESTS)):
-            max_stats = self.entity_data['max_stats']
             if stats[i]==max_stats[i]*STAT_GAP:
                 all_quests.append({
                     'type': 'alloc',

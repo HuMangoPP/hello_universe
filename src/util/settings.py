@@ -189,6 +189,7 @@ QUEST_CARD_UI = {
         'ability': (0, 255, 0),
         'trait': (0, 0, 255),
         'upgrade': (255, 0, 255),
+        'physiology': (0, 255, 255),
     },
     's_ratio': 2,
     'a_ratio': 2,

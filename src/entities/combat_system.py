@@ -111,8 +111,8 @@ class CombatSystem:
             for target in range(len(self.entities.creature)):
                 if source!=target and self.entities.creature[target].collide(self.entities.hurt_box[source].get_pos()):
                     # decrease hp
-                    self.entities.health[target]-=10
-
+                    self.entities.health[target] -= 0
+                    print(f'took damage from {source}')
                     # apply modifiers
                     for modifier in self.entities.hurt_box[source].modifiers:
                         self.entities.status_effects[target]['effects'].append(modifier)
@@ -121,7 +121,7 @@ class CombatSystem:
                         self.entities.status_effects[target]['source'].append(source)
                     # increase the target's aggression score against the attacker
                     self.entities.behaviours[target].aggression[source]+=0.1
-    
+
     def apply_status(self, source, target, effect, time):
         self.entities.status_effects[target]['effects'].append(effect)
         self.entities.status_effects[target]['cd'].append(BASE_CD)
@@ -139,6 +139,7 @@ class CombatSystem:
                     cd = self.entities.status_effects[i]['cd'][0]
                     time = self.entities.status_effects[i]['time'][0]
                     source = self.entities.status_effects[i]['source'][0]
+
                     self.entities.status_effects[i]['effects'][0:1] = []
                     self.entities.status_effects[i]['cd'][0:1] = []
                     self.entities.status_effects[i]['time'][0:1] = []

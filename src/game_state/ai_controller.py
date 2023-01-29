@@ -105,7 +105,7 @@ class AIController:
         for i in range(len(entities.stats)):
             if i != self.non_controllable:
 
-                quests = WorldEvent(entity_data = entities.get_entity_data(i)).quests
+                quests = WorldEvent(entities, i).quests
                 abl_tr_quests = list(filter(lambda quest : quest['type'] in ['ability', 'trait'], quests))
                 alloc_quests = list(filter(lambda quest : quest['type'] == 'alloc', quests))
                 upg_quests = list(filter(lambda quest : quest['type'] == 'upgrade', quests))

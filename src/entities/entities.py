@@ -231,6 +231,23 @@ class Entities:
             calc+=constant
         return calc
 
+    def max_calc(self, index, preset):
+        calc = 0
+
+        # presets
+        stats_to_calc = []
+        constants = []
+        if preset == 'max_body_parts':
+            stats_to_calc = ['def', 'mbl']
+            constants = []
+        
+        for stat_to_calc in stats_to_calc:
+            calc+=self.stats[index]['max'][stat_to_calc]
+        for constant in constants:
+            calc+=constant
+        
+        return calc
+    
     def interact_calculation(self, index, index_preset, target, target_preset):
         calc = 0
         calc += self.stat_calculation(index, preset=index_preset)

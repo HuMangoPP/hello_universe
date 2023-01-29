@@ -82,6 +82,12 @@ class EvoSystem:
         for behaviour in self.entities.behaviours:
             behaviour.shift()
 
+    def change_physiology(self, type, index):
+        if type == 'body':
+            self.entities.creature[index].change_physiology(1, 0)
+        else:
+            self.entities.creature[index].change_physiology(0, 1)
+
     def regen(self):
         for i in range(len(self.entities.health)):
             self.entities.health[i] = self.entities.stats[i]['hp']
@@ -106,6 +112,9 @@ class EvoSystem:
                     print(f'gained {reward}')
                 case 'ability':
                     self.give_abilities(index, reward)
+                    print(f'gained {reward}')
+                case 'physiology':
+                    self.change_physiology(reward, index)
                     print(f'gained {reward}')
     
     # def inter_species_reproduce(self, i, j):
