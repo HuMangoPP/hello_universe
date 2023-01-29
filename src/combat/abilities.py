@@ -4,7 +4,7 @@ from src.util.settings import MODEL_COLORS
 MAX_NUM_ABILITIES = 5
 
 BASIC_ABILITIES = [
-    'advance', # basic charging move // body slam
+    'dash', # basic charging move // body slam
     'intimidate', # basic intimidation move
 ]
 
@@ -15,14 +15,13 @@ SPECIAL_ABILITIES = [
     'rush' # upgraded version of advance with antlers/horn/corn
     'fly', # for flying creatures -> basically increase z value
     'swim', # for swimming creatures -> decrease z value and move in water
-    'swim', # for creatures that can swim -> decrease z value
-    'run', # begin running for creatures that can run -> faster top speed
+    # 'run', # begin running for creatures that can run -> faster top speed
     'throw', # with arm/leg/tongue with high mobility -> must be able to grapple
     'slash', # with leg weapon -> deals bleed status effect
 ]
 
 ALL_ABILITIES = {
-    'advance': {
+    'dash': {
         'type': ['attack', 'skillshot', 'movement'],
         'modifiers': [],
         'side_effects': ['ability_lock'],
@@ -68,6 +67,18 @@ ALL_ABILITIES = {
         'type': ['utility', 'skillshot', 'movement', 'toggle'],
         'modifiers': [],
         'side_effects': ['ability_lock', 'underwater'],
+        'cd': 500,
+    },
+    'grapple': {
+        'type': ['utility', 'toggle'],
+        'modifiers': [],
+        'side_effects': ['ability_lock', 'grapple'],
+        'cd': 500
+    },
+    'throw': {
+        'type': ['attack', 'skillshot'],
+        'modifiers': [],
+        'side_effects': ['ability_lock', 'grapple'],
         'cd': 500,
     }
 }

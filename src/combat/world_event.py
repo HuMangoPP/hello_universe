@@ -7,8 +7,9 @@ EVENT_REQ = [
     'hide', # stl stat increase / trait / ability
 ]
 
-TRAIT_REQS = {
-    'no_dupe': lambda data: data['trait'] not in data['traits'].traits,
+MISC_REQS = {
+    'no_dupe_trait': lambda data: data['trait'] not in data['traits'].traits,
+    'no_dupe_ability': lambda data: data['ability'] not in data['abilities'],
     'legs': lambda data: data['creature'].legs.num_legs()>0,
     'free_legs': lambda data: data['creature'].legs.num_legs()>1, 
 }
@@ -23,29 +24,68 @@ TRAIT_QUESTS = {
         'stat_req': [6, 0, 0, 2, 0]
     },
     'leg_weapon': {
-        'misc_req': ['no_dupe', 'legs'],
+        'misc_req': ['no_dupe_trait', 'legs'],
         'stat_req': [0, 2, 0, 2, 0]
     },
     'head_weapon': {
-        'misc_req': ['no_dupe'],
+        'misc_req': ['no_dupe_trait'],
         'stat_req': [0, 4, 0, 2, 0]
     },
     'body_armour': {
-        'misc_req': ['no_dupe'],
+        'misc_req': ['no_dupe_trait'],
         'stat_req': [0, 0, 2, 0, 0]
+    },
+    'teeth': {
+        'misc_req': ['no_dupe_trait'],
+        'stat_req': [0, 2, 0, 0, 0],
+    },
+    'gills': {
+        'misc_req': ['no_dupe_trait'],
+        'stat_req': [1, 0, 0, 4, 0],
     }
 }
 
 ABILITY_QUESTS = {
     'fly': {
         'trait_req': ['wings'],
+        'misc_req': ['no_dupe_ability'],
     },
     'rush': {
         'trait_req': ['head_weapon'],
+        'misc_req': ['no_dupe_ability'],
+    },
+    'hit': {
+        'trait_req': [],  
+        'misc_req': ['free_legs', 'no_dupe_ability'],
     },
     'slash': {
         'trait_req': ['leg_weapon'],
+        'misc_req': ['no_dupe_ability'],
     },
+    'swim': {
+        'trait_req': ['gill'],
+        'misc_req': ['no_dupe_ability'],
+    },
+    'grapple': {
+        'trait_req': ['arms'],
+        'misc_req': ['no_dupe_ability']
+    },
+    'throw': {
+        'trait_req': ['arms'],
+        'misc_req': ['no_dupe_ability']
+    },
+    'bite': {
+        'trait_req': ['teeth'],
+        'misc_req': ['no_dupe_ability']
+    }, 
+    'dash': {
+        'trait_req': [],
+        'misc_req': ['legs', 'no_dupe_ability']
+    }, 
+    'intimidate': {
+        'trait_req': [],
+        'misc_req': ['no_dupe_ability']
+    }
 }
 
 STAT_QUESTS = ['itl', 'pwr', 'def', 'mbl', 'stl']
@@ -68,7 +108,7 @@ class WorldEvent:
             meets_stat_req = True
             entity_data['trait'] = quest
             for req in misc_req:
-                meets_misc_req = meets_misc_req and TRAIT_REQS[req](entity_data)
+                meets_misc_req = meets_misc_req and MISC_REQS[req](entity_data)
             for i in range(len(stat_req)):
                 meets_stat_req = meets_stat_req and stats[i]>=stat_req[i]*STAT_GAP
             if meets_misc_req and meets_stat_req:
@@ -82,10 +122,17 @@ class WorldEvent:
         # obtain ability quests
         for quest in ABILITY_QUESTS.keys():
             trait_req = ABILITY_QUESTS[quest]['trait_req']
+            misc_req = ABILITY_QUESTS[quest]['misc_req']
             meets_trait_req = True
+            entity_data['ability'] = quest
             for req in trait_req:
-                meets_trait_req = meets_trait_req and req in entity_data['traits'].traits and quest not in entity_data['abilities']
+                meets_trait_req = (meets_trait_req and 
+                                  req in entity_data['traits'].traits)
             
+            for req in misc_req:
+                meets_trait_req = (meets_trait_req and
+                                   MISC_REQS[req](entity_data))
+                
             if meets_trait_req:
                 all_quests.append({
                     'type': 'ability',
