@@ -1,9 +1,9 @@
 import pygame as pg
 from random import choice, randint
 from math import atan2, cos, sin, sqrt, pi
-from src.combat.abilities import BASIC_ABILITIES, ALL_ABILITIES, ActiveAbility, BASE_AOE_RADIUS
-from src.combat.status_effects import BASE_CD
-from src.util.settings import HEIGHT, WIDTH, STAT_GAP
+from src.combat.abilities import BASIC_ABILITIES, BASE_AOE_RADIUS
+from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
+from src.util.settings import WIDTH
 from src.util.physics import new_vel
 from src.models.creature import Creature
 from src.models.traits import Traits
@@ -101,9 +101,20 @@ class Entities:
         y_i = mv_input['y']
         if 'ability_lock' in self.status_effects[index]['effects']:
             x_i, y_i = 0, 0
+        
+        # entity is stunned cannot move
+        if 'stunned' in self.status_effects[index]['effects']:
+            x_i, y_i = 0, 0
 
         # entity movement
         x_dir, y_dir = camera.screen_to_world(x_i, y_i)
+
+        for j in range(len(self.status_effects[index]['effects'])):
+            if self.status_effects[index]['effects'][j] == 'intimidated':
+                source = self.status_effects[index]['source'][j]
+                angle = atan2(self.pos[source][1]-self.pos[index][1],
+                              self.pos[source][0]-self.pos[index][0])
+                x_dir, y_dir = cos(angle+pi), sin(angle+pi)
 
         self.vel[index][0] = new_vel(self.acc[index], self.vel[index][0], x_dir, dt)
         self.vel[index][1] = new_vel(self.acc[index], self.vel[index][1], y_dir, dt)
@@ -114,6 +125,13 @@ class Entities:
                 angle = atan2(y_dir, x_dir)
                 self.vel[index][0] = self.spd[index]*cos(angle)
                 self.vel[index][1] = self.spd[index]*sin(angle)
+
+        for impair in MOVEMENT_IMPAIR_EFFECTS:
+            if impair in self.status_effects[index]['effects']:
+                self.vel[index][0] *= 0.8
+                self.vel[index][1] *= 0.8
+                # cumulative 20% reduction to movement speed if
+                # entity is bleeding, poisoned, or weakened
    
     def move(self, camera, dt):
         for i in range(len(self.pos)):

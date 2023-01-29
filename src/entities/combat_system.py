@@ -1,7 +1,7 @@
 import pygame as pg
 import numpy as np
-from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS, ActiveAbility
-from src.combat.status_effects import BASE_CD
+from src.combat.abilities import ALL_ABILITIES, ActiveAbility
+from src.combat.status_effects import BASE_CD, DOT_EFFECTS
 
 from math import sin, cos, atan2
 
@@ -27,6 +27,10 @@ class CombatSystem:
         
         # prevent spamming
         if 'ability_lock' in self.entities.status_effects[index]['effects']:
+            return
+    
+        # entity is stunned cannot use abilities
+        if 'stunned' in self.entities.status_effects[index]['effects']:
             return
 
         # all abilities
@@ -111,16 +115,23 @@ class CombatSystem:
             for target in range(len(self.entities.creature)):
                 if source!=target and self.entities.creature[target].collide(self.entities.hurt_box[source].get_pos()):
                     # decrease hp
-                    self.entities.health[target] -= 0
+                    self.take_damage(target, 0)
                     print(f'took damage from {source}')
                     # apply modifiers
                     for modifier in self.entities.hurt_box[source].modifiers:
-                        self.entities.status_effects[target]['effects'].append(modifier)
-                        self.entities.status_effects[target]['cd'].append(BASE_CD)
-                        self.entities.status_effects[target]['time'].append(time)
-                        self.entities.status_effects[target]['source'].append(source)
+                        self.apply_status(source, target, modifier, time)
                     # increase the target's aggression score against the attacker
                     self.entities.behaviours[target].aggression[source]+=0.1
+
+    def take_damage(self, target, dmg):
+        self.entities.health[target] -= dmg 
+
+    def dot_status(self):
+        for i in range(len(self.entities.status_effects)):
+            for dot in DOT_EFFECTS:
+                if dot in self.entities.status_effects[i]['effects']:
+                    self.take_damage(i, 0)
+                    print(f'{i} took dot damage')
 
     def apply_status(self, source, target, effect, time):
         self.entities.status_effects[target]['effects'].append(effect)
