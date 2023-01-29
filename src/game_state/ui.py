@@ -352,18 +352,16 @@ class Interaction_UI:
         ping.set_colorkey((0, 0, 0))
         ping.set_alpha(100)
 
-        if self.in_range == -1: 
-            pg.draw.circle(ping, (255, 255, 0), (50, 50), 50)
-        else:
-            pg.draw.circle(ping, (0, 255, 255), (50, 50), 50)
+        if self.in_range != -1:
             capsule = self.sprites['capsule']
             nutrients = self.sprites['nutrients']
             pad = nutrients.get_height()/2
             radius = (nutrients.get_height()/2 + capsule.get_height()/2)/2
+            right_margin = 20
             x, y = WIDTH/2 + nutrients.get_width(), HEIGHT/2
-            screen.blit(capsule, (x - capsule.get_height()/2, y - capsule.get_height()/2))
-            pg.draw.circle(screen, (10, 10, 10), (x, y), radius)
-            screen.blit(nutrients, (x-pad, y-pad))
+            screen.blit(capsule, (x - capsule.get_height()/2 + right_margin, y - capsule.get_height()/2))
+            pg.draw.circle(screen, (10, 10, 10), (x + right_margin, y), radius)
+            screen.blit(nutrients, (x-pad + right_margin, y-pad))
 
         screen.blit(ping, (WIDTH/2-50, HEIGHT/2-50))
 
