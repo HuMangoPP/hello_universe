@@ -50,7 +50,7 @@ class AIController:
         for i in range(len(entities.pos)):
             if i != index:
                 dist = self.dist_between(entities.pos[i], entities.pos[index])
-                awareness = entities.interact_calculation(index, ['itl'], i, ['stl'], [100])
+                awareness = entities.interact_calculation(index, 'awareness', i, 'stealth')
                 aggression = entities.behaviours[index].aggression[i]
                 # determine the input to send
                 # TODO: sort input based on priority (aggression score) to see which one should be sent
@@ -85,7 +85,7 @@ class AIController:
 
                     if 'ability_cd' not in entities.status_effects[i]['effects']:
                         dist = self.dist_between(entities.pos[i], entities.pos[j])
-                        awareness = entities.interact_calculation(i, ['itl'], j, ['stl'], [100])
+                        awareness = entities.interact_calculation(i, 'awareness', j, 'stealth')
                         aggression = entities.behaviours[i].aggression[j]
 
                         if aggression>0:
@@ -117,7 +117,7 @@ class AIController:
                     evo_system.rec_quest(i, upg_quests[0])
 
     def corpse_interact(self, entities, corpses, index, target, dist):
-        if entities.energy[index]<entities.stat_calculation(index, ['def'], [100])/2:
+        if entities.energy[index]<entities.stat_calculation(index, preset='energy')/2:
             if dist<=100:
                 entities.consume(index, target, corpses)
                 return True

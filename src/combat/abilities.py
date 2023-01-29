@@ -6,8 +6,6 @@ MAX_NUM_ABILITIES = 5
 BASIC_ABILITIES = [
     'advance', # basic charging move // body slam
     'intimidate', # basic intimidation move
-    'hit',
-    'swim',
 ]
 
 SPECIAL_ABILITIES = [

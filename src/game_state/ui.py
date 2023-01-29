@@ -9,6 +9,7 @@ class UserInterface:
     def __init__(self, player, font, ui_sprites):
         self.font = font
         self.player = player
+        self.colorkey_all(ui_sprites)
         self.stat_icons = list(ui_sprites['stat_icons'].values())
         self.ability_icons = ui_sprites['ability_icons']
         self.trait_icons = ui_sprites['trait_icons']
@@ -19,11 +20,16 @@ class UserInterface:
             'display': False,
             'ui': Quest_UI([])
         }
-
-        self.interaction_ui = {
-            'display': False,
-            'ui': Interaction_UI()
-        }
+        self.interaction_ui = Interaction_UI({
+            'bone': ui_sprites['hud_frames']['bone'],
+            'capsule': ui_sprites['hud_frames']['capsule'],
+            'nutrients': ui_sprites['hud_frames']['nutrients'],
+        })
+    
+    def colorkey_all(self, ui_sprites):
+        for sprite_type in ui_sprites:
+            for sprite in ui_sprites[sprite_type]:
+                ui_sprites[sprite_type][sprite].set_colorkey((0, 0, 0))
     
     ############################# 
     # hud and mouse             #
@@ -67,8 +73,7 @@ class UserInterface:
             self.quest_ui['ui'].display(screen, self.font)
         
         # interactions
-        if self.interaction_ui['display']:
-            self.interaction_ui['ui'].display(screen, self.font)
+        self.interaction_ui.display(screen, self.font)
 
     def input(self, pg_events, entities, corpses, evo_system):
         if self.quest_ui['display']:
@@ -77,11 +82,10 @@ class UserInterface:
                 evo_system.rec_quest(self.player, quest)
                 self.toggle_quests_menu()
         
-        if self.interaction_ui['display']:
-            self.interaction_ui['ui'].detection(entities.pos[self.player], corpses)
-            interact = self.interaction_ui['ui'].input(pg_events)
-            if interact['type'] == 'consume':
-                entities.consume(self.player, interact['index'], corpses)
+        self.interaction_ui.detection(entities.pos[self.player], corpses)
+        interact = self.interaction_ui.input(pg_events)
+        if interact['type'] == 'consume':
+            entities.consume(self.player, interact['index'], corpses)
         
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
@@ -89,7 +93,6 @@ class UserInterface:
         health_bar.set_colorkey('black')
         health_ratio = 1-entities.health[self.player]/entities.stats[self.player]['hp']
         hp_frame = self.hud_frames['hp_frame']
-        hp_frame.set_colorkey('black')
         pg.draw.circle(health_bar, GAUGE_UI['colours'][0], 
                         (GAUGE_UI['radius'], GAUGE_UI['radius']), 
                         GAUGE_UI['radius'])
@@ -102,10 +105,9 @@ class UserInterface:
         # energy bar, similar in style to the health
         energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         energy_bar.set_colorkey('black')
-        total_energy_calculation = entities.stat_calculation(self.player, ['def', 'pwr'], [100])
+        total_energy_calculation = entities.stat_calculation(self.player, preset='energy')
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
         energy_frame = self.hud_frames['energy_frame']
-        energy_frame.set_colorkey('black')
         pg.draw.circle(energy_bar, GAUGE_UI['colours'][1],
                         (GAUGE_UI['radius'], GAUGE_UI['radius']),
                         GAUGE_UI['radius'])
@@ -127,7 +129,6 @@ class UserInterface:
             entities.stats[self.player]['stl'],
         ]
         stats_frame = self.hud_frames['stats_frame']
-        stats_frame.set_colorkey('black')
         left_edge_pad = self.hud_frames['hp_frame'].get_width()
         bar_edge_pad = left_edge_pad+STAT_BAR_UI['bar_pad']
         for i in range(len(stats)):
@@ -164,7 +165,6 @@ class UserInterface:
 
     def display_traits_and_abilities(self, screen, entities):
         frame = self.hud_frames['ability_and_trait_frame']
-        frame.set_colorkey('black')
         right_pad = self.hud_frames['energy_frame'].get_width()
         left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
         screen.blit(frame, (left_edge_pad, 
@@ -199,7 +199,7 @@ class UserInterface:
         if 'aoe' in ALL_ABILITIES[ability_key]['type']:
             # aoe range
             # the radius will be calculated using entity stats
-            radius = entities.stat_calculation(self.player, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS])
+            radius = entities.stat_calculation(self.player, preset='intimidation')
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
     
     def display_statuses(self, screen, entities):
@@ -241,15 +241,6 @@ class UserInterface:
         circle.set_colorkey((0, 0, 0))
         circle.set_alpha(100)
         screen.blit(circle, (WIDTH/2-50, HEIGHT/2-50))
-
-    ############################# 
-    # interactions menus        #
-    ############################# 
-    def toggle_interactions_menu(self):
-        self.interaction_ui = {
-            'display': not self.interaction_ui['display'],
-            'ui': self.interaction_ui['ui']
-        }
     
 ############################# 
 # questing menus class      #
@@ -350,9 +341,12 @@ class Quest_UI:
 #############################
 
 class Interaction_UI:
-    def __init__(self):
+    def __init__(self, sprites):
         self.in_range = -1
-    
+        self.sprites = sprites
+        self.sprites['capsule'] = pg.transform.scale(self.sprites['capsule'], (144, 48))
+        self.sprites['capsule'].set_alpha(100)
+
     def display(self, screen, font):
         ping = pg.Surface((100, 100))
         ping.set_colorkey((0, 0, 0))
@@ -362,6 +356,14 @@ class Interaction_UI:
             pg.draw.circle(ping, (255, 255, 0), (50, 50), 50)
         else:
             pg.draw.circle(ping, (0, 255, 255), (50, 50), 50)
+            capsule = self.sprites['capsule']
+            nutrients = self.sprites['nutrients']
+            pad = nutrients.get_height()/2
+            radius = (nutrients.get_height()/2 + capsule.get_height()/2)/2
+            x, y = WIDTH/2 + nutrients.get_width(), HEIGHT/2
+            screen.blit(capsule, (x - capsule.get_height()/2, y - capsule.get_height()/2))
+            pg.draw.circle(screen, (10, 10, 10), (x, y), radius)
+            screen.blit(nutrients, (x-pad, y-pad))
 
         screen.blit(ping, (WIDTH/2-50, HEIGHT/2-50))
 
@@ -375,7 +377,7 @@ class Interaction_UI:
     def input(self, pg_event):
         for event in pg_event:
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_j:
+                if event.key == pg.K_f:
                     if self.in_range!=-1:
                         return {
                             'type': 'consume',

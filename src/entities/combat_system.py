@@ -72,7 +72,7 @@ class CombatSystem:
 
         if 'aoe' in ALL_ABILITIES[queued_ability]['type']:
             self.aoe_collide(index, 
-                            self.entities.stat_calculation(index, ['itl', 'pwr', 'mbl'], [BASE_AOE_RADIUS]),
+                            self.entities.stat_calculation(index, preset='intimidation'),
                             ALL_ABILITIES[queued_ability])
         
         toggled = []

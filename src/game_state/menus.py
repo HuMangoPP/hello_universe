@@ -126,8 +126,6 @@ def game_menu(screen, game_data):
                 #     ui.toggle_quests_menu()
                 #     ui.update_quests(WorldEvent(entities.get_entity_data(player)))
                 #     ui.input(events, entities, corpses)
-                if event.key == pg.K_f:
-                    ui.toggle_interactions_menu()
                 if event.key == pg.K_DELETE:
                     entities.health[player] = -100
                     

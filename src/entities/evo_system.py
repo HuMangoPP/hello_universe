@@ -76,7 +76,7 @@ class EvoSystem:
             if self.entities.stats[i][increase]>self.entities.traits[i].max_stats[increase]*STAT_GAP:
                 self.entities.stats[i][increase] = self.entities.traits[i].max_stats[increase]*STAT_GAP
             
-            self.entities.spd[i] = self.entities.detailed_calculation(i, ['mbl'], [5], [lambda calc : log(calc**2)])
+            self.entities.spd[i] = self.entities.detailed_calculation(i, 'movement', [lambda calc : log(calc**2)])
 
     def behaviour_shift(self):
         for behaviour in self.entities.behaviours:

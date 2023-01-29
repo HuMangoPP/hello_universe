@@ -5,7 +5,7 @@ class Camera():
     def __init__(self, x, y, z):
         self.pos = np.array([x, y, z])
 
-        self.transform = np.array([[1, 0.5, 0], [-1, 0.5, 0], [0, -1, 1]]).transpose()
+        self.transform = np.array([[1, 0, 0], [0, 1, 0], [0, -1, 1]]).transpose()
         self.inverse = np.linalg.inv(self.transform)
         self.collapse_z = np.array([[1, 0], [0, 1], [0, 0]]).transpose()
 
