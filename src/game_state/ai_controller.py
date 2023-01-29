@@ -23,9 +23,6 @@ class AIController:
                     x_i, y_i = x, y
 
                 # submit input to the updater
-                x, y = self.check_intimidated(entities, i)
-                if x or y:
-                    x_i, y_i = x, y
                 if x_i==0 and y_i==0:
                     x_i, y_i = self.idle_movement()
                 entities.parse_input({
@@ -50,7 +47,7 @@ class AIController:
         for i in range(len(entities.pos)):
             if i != index:
                 dist = self.dist_between(entities.pos[i], entities.pos[index])
-                awareness = entities.interact_calculation(index, ['itl'], i, ['stl'], [100])
+                awareness = entities.interact_calculation(index, 'awareness', i, 'stealth')
                 aggression = entities.behaviours[index].aggression[i]
                 # determine the input to send
                 # TODO: sort input based on priority (aggression score) to see which one should be sent
@@ -61,15 +58,6 @@ class AIController:
                 elif aggression<0 and dist<=awareness*abs(aggression):
                     angles = self.angles_between(entities.pos[index], entities.pos[i])
                     return cos(angles['z']+pi), sin(angles['z']+pi)
-        return 0, 0
-    
-    def check_intimidated(self, entities, index):
-        status_effects = entities.status_effects[index]
-        for i in range(len(status_effects['effects'])):
-            if status_effects['effects'][i] == 'intimidated':
-                angles = self.angles_between(entities.pos[index], entities.pos[status_effects['source'][i]])
-                return cos(angles['z']+pi), sin(angles['z']+pi)
-        
         return 0, 0
 
     def idle_movement(self):
@@ -85,7 +73,7 @@ class AIController:
 
                     if 'ability_cd' not in entities.status_effects[i]['effects']:
                         dist = self.dist_between(entities.pos[i], entities.pos[j])
-                        awareness = entities.interact_calculation(i, ['itl'], j, ['stl'], [100])
+                        awareness = entities.interact_calculation(i, 'awareness', j, 'stealth')
                         aggression = entities.behaviours[i].aggression[j]
 
                         if aggression>0:
@@ -105,7 +93,7 @@ class AIController:
         for i in range(len(entities.stats)):
             if i != self.non_controllable:
 
-                quests = WorldEvent(entity_data = entities.get_entity_data(i)).quests
+                quests = WorldEvent(entities, i).quests
                 abl_tr_quests = list(filter(lambda quest : quest['type'] in ['ability', 'trait'], quests))
                 alloc_quests = list(filter(lambda quest : quest['type'] == 'alloc', quests))
                 upg_quests = list(filter(lambda quest : quest['type'] == 'upgrade', quests))
@@ -117,7 +105,7 @@ class AIController:
                     evo_system.rec_quest(i, upg_quests[0])
 
     def corpse_interact(self, entities, corpses, index, target, dist):
-        if entities.energy[index]<entities.stat_calculation(index, ['def'], [100])/2:
+        if entities.energy[index]<entities.stat_calculation(index, preset='energy')/2:
             if dist<=100:
                 entities.consume(index, target, corpses)
                 return True

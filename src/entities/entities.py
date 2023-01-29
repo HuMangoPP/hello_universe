@@ -1,9 +1,9 @@
 import pygame as pg
 from random import choice, randint
 from math import atan2, cos, sin, sqrt, pi
-from src.combat.abilities import BASIC_ABILITIES, ALL_ABILITIES, ActiveAbility, BASE_AOE_RADIUS
-from src.combat.status_effects import BASE_CD
-from src.util.settings import HEIGHT, WIDTH, STAT_GAP
+from src.combat.abilities import BASIC_ABILITIES, BASE_AOE_RADIUS
+from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
+from src.util.settings import WIDTH
 from src.util.physics import new_vel
 from src.models.creature import Creature
 from src.models.traits import Traits
@@ -49,7 +49,7 @@ class Entities:
         # game data
         self.stats.append(stats)
         self.health.append(stats['hp'])
-        self.energy.append(self.stat_calculation(len(self.energy), ['def', 'pwr'], [100])) # energy calculation
+        self.energy.append(self.stat_calculation(len(self.energy), preset='energy')) # energy calculation
         
         self.abilities.append(BASIC_ABILITIES)
         self.status_effects.append({
@@ -87,6 +87,8 @@ class Entities:
             dy = self.pos[i][1]-camera.pos[1]
             if sqrt(dx**2+dy**2)<=WIDTH/2:
                 self.creature[i].render(screen, camera)
+            # if self.hurt_box[i]:
+            #     self.hurt_box[i].render(screen, camera)
 
     def update(self, camera, dt):
         self.spend_energy(dt)
@@ -99,9 +101,20 @@ class Entities:
         y_i = mv_input['y']
         if 'ability_lock' in self.status_effects[index]['effects']:
             x_i, y_i = 0, 0
+        
+        # entity is stunned cannot move
+        if 'stunned' in self.status_effects[index]['effects']:
+            x_i, y_i = 0, 0
 
         # entity movement
         x_dir, y_dir = camera.screen_to_world(x_i, y_i)
+
+        for j in range(len(self.status_effects[index]['effects'])):
+            if self.status_effects[index]['effects'][j] == 'intimidated':
+                source = self.status_effects[index]['source'][j]
+                angle = atan2(self.pos[source][1]-self.pos[index][1],
+                              self.pos[source][0]-self.pos[index][0])
+                x_dir, y_dir = cos(angle+pi), sin(angle+pi)
 
         self.vel[index][0] = new_vel(self.acc[index], self.vel[index][0], x_dir, dt)
         self.vel[index][1] = new_vel(self.acc[index], self.vel[index][1], y_dir, dt)
@@ -112,6 +125,13 @@ class Entities:
                 angle = atan2(y_dir, x_dir)
                 self.vel[index][0] = self.spd[index]*cos(angle)
                 self.vel[index][1] = self.spd[index]*sin(angle)
+
+        for impair in MOVEMENT_IMPAIR_EFFECTS:
+            if impair in self.status_effects[index]['effects']:
+                self.vel[index][0] *= 0.8
+                self.vel[index][1] *= 0.8
+                # cumulative 20% reduction to movement speed if
+                # entity is bleeding, poisoned, or weakened
    
     def move(self, camera, dt):
         for i in range(len(self.pos)):
@@ -141,7 +161,7 @@ class Entities:
                 ...
             else:
                 self.energy[i]-=energy_spent*dt
-            total_energy = self.stat_calculation(i, ['def', 'pwr'], [100])
+            total_energy = self.stat_calculation(i, preset='energy')
             if self.energy[i]>total_energy:
                 self.energy[i] = total_energy
 
@@ -162,6 +182,9 @@ class Entities:
             corpse_data = {
                 'pos': pos,
                 'nutrients': 100,
+                'materials': {
+                    'bone': 10,
+                },
                 'creature': self.creature[i]
             }
             corpses.add_new_corpse(corpse_data)
@@ -189,24 +212,70 @@ class Entities:
     def scavenge(self, index, target_index, corpses):
         ...
 
-    def stat_calculation(self, index, stats_to_calc, constants):
+    def stat_calculation(self, index, preset):
         calc = 0
+        
+        # presets
+        stats_to_calc = []
+        constants = []
+        if preset == 'energy':
+            stats_to_calc = ['def', 'pwr']
+            constants = [100]
+        elif preset == 'intimidation':
+            stats_to_calc = ['itl', 'pwr', 'mbl']
+            constants = [BASE_AOE_RADIUS]
+        elif preset == 'awareness':
+            stats_to_calc = ['itl', 'stl']
+            constants = [100]
+        elif preset == 'stealth':
+            stats_to_calc = ['itl', 'stl']
+            constants = []
+        elif preset == 'damage':
+            stats_to_calc = ['pwr', 'def', 'mbl']
+            constants = []
+        elif preset == 'evasion':
+            stats_to_calc = ['mbl', 'stl']
+            constants = []
+        elif preset == 'damage_mitigate':
+            stats_to_calc = ['def', 'mbl']
+            constants = []
+        elif preset == 'movement':
+            stats_to_calc = ['mbl']
+            constants = [5]
+
         for stat_to_calc in stats_to_calc:
             calc+=self.stats[index][stat_to_calc]
         for constant in constants:
             calc+=constant
         return calc
 
-    def interact_calculation(self, index, index_stats, target, target_stats, constants):
+    def max_calc(self, index, preset):
         calc = 0
-        calc += self.stat_calculation(index, index_stats, constants)
-        calc -= self.stat_calculation(target, target_stats, [])
+
+        # presets
+        stats_to_calc = []
+        constants = []
+        if preset == 'max_body_parts':
+            stats_to_calc = ['def', 'mbl']
+            constants = []
+        
+        for stat_to_calc in stats_to_calc:
+            calc+=self.stats[index]['max'][stat_to_calc]
+        for constant in constants:
+            calc+=constant
+        
+        return calc
+    
+    def interact_calculation(self, index, index_preset, target, target_preset):
+        calc = 0
+        calc += self.stat_calculation(index, preset=index_preset)
+        calc -= self.stat_calculation(target, preset=target_preset)
         return calc
 
     # TODO: figure out how to format this to take into account other calculations like
     # maybe size/num_parts/etc
-    def detailed_calculation(self, index, stats_to_calc, constants, fns):
-        calc = self.stat_calculation(index, stats_to_calc, constants)
+    def detailed_calculation(self, index, preset, fns):
+        calc = self.stat_calculation(index, preset)
         for fn in fns:
             calc = fn(calc)
         

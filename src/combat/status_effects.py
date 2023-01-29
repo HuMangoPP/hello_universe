@@ -11,4 +11,12 @@ STATUS_EFFECTS = [
     'strike',
 ]
 
+MOVEMENT_IMPAIR_EFFECTS = [
+    'bleeding', 'poisoned', 'weakened',
+]
+
+DOT_EFFECTS = [
+    'poisoned', 'bleeding',
+]
+
 BASE_CD = 1000

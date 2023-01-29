@@ -76,11 +76,17 @@ class EvoSystem:
             if self.entities.stats[i][increase]>self.entities.traits[i].max_stats[increase]*STAT_GAP:
                 self.entities.stats[i][increase] = self.entities.traits[i].max_stats[increase]*STAT_GAP
             
-            self.entities.spd[i] = self.entities.detailed_calculation(i, ['mbl'], [5], [lambda calc : log(calc**2)])
+            self.entities.spd[i] = self.entities.detailed_calculation(i, 'movement', [lambda calc : log(calc**2)])
 
     def behaviour_shift(self):
         for behaviour in self.entities.behaviours:
             behaviour.shift()
+
+    def change_physiology(self, type, index):
+        if type == 'body':
+            self.entities.creature[index].change_physiology(1, 0)
+        else:
+            self.entities.creature[index].change_physiology(0, 1)
 
     def regen(self):
         for i in range(len(self.entities.health)):
@@ -106,6 +112,9 @@ class EvoSystem:
                     print(f'gained {reward}')
                 case 'ability':
                     self.give_abilities(index, reward)
+                    print(f'gained {reward}')
+                case 'physiology':
+                    self.change_physiology(reward, index)
                     print(f'gained {reward}')
     
     # def inter_species_reproduce(self, i, j):

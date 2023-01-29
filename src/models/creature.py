@@ -36,8 +36,10 @@ class Creature:
 
         if self.legs.num_pair_legs==self.num_parts:
             ratio_body_to_legs = 1
+            print('same number of legs as body parts')
+            
         self.legs.attached_segments = []
-        if ratio_body_to_legs>=1:
+        if ratio_body_to_legs>1:
             for i in range(len(self.skeleton)):
                 if i%ratio_body_to_legs==0 and i!=0:
                     self.legs.attached_segments.append(i)

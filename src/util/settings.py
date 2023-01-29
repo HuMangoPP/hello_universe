@@ -19,7 +19,7 @@ BASE_MAX_STATS = {
     'itl': 1,
     'pwr': 1,
     'def': 1,
-    'mbl': 10,
+    'mbl': 1,
     'hp': 1,
     'stl': 1,
 }
@@ -43,7 +43,7 @@ BASE_STATS = {
     # dodging attacks, running away from other entities to avoid
     # combat, etc
     # stamina and mobility outside of combat
-    'mbl': 50,
+    'mbl': 5,
     # stealth has to do with evasiveness during and outside 
     # of combat
     # dodging attacks/fleeing from combat
@@ -189,6 +189,7 @@ QUEST_CARD_UI = {
         'ability': (0, 255, 0),
         'trait': (0, 0, 255),
         'upgrade': (255, 0, 255),
+        'physiology': (0, 255, 255),
     },
     's_ratio': 2,
     'a_ratio': 2,
