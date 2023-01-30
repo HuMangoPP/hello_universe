@@ -40,11 +40,12 @@ class Entities:
         self.vel.append([0, 0, 0])          # [x, y, z]
         self.spd.append(entity_data['spd'])
         self.acc.append(entity_data['acc'])
-        self.creature.append(Creature(entity_data['body_parts'], 
-                                      entity_data['pos'], 
-                                      entity_data['size'], 
-                                      entity_data['num_legs'],
-                                      entity_data['leg_length']))
+        self.creature.append(Creature(num_parts=entity_data['body_parts'], 
+                                      pos=entity_data['pos'], 
+                                      size=entity_data['size'], 
+                                      max_size=entity_data['max_size'],
+                                      num_pair_legs=entity_data['num_legs'],
+                                      leg_length=entity_data['leg_length']))
 
         # game data
         self.stats.append(stats)
@@ -255,7 +256,7 @@ class Entities:
         # presets
         stats_to_calc = []
         constants = []
-        if preset == 'max_body_parts':
+        if preset == 'potential_growth_size':
             stats_to_calc = ['def', 'mbl']
             constants = []
         

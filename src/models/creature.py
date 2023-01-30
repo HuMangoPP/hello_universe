@@ -5,14 +5,18 @@ from src.util.physics import collide
 from src.util.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
 
 class Creature:
-    def __init__(self, num_parts, pos, size, num_pair_legs, leg_length):
+    def __init__(self, num_parts, pos, size, max_size, num_pair_legs, leg_length):
         self.num_parts = num_parts
         self.head = pos
         self.z_pos = pos[2]
         self.skeleton = []
         self.size = size
+        self.max_size = max_size
         self.build_skeleton(pos)
-        self.legs = Legs(num_pair_legs, leg_length, [], [])
+        self.legs = Legs(num_pair_legs=num_pair_legs, 
+                        leg_length=leg_length, 
+                        arm_attachments=[], 
+                        wing_attachments=[])
         self.give_legs()
     
     def build_skeleton(self, pos, a=0):
@@ -54,13 +58,18 @@ class Creature:
                     if self.legs.num_legs()==self.legs.num_pair_legs:
                         break
         self.upright()
-        
-    def change_physiology(self, parts, legs):
-        self.num_parts+=parts
+
+    def improve_body(self, new_size):
+        self.size = new_size
+        if self.size > self.max_size:
+            self.size = self.max_size / (self.num_parts + 1)
+
+        self.num_parts+=1
         new_pos = [self.head[0], self.head[1], self.z_pos]
         self.build_skeleton(new_pos)
 
-        self.legs.num_pair_legs+=legs
+    def improve_legs(self):
+        self.legs.num_pair_legs+=1
         self.give_legs()
 
     def render(self, screen, camera):

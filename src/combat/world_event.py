@@ -143,8 +143,8 @@ class WorldEvent:
         
         # new body part quests
         # body part
-        max_body_parts = entities.max_calc(index, preset='max_body_parts')
-        if entity_data['creature'].num_parts < max_body_parts:
+        potential_growth_size = entities.max_calc(index, preset='potential_growth_size')
+        if entity_data['creature'].size < potential_growth_size:
             all_quests.append({
                 'type': 'physiology',
                 'reward': 'body',

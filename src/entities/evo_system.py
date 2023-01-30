@@ -32,6 +32,7 @@ class EvoSystem:
                 'acc': self.entities.acc[i],
                 'body_parts': int(self.entities.creature[i].num_parts),
                 'size': int(self.entities.creature[i].size),
+                'max_size': int(self.entities.creature[i].size),
                 'num_legs': int(self.entities.creature[i].legs.num_pair_legs),
                 'leg_length': int(self.entities.creature[i].legs.leg_length),
                 'aggression': self.entities.behaviours[i].aggression.copy(),
@@ -84,9 +85,9 @@ class EvoSystem:
 
     def change_physiology(self, type, index):
         if type == 'body':
-            self.entities.creature[index].change_physiology(1, 0)
+            self.entities.creature[index].improve_body(10)
         else:
-            self.entities.creature[index].change_physiology(0, 1)
+            self.entities.creature[index].improve_legs()
 
     def regen(self):
         for i in range(len(self.entities.health)):
