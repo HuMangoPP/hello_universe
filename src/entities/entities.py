@@ -30,7 +30,8 @@ class Entities:
         self.status_effects = []   
         self.traits = []        
         self.hurt_box = []      
-        self.quests = []           
+        self.quests = []  
+        self.new_trait = []         
 
         self.behaviours = []    
     
@@ -61,14 +62,8 @@ class Entities:
         })
         self.traits.append(Traits([], stats['min'], stats['max']))
         self.hurt_box.append(None)
-        self.quests.append({
-            'active': False,
-            'type': '',
-            'reward': '',
-            'goal_type': '',
-            'goal': 0,
-            'progress': 0,
-        })
+        self.quests.append({})
+        self.new_trait.append({})
 
         self.behaviours.append(Behaviour({
             'aggression': entity_data['aggression'],
@@ -267,6 +262,12 @@ class Entities:
         
         return calc
     
+    def health_and_energy_ratios(self, index):
+        energy_ratio = self.energy[index]/self.stat_calculation(index, 'energy') * 100
+        health_ratio = self.health[index]/self.stats[index]['hp'] * 100
+        
+        return [health_ratio, energy_ratio]
+
     def interact_calculation(self, index, index_preset, target, target_preset):
         calc = 0
         calc += self.stat_calculation(index, preset=index_preset)
@@ -283,27 +284,18 @@ class Entities:
         print(calc)
         return calc
 
+    def get_entity_quest_data(self, index):
+        data = self.get_entity_data(index)
+        data['new_trait'] = self.new_trait[index]
+
+        return data
 
     def get_entity_data(self, index):
-        stats = [
-            self.stats[index]['itl'],
-            self.stats[index]['pwr'],
-            self.stats[index]['def'],
-            self.stats[index]['mbl'],
-            self.stats[index]['stl']
-        ]
 
-        max_stats = [
-            self.traits[index].max_stats['itl'],
-            self.traits[index].max_stats['pwr'],
-            self.traits[index].max_stats['def'],
-            self.traits[index].max_stats['mbl'],
-            self.traits[index].max_stats['stl'],
-        ]
         return {
             'creature': self.creature[index],
             'traits': self.traits[index],
-            'stats': stats,
+            'stats': self.stats[index],
             'abilities': self.abilities[index],
-            'max_stats': max_stats
+            'max_stats': self.traits[index].max_stats
         }

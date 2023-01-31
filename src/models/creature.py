@@ -59,8 +59,8 @@ class Creature:
                         break
         self.upright()
 
-    def improve_body(self, new_size):
-        self.size = new_size
+    def improve_body(self):
+        self.size+=1
         if self.size > self.max_size:
             self.size = self.max_size / (self.num_parts + 1)
 

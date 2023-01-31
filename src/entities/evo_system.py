@@ -56,8 +56,15 @@ class EvoSystem:
         self.entities.abilities[index].append(ability)
 
     def give_traits(self, index, trait):
-        self.entities.traits[index].give_traits(self.entities.creature[index], trait)
-
+        if self.entities.new_trait[index]:
+            self.entities.new_trait[index]['level']+=1
+        else:
+            self.entities.new_trait[index] = trait
+            self.entities.new_trait[index]['level'] = 1
+        
+        if self.entities.new_trait[index]['level'] == 3:
+            self.entities.traits[index].give_traits(self.entities.creature[index], trait['reward'])
+            self.entities.new_trait[index] = {}
     def allocate_stat(self, index, stat):
         self.entities.stats[index]['max'][stat]+=1
     
@@ -85,65 +92,31 @@ class EvoSystem:
 
     def change_physiology(self, type, index):
         if type == 'body':
-            self.entities.creature[index].improve_body(10)
+            self.entities.creature[index].improve_body()
         else:
             self.entities.creature[index].improve_legs()
 
     def regen(self):
         for i in range(len(self.entities.health)):
             self.entities.health[i] = self.entities.stats[i]['hp']
-    
+
     def rec_quest(self, index, quest):
-        if not self.entities.quests[index]['active']:
-            quest['progress'] = 0
-            quest['active'] = False
-            self.entities.quests[index] = quest
 
-            # for now, accepting a quest automatically completes it
-            reward = self.entities.quests[index]['reward']
-            match self.entities.quests[index]['type']:
-                case 'upgrade':
-                    self.entities.stats[index][reward]+=1
-                    print(f"upgraded {reward}")
-                case 'alloc':
-                    self.allocate_stat(index, reward)
-                    print(f"allocated {reward}")
-                case 'trait':
-                    self.give_traits(index, reward)
-                    print(f'gained {reward}')
-                case 'ability':
-                    self.give_abilities(index, reward)
-                    print(f'gained {reward}')
-                case 'physiology':
-                    self.change_physiology(reward, index)
-                    print(f'gained {reward}')
-    
-    # def inter_species_reproduce(self, i, j):
-    #     # inter-species reproduction allows for reproduction
-    #     # with another creature
-    #     # the new creature will get traits from both parents
-    #     # to perform inter-species reproduction, a world quest must be completed
-
-    #     i = 0
-    #     j = 0
-
-    #     entity_data = {
-    #         'pos': self.pos[i].copy(),
-    #         'spd': (self.spd[i]+self.spd[j])/2,
-    #         'acc': (self.acc[i]+self.acc[j])/2,
-    #         'body_parts': int((self.creature[i].num_parts+self.creature[j].num_parts)/2),
-    #         'size': (self.creature[i].size+self.creature[j].size)/2,
-    #         'num_legs': int((self.creature[i].legs.num_pair_legs+self.creature[j].legs.num_pair_legs)/2),
-    #         'leg_length': int((self.creature[i].legs.leg_length+self.creature[i].legs.leg_length)/2),
-    #     }
-    #     stats = {
-    #         'itl': (self.stats[i]['itl']+self.stats[i]['itl'])/2,
-    #         'pwr': (self.stats[i]['pwr']+self.stats[j]['pwr'])/2,
-    #         'def': (self.stats[i]['def']+self.stats[j]['def'])/2,
-    #         'hp': (self.stats[i]['hp']+self.stats[j]['hp'])/2,
-    #         'mbl': (self.stats[i]['mbl']+self.stats[j]['mbl'])/2,
-    #         'stl': (self.stats[i]['stl']+self.stats[j]['stl'])/2,
-    #         'min': 0,
-    #         'max': 0,
-    #     }
-    #     self.add_new_entity(entity_data, stats)
+        reward = quest['reward']
+        match quest['type']:
+            case 'upgrade':
+                self.entities.stats[index][reward]+=1
+                print(f"upgraded {reward}")
+            case 'alloc':
+                self.allocate_stat(index, reward)
+                print(f"allocated {reward}")
+            case 'trait':
+                self.give_traits(index, quest)
+                print(f'gained {reward}')
+            case 'ability':
+                self.give_abilities(index, reward)
+                print(f'gained {reward}')
+            case 'physiology':
+                self.change_physiology(reward, index)
+                print(f'gained {reward}')
+        self.entities.energy[index] -= 1

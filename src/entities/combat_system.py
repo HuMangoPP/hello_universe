@@ -116,7 +116,6 @@ class CombatSystem:
                 if source!=target and self.entities.creature[target].collide(self.entities.hurt_box[source].get_pos()):
                     # decrease hp
                     self.take_damage(target, 0)
-                    print(f'took damage from {source}')
                     # apply modifiers
                     for modifier in self.entities.hurt_box[source].modifiers:
                         self.apply_status(source, target, modifier, time)
@@ -134,6 +133,8 @@ class CombatSystem:
                     print(f'{i} took dot damage')
 
     def apply_status(self, source, target, effect, time):
+        if effect in self.entities.status_effects[target]['effects']:
+            return
         self.entities.status_effects[target]['effects'].append(effect)
         self.entities.status_effects[target]['cd'].append(BASE_CD)
         self.entities.status_effects[target]['time'].append(time)
