@@ -58,7 +58,10 @@ class Entities:
             'time': [],
             'source': [],
         })
-        self.traits.append(Traits(entity_data['traits'], stats['min'], stats['max']))
+        self.traits.append(Traits([], stats['min'], stats['max']))
+        for trait in entity_data['traits']:
+            index = len(self.traits)-1
+            self.traits[index].give_traits(self.creature[index], trait)
         self.hurt_box.append(None)
         self.quests.append({})
 

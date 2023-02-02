@@ -76,12 +76,12 @@ class Legs:
         index = self.attached_segments[i]
         x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
         angle = skeleton[index][3]
-        self.step_pos[2*i] = [x+self.leg_length/2*cos(3*pi/4+angle),
-                              y+self.leg_length/2*sin(3*pi/4+angle),
+        self.step_pos[2*i] = [x+self.leg_length/2*cos(5/6*pi+angle),
+                              y+self.leg_length/2*sin(5/6*pi+angle),
                               z]
-        self.step_pos[2*i+1] = [x+self.leg_length/2*cos(-3*pi/4+angle),
-                               y+self.leg_length/2*sin(-3*pi/4+angle),
-                               z]
+        self.step_pos[2*i+1] = [x+self.leg_length/2*cos(-5/6*pi+angle),
+                                y+self.leg_length/2*sin(-5/6*pi+angle),
+                                z]
         self.feet_pos[2*i] = self.step_pos[2*i]
         self.feet_pos[2*i+1] = self.step_pos[2*i+1]
 
@@ -90,12 +90,12 @@ class Legs:
         index = self.attached_segments[i]
         x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
         angle = skeleton[index][3]
-        self.step_pos[2*i] = [x+self.leg_length/4*cos(pi/4+angle),
-                              y+self.leg_length/4*sin(pi/4+angle),
-                              z-self.leg_length/sqrt(2)]
-        self.step_pos[2*i+1] = [x+self.leg_length/4*cos(-pi/4+angle),
-                                y+self.leg_length/4*sin(-pi/4+angle),
-                                z-self.leg_length/sqrt(2)]
+        self.step_pos[2*i] = [x+self.leg_length/4*cos(pi/6+angle),
+                              y+self.leg_length/4*sin(pi/6+angle),
+                              z-self.leg_length/4]
+        self.step_pos[2*i+1] = [x+self.leg_length/4*cos(-pi/6+angle),
+                                y+self.leg_length/4*sin(-pi/6+angle),
+                                z-self.leg_length/6]
 
         # then move it there depending on other factors
         self.feet_pos[2*i] = self.step_pos[2*i]
@@ -210,6 +210,7 @@ class Legs:
             
             self.feet_pos[2*index] = pos_0
             self.feet_pos[2*index+1] = pos_1
+    
     ############################# 
     # evolution systems         #
     ############################# 

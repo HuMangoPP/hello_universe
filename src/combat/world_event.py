@@ -125,6 +125,7 @@ class WorldEvent:
             # if the entity is not currently trying to get a 
             # new trait, give them a random one they can accept
             possible_trait_quests = list(filter(lambda x : x not in traits, TRAIT_QUESTS.keys()))
+            
             trait = choice(possible_trait_quests)
             all_quests.append({
                 'type': 'trait',
@@ -132,8 +133,8 @@ class WorldEvent:
                 'stats_req': TRAIT_QUESTS[trait]['stats_req']
             })
 
-            # alternatively, they can choose to upgrade any stat/allocate
-            # # stat upgrade / allocation quests
+        # alternatively, they can choose to upgrade any stat/allocate
+        # # stat upgrade / allocation quests
         
         for quest in possible_stat_quests:
             if stats[quest]==max_stats[quest]*STAT_GAP:
