@@ -9,6 +9,7 @@ STATUS_EFFECTS = [
     'in_air',
     'underwater'
     'strike',
+    'grapple'
 ]
 
 MOVEMENT_IMPAIR_EFFECTS = [

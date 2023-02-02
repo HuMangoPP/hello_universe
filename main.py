@@ -51,7 +51,7 @@ def main():
         'aggression': [],
         'herd': [],
         'abilities': BASIC_ABILITIES,
-        'traits': ['wings']
+        'traits': ['arms']
     }, BASE_STATS)
     corpses = Corpses()
     evo_system = EvoSystem(entities)
