@@ -1,7 +1,6 @@
 import pygame as pg
-from random import choice, randint
 from math import atan2, cos, sin, sqrt, pi
-from src.combat.abilities import BASIC_ABILITIES, BASE_AOE_RADIUS
+from src.combat.abilities import BASE_AOE_RADIUS
 from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
 from src.util.settings import WIDTH
 from src.util.physics import new_vel
@@ -52,14 +51,14 @@ class Entities:
         self.health.append(stats['hp'])
         self.energy.append(self.stat_calculation(len(self.energy), preset='energy')) # energy calculation
         
-        self.abilities.append(BASIC_ABILITIES)
+        self.abilities.append(entity_data['abilities'])
         self.status_effects.append({
             'effects': [],
             'cd': [],
             'time': [],
             'source': [],
         })
-        self.traits.append(Traits([], stats['min'], stats['max']))
+        self.traits.append(Traits(entity_data['traits'], stats['min'], stats['max']))
         self.hurt_box.append(None)
         self.quests.append({})
 
@@ -279,7 +278,6 @@ class Entities:
         for fn in fns:
             calc = fn(calc)
         
-        print(calc)
         return calc
 
     def get_entity_quest_data(self, index):

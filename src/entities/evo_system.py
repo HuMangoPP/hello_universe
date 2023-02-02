@@ -25,6 +25,7 @@ class EvoSystem:
         # has the possibility of generating new mutations and traits
 
         next_gen = self.calculate_performance()
+
         for i in next_gen:
             entity_data = {
                 'pos': self.entities.pos[i].copy(),
@@ -37,6 +38,8 @@ class EvoSystem:
                 'leg_length': int(self.entities.creature[i].legs.leg_length),
                 'aggression': self.entities.behaviours[i].aggression.copy(),
                 'herd': self.entities.behaviours[i].herding.copy(),
+                'abilities': self.entities.abilities[i].copy(),
+                'traits': self.entities.traits[i].traits.copy()
             }
 
             stats = {
@@ -53,7 +56,6 @@ class EvoSystem:
             self.entities.add_new_entity(entity_data, stats)
 
     def give_abilities(self, index, ability):
-        print(f'given ability {ability}')
         self.entities.abilities[index].append(ability)
 
     def give_traits(self, index, trait):
