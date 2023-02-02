@@ -1,3 +1,4 @@
+from random import choice
 from src.util.settings import STAT_GAP
 
 EVENT_REQ = [
@@ -17,31 +18,31 @@ MISC_REQS = {
 TRAIT_QUESTS = {
     'wings': {
         'misc_req': ['free_legs'],
-        'stat_req': [0, 0, 0, 8, 0],
+        'stats_req': {'mbl': 2},
     },
     'arms': {
         'misc_req': ['free_legs'],
-        'stat_req': [6, 0, 0, 2, 0]
+        'stats_req': {'itl': 2, 'mbl': 1}
     },
-    'leg_weapon': {
+    'claws': {
         'misc_req': ['no_dupe_trait', 'legs'],
-        'stat_req': [0, 2, 0, 2, 0]
+        'stats_req': {'pwr': 1, 'mbl': 1}
     },
-    'head_weapon': {
+    'horn': {
         'misc_req': ['no_dupe_trait'],
-        'stat_req': [0, 4, 0, 2, 0]
+        'stats_req': {'pwr': 1, 'def': 1}
     },
-    'body_armour': {
+    'body': {
         'misc_req': ['no_dupe_trait'],
-        'stat_req': [0, 0, 2, 0, 0]
+        'stats_req': {'def': 1, 'stl': 1}
     },
-    'teeth': {
+    'fangs': {
         'misc_req': ['no_dupe_trait'],
-        'stat_req': [0, 2, 0, 0, 0],
+        'stats_req': {'pwr': 2}
     },
     'gills': {
         'misc_req': ['no_dupe_trait'],
-        'stat_req': [1, 0, 0, 4, 0],
+        'stats_req': {'def': 1, 'mbl': 2}
     }
 }
 
@@ -95,29 +96,73 @@ class WorldEvent:
         self.quests = self.generate_quest(entities, index)
     
     def generate_quest(self, entities, index):
-        entity_data = entities.get_entity_data(index)
+        entity_data = entities.get_entity_quest_data(index)
         all_quests = []
         stats = entity_data['stats']
         max_stats = entity_data['max_stats']
+        new_trait = entity_data['traits'].new_trait
+        traits = entity_data['traits'].traits
         
-        # obtain trait quests
-        for quest in TRAIT_QUESTS.keys():
-            misc_req = TRAIT_QUESTS[quest]['misc_req']
-            stat_req = TRAIT_QUESTS[quest]['stat_req']
-            meets_misc_req = True
-            meets_stat_req = True
-            entity_data['trait'] = quest
-            for req in misc_req:
-                meets_misc_req = meets_misc_req and MISC_REQS[req](entity_data)
-            for i in range(len(stat_req)):
-                meets_stat_req = meets_stat_req and stats[i]>=stat_req[i]*STAT_GAP
-            if meets_misc_req and meets_stat_req:
+
+        possible_stat_quests = STAT_QUESTS
+        if new_trait:
+            # get which stats should be upgradeable
+            stats_req = new_trait['stats_req']
+            possible_stat_quests = list(filter(lambda x : x in stats_req.keys(), STAT_QUESTS))
+            # also check if the trait can move onto the next level
+
+            trait_level = new_trait['level']
+            meets_level_up = True
+            for req in stats_req:
+                if stats_req[req] * trait_level > max_stats[req]:
+                    meets_level_up = False
+                    break
+            
+            if meets_level_up:
+                all_quests.append(new_trait)
+                possible_stat_quests = []
+        else:
+            # if the entity is not currently trying to get a 
+            # new trait, give them a random one they can accept
+            possible_trait_quests = list(filter(lambda x : x not in traits, TRAIT_QUESTS.keys()))
+            
+            trait = choice(possible_trait_quests)
+            all_quests.append({
+                'type': 'trait',
+                'reward': trait,
+                'stats_req': TRAIT_QUESTS[trait]['stats_req']
+            })
+
+        # alternatively, they can choose to upgrade any stat/allocate
+        # # stat upgrade / allocation quests
+        
+        for quest in possible_stat_quests:
+            if stats[quest]==max_stats[quest]*STAT_GAP:
                 all_quests.append({
-                    'type': 'trait',
+                    'type': 'alloc',
                     'reward': quest,
-                    'req_type': '',
-                    'req': 0,
                 })
+            else:
+                all_quests.append({
+                    'type': 'upgrade',
+                    'reward': quest,
+                })
+        
+        
+        # # obtain trait quests
+        # for quest in TRAIT_QUESTS.keys():
+        #     misc_req = TRAIT_QUESTS[quest]['misc_req']
+        #     stats_req = TRAIT_QUESTS[quest]['stats_req']
+        #     meets_misc_req = True
+        #     entity_data['trait'] = quest
+        #     for req in misc_req:
+        #         meets_misc_req = meets_misc_req and MISC_REQS[req](entity_data)
+        #     if meets_misc_req:
+        #         all_quests.append({
+        #             'type': 'trait',
+        #             'reward': quest,
+        #             'stats_req': stats_req,
+        #         })
         
         # obtain ability quests
         for quest in ABILITY_QUESTS.keys():
@@ -137,45 +182,22 @@ class WorldEvent:
                 all_quests.append({
                     'type': 'ability',
                     'reward': quest,
-                    'req_type': '',
-                    'req': 0,
                 })
         
-        # new body part quests
-        # body part
-        max_body_parts = entities.max_calc(index, preset='max_body_parts')
-        if entity_data['creature'].num_parts < max_body_parts:
-            all_quests.append({
-                'type': 'physiology',
-                'reward': 'body',
-                'req_type': '',
-                'req': 0,
-            })
+        # # new body part quests
+        # # body part
+        # potential_growth_size = entities.max_calc(index, preset='potential_growth_size')
+        # if entity_data['creature'].size < potential_growth_size:
+        #     all_quests.append({
+        #         'type': 'physiology',
+        #         'reward': 'body',
+        #     })
         
-        if entity_data['creature'].legs.num_pair_legs < entity_data['creature'].num_parts:
-            all_quests.append({
-                'type': 'physiology',
-                'reward': 'leg',
-                'req_type': '',
-                'req': 0,
-            })
-
-        # stat upgrade / allocation quests
-        for i in range(len(STAT_QUESTS)):
-            if stats[i]==max_stats[i]*STAT_GAP:
-                all_quests.append({
-                    'type': 'alloc',
-                    'reward': STAT_QUESTS[i],
-                    'req_type': '',
-                    'req': 0,
-                })
-            else:
-                all_quests.append({
-                    'type': 'upgrade',
-                    'reward': STAT_QUESTS[i],
-                    'req_type': '',
-                    'req': 0,
-                })
+        # if entity_data['creature'].legs.num_pair_legs < entity_data['creature'].num_parts:
+        #     all_quests.append({
+        #         'type': 'physiology',
+        #         'reward': 'leg',
+        #     })
 
         
         return all_quests

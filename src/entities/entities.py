@@ -1,7 +1,6 @@
 import pygame as pg
-from random import choice, randint
 from math import atan2, cos, sin, sqrt, pi
-from src.combat.abilities import BASIC_ABILITIES, BASE_AOE_RADIUS
+from src.combat.abilities import BASE_AOE_RADIUS
 from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
 from src.util.settings import WIDTH
 from src.util.physics import new_vel
@@ -30,7 +29,7 @@ class Entities:
         self.status_effects = []   
         self.traits = []        
         self.hurt_box = []      
-        self.quests = []           
+        self.quests = []    
 
         self.behaviours = []    
     
@@ -40,18 +39,19 @@ class Entities:
         self.vel.append([0, 0, 0])          # [x, y, z]
         self.spd.append(entity_data['spd'])
         self.acc.append(entity_data['acc'])
-        self.creature.append(Creature(entity_data['body_parts'], 
-                                      entity_data['pos'], 
-                                      entity_data['size'], 
-                                      entity_data['num_legs'],
-                                      entity_data['leg_length']))
+        self.creature.append(Creature(num_parts=entity_data['body_parts'], 
+                                      pos=entity_data['pos'], 
+                                      size=entity_data['size'], 
+                                      max_size=entity_data['max_size'],
+                                      num_pair_legs=entity_data['num_legs'],
+                                      leg_length=entity_data['leg_length']))
 
         # game data
         self.stats.append(stats)
         self.health.append(stats['hp'])
         self.energy.append(self.stat_calculation(len(self.energy), preset='energy')) # energy calculation
         
-        self.abilities.append(BASIC_ABILITIES)
+        self.abilities.append(entity_data['abilities'])
         self.status_effects.append({
             'effects': [],
             'cd': [],
@@ -59,15 +59,11 @@ class Entities:
             'source': [],
         })
         self.traits.append(Traits([], stats['min'], stats['max']))
+        for trait in entity_data['traits']:
+            index = len(self.traits)-1
+            self.traits[index].give_traits(self.creature[index], trait)
         self.hurt_box.append(None)
-        self.quests.append({
-            'active': False,
-            'type': '',
-            'reward': '',
-            'goal_type': '',
-            'goal': 0,
-            'progress': 0,
-        })
+        self.quests.append({})
 
         self.behaviours.append(Behaviour({
             'aggression': entity_data['aggression'],
@@ -255,7 +251,7 @@ class Entities:
         # presets
         stats_to_calc = []
         constants = []
-        if preset == 'max_body_parts':
+        if preset == 'potential_growth_size':
             stats_to_calc = ['def', 'mbl']
             constants = []
         
@@ -266,6 +262,12 @@ class Entities:
         
         return calc
     
+    def health_and_energy_ratios(self, index):
+        energy_ratio = self.energy[index]/self.stat_calculation(index, 'energy') * 100
+        health_ratio = self.health[index]/self.stats[index]['hp'] * 100
+        
+        return [health_ratio, energy_ratio]
+
     def interact_calculation(self, index, index_preset, target, target_preset):
         calc = 0
         calc += self.stat_calculation(index, preset=index_preset)
@@ -279,30 +281,19 @@ class Entities:
         for fn in fns:
             calc = fn(calc)
         
-        print(calc)
         return calc
 
+    def get_entity_quest_data(self, index):
+        data = self.get_entity_data(index)
+
+        return data
 
     def get_entity_data(self, index):
-        stats = [
-            self.stats[index]['itl'],
-            self.stats[index]['pwr'],
-            self.stats[index]['def'],
-            self.stats[index]['mbl'],
-            self.stats[index]['stl']
-        ]
 
-        max_stats = [
-            self.traits[index].max_stats['itl'],
-            self.traits[index].max_stats['pwr'],
-            self.traits[index].max_stats['def'],
-            self.traits[index].max_stats['mbl'],
-            self.traits[index].max_stats['stl'],
-        ]
         return {
             'creature': self.creature[index],
             'traits': self.traits[index],
-            'stats': stats,
+            'stats': self.stats[index],
             'abilities': self.abilities[index],
-            'max_stats': max_stats
+            'max_stats': self.traits[index].max_stats
         }

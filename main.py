@@ -10,6 +10,8 @@ from src.entities.corpse import Corpses
 from src.entities.evo_system import EvoSystem
 from src.entities.combat_system import CombatSystem
 
+from src.combat.abilities import BASIC_ABILITIES
+
 from src.util.settings import RES, BASE_STATS
 from src.util.asset_loader import load_assets
 from src.util.font import Font
@@ -43,10 +45,13 @@ def main():
         'acc': 0.5,
         'body_parts': 5,
         'size': 5,
+        'max_size': 10,
         'num_legs': 2,
         'leg_length': 100,
         'aggression': [],
         'herd': [],
+        'abilities': BASIC_ABILITIES,
+        'traits': ['arms']
     }, BASE_STATS)
     corpses = Corpses()
     evo_system = EvoSystem(entities)
