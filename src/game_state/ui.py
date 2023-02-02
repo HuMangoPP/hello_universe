@@ -154,6 +154,7 @@ class UserInterface:
 
     def trait_slots(self, screen, entities):
         traits = entities.traits[self.player].traits
+        new_trait = entities.traits[self.player].new_trait
         frame = self.hud_frames['ability_and_trait_frame']
         right_pad = self.hud_frames['energy_frame'].get_width()
         left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
@@ -161,6 +162,13 @@ class UserInterface:
         for i in range(len(traits)):
             icon = self.trait_icons[traits[i]]
             screen.blit(icon, (icon_edge_pad+i*ATS_UI['icon_size'],
+                                HEIGHT-ATS_UI['bottom_pad']-ATS_UI['icon_size']))
+        
+        # display new traits
+        if new_trait:
+            icon = self.trait_icons[new_trait['reward']].copy()
+            icon.fill((255, 0, 0, 100), special_flags=pg.BLEND_RGBA_ADD)
+            screen.blit(icon, (icon_edge_pad+len(traits)*ATS_UI['icon_size'],
                                 HEIGHT-ATS_UI['bottom_pad']-ATS_UI['icon_size']))
 
     def display_traits_and_abilities(self, screen, entities):

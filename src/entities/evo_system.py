@@ -53,6 +53,7 @@ class EvoSystem:
             self.entities.add_new_entity(entity_data, stats)
 
     def give_abilities(self, index, ability):
+        print(f'given ability {ability}')
         self.entities.abilities[index].append(ability)
 
     def give_traits(self, index, trait):

@@ -24,19 +24,19 @@ TRAIT_QUESTS = {
         'misc_req': ['free_legs'],
         'stats_req': {'itl': 2, 'mbl': 1}
     },
-    'leg_weapon': {
+    'claws': {
         'misc_req': ['no_dupe_trait', 'legs'],
         'stats_req': {'pwr': 1, 'mbl': 1}
     },
-    'head_weapon': {
+    'horn': {
         'misc_req': ['no_dupe_trait'],
         'stats_req': {'pwr': 1, 'def': 1}
     },
-    'body_armour': {
+    'body': {
         'misc_req': ['no_dupe_trait'],
         'stats_req': {'def': 1, 'stl': 1}
     },
-    'teeth': {
+    'fangs': {
         'misc_req': ['no_dupe_trait'],
         'stats_req': {'pwr': 2}
     },
