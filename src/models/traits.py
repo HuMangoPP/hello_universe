@@ -16,6 +16,7 @@ ALL_TRAITS = [
 class Traits:
     def __init__(self, traits, min_stats, max_stats):
         self.traits = traits
+        self.new_trait = {}
         self.min_stats = min_stats
         self.max_stats = max_stats
 

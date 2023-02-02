@@ -42,7 +42,7 @@ TRAIT_QUESTS = {
     },
     'gills': {
         'misc_req': ['no_dupe_trait'],
-        'stats': {'def': 1, 'mbl': 2}
+        'stats_req': {'def': 1, 'mbl': 2}
     }
 }
 
@@ -100,7 +100,7 @@ class WorldEvent:
         all_quests = []
         stats = entity_data['stats']
         max_stats = entity_data['max_stats']
-        new_trait = entity_data['new_trait']
+        new_trait = entity_data['traits'].new_trait
         traits = entity_data['traits'].traits
         
 

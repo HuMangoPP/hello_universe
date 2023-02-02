@@ -30,8 +30,7 @@ class Entities:
         self.status_effects = []   
         self.traits = []        
         self.hurt_box = []      
-        self.quests = []  
-        self.new_trait = []         
+        self.quests = []    
 
         self.behaviours = []    
     
@@ -63,7 +62,6 @@ class Entities:
         self.traits.append(Traits([], stats['min'], stats['max']))
         self.hurt_box.append(None)
         self.quests.append({})
-        self.new_trait.append({})
 
         self.behaviours.append(Behaviour({
             'aggression': entity_data['aggression'],
@@ -286,7 +284,6 @@ class Entities:
 
     def get_entity_quest_data(self, index):
         data = self.get_entity_data(index)
-        data['new_trait'] = self.new_trait[index]
 
         return data
 

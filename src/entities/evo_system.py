@@ -56,15 +56,16 @@ class EvoSystem:
         self.entities.abilities[index].append(ability)
 
     def give_traits(self, index, trait):
-        if self.entities.new_trait[index]:
-            self.entities.new_trait[index]['level']+=1
+        if self.entities.traits[index].new_trait:
+            self.entities.traits[index].new_trait['level']+=1
         else:
-            self.entities.new_trait[index] = trait
-            self.entities.new_trait[index]['level'] = 1
+            self.entities.traits[index].new_trait = trait
+            self.entities.traits[index].new_trait['level'] = 1
         
-        if self.entities.new_trait[index]['level'] == 3:
+        if self.entities.traits[index].new_trait['level'] == 3:
             self.entities.traits[index].give_traits(self.entities.creature[index], trait['reward'])
-            self.entities.new_trait[index] = {}
+            self.entities.traits[index].new_trait = {}
+
     def allocate_stat(self, index, stat):
         self.entities.stats[index]['max'][stat]+=1
     
