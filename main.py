@@ -45,6 +45,7 @@ def main():
         'acc': 0.5,
         'body_parts': 5,
         'size': 5,
+        'min_size': 5,
         'max_size': 10,
         'num_legs': 2,
         'leg_length': 100,

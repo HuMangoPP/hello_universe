@@ -184,20 +184,29 @@ class WorldEvent:
                     'reward': quest,
                 })
         
-        # # new body part quests
-        # # body part
+        # new body part quests
+        # body part
         # potential_growth_size = entities.max_calc(index, preset='potential_growth_size')
-        # if entity_data['creature'].size < potential_growth_size:
-        #     all_quests.append({
-        #         'type': 'physiology',
-        #         'reward': 'body',
-        #     })
+        max_growth_size = entities.creature_calc(index, 'max_growth_size')
+        min_growth_size = entities.creature_calc(index, 'min_growth_size')
+        if entity_data['creature'].size < max_growth_size:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'increase_body',
+            })
+        if entity_data['creature'].size > min_growth_size:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'decrease_body',
+            })
         
-        # if entity_data['creature'].legs.num_pair_legs < entity_data['creature'].num_parts:
-        #     all_quests.append({
-        #         'type': 'physiology',
-        #         'reward': 'leg',
-        #     })
+        # base this on the mbl stat as well
+        max_legs_allowed = entities.creature_calc(index, 'max_legs_allowed')
+        if entity_data['creature'].legs.num_pair_legs < max_legs_allowed:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'leg',
+            })
 
         
         return all_quests

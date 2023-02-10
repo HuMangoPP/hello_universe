@@ -1,16 +1,17 @@
 import pygame as pg
-from math import atan2, sqrt, cos, sin, floor
+from math import atan2, sqrt, cos, sin, ceil
 from src.models.legs import Legs
 from src.util.physics import collide
 from src.util.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
 
 class Creature:
-    def __init__(self, num_parts, pos, size, max_size, num_pair_legs, leg_length):
+    def __init__(self, num_parts, pos, size, min_size, max_size, num_pair_legs, leg_length):
         self.num_parts = num_parts
         self.head = pos
         self.z_pos = pos[2]
         self.skeleton = []
         self.size = size
+        self.min_size = min_size
         self.max_size = max_size
         self.build_skeleton(pos)
         self.legs = Legs(num_pair_legs=num_pair_legs, 
@@ -36,7 +37,7 @@ class Creature:
         if self.legs.num_pair_legs>self.num_parts:
             return
         
-        ratio_body_to_legs = floor(self.num_parts/(self.legs.num_pair_legs+1))
+        ratio_body_to_legs = ceil(self.num_parts/(self.legs.num_pair_legs+1))
 
         if self.legs.num_pair_legs==self.num_parts:
             ratio_body_to_legs = 1
@@ -45,7 +46,7 @@ class Creature:
         self.legs.attached_segments = []
         if ratio_body_to_legs>1:
             for i in range(len(self.skeleton)):
-                if i%ratio_body_to_legs==0 and i!=0:
+                if i%ratio_body_to_legs==0:
                     self.legs.attached_segments.append(i)
                     self.legs.build_legs(self.skeleton[i])
                     if self.legs.num_legs()==self.legs.num_pair_legs:
@@ -59,16 +60,17 @@ class Creature:
                         break
         self.upright()
 
-    def improve_body(self):
-        self.size+=1
+    def change_body(self, change_in_size):
+        self.size+=change_in_size
+        if self.size<self.min_size:
+            self.size = self.min_size
         if self.size > self.max_size:
-            self.size = self.max_size / (self.num_parts + 1)
+            self.size = self.min_size
+            self.num_parts+=1
+            new_pos = [self.head[0], self.head[1], self.z_pos]
+            self.build_skeleton(new_pos)
 
-        self.num_parts+=1
-        new_pos = [self.head[0], self.head[1], self.z_pos]
-        self.build_skeleton(new_pos)
-
-    def improve_legs(self):
+    def change_legs(self):
         self.legs.num_pair_legs+=1
         self.give_legs()
 

@@ -1,5 +1,5 @@
 import pygame as pg
-from math import atan2, cos, sin, sqrt, pi
+from math import atan2, cos, sin, sqrt, pi, floor, exp
 from src.combat.abilities import BASE_AOE_RADIUS
 from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
 from src.util.settings import WIDTH
@@ -42,6 +42,7 @@ class Entities:
         self.creature.append(Creature(num_parts=entity_data['body_parts'], 
                                       pos=entity_data['pos'], 
                                       size=entity_data['size'], 
+                                      min_size=entity_data['min_size'],
                                       max_size=entity_data['max_size'],
                                       num_pair_legs=entity_data['num_legs'],
                                       leg_length=entity_data['leg_length']))
@@ -262,6 +263,20 @@ class Entities:
         
         return calc
     
+    def creature_calc(self, index, preset):
+        if preset == 'max_legs_allowed':
+            # once you reach over 
+            parts = self.creature[index].num_parts
+            mbl = self.stats[index]['mbl']
+            return round(parts*(2/(1+exp(-mbl/parts))-1))
+        if preset == 'max_growth_size':
+            max_size = self.creature[index].max_size
+            num_body_parts = self.creature[index].num_parts
+            return round(max_size*(2/(1+exp(-num_body_parts/max_size))))
+        if preset == 'min_growth_size':
+            return self.creature[index].min_size
+        return 0
+
     def health_and_energy_ratios(self, index):
         energy_ratio = self.energy[index]/self.stat_calculation(index, 'energy') * 100
         health_ratio = self.health[index]/self.stats[index]['hp'] * 100
