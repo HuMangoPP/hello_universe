@@ -1,7 +1,9 @@
-from math import atan2, cos, sin, sqrt, pi
+from math import cos, sin, pi
 from random import choice, randint
 from src.combat.abilities import ALL_ABILITIES
 from src.combat.world_event import WorldEvent
+
+from src.util.physics import dist_between, angles_between
 
 class AIController:
     def __init__(self, non_controllable):
@@ -33,12 +35,12 @@ class AIController:
 
     def detect_food(self, corpses, entities, index):
         for i in range(len(corpses.pos)):
-            dist = self.dist_between(entities.pos[index], corpses.pos[i])
+            dist = dist_between(entities.pos[index], corpses.pos[i])
             awareness = 500
             if self.corpse_interact(entities, corpses, index, i, dist):
                 continue
             if dist<=awareness:
-                angles = self.angles_between(entities.pos[index], corpses.pos[i])
+                angles = angles_between(entities.pos[index], corpses.pos[i])
                 return cos(angles['z']), sin(angles['z'])
 
         return 0, 0
@@ -46,17 +48,17 @@ class AIController:
     def detect_enemies(self, entities, index):
         for i in range(len(entities.pos)):
             if i != index:
-                dist = self.dist_between(entities.pos[i], entities.pos[index])
+                dist = dist_between(entities.pos[i], entities.pos[index])
                 awareness = entities.interact_calculation(index, 'awareness', i, 'stealth')
                 aggression = entities.behaviours[index].aggression[i]
                 # determine the input to send
                 # TODO: sort input based on priority (aggression score) to see which one should be sent
                 if aggression>0 and dist<=awareness*aggression:
                     # move towards the target
-                    angles = self.angles_between(entities.pos[index], entities.pos[i])
+                    angles = angles_between(entities.pos[index], entities.pos[i])
                     return cos(angles['z']), sin(angles['z'])
                 elif aggression<0 and dist<=awareness*abs(aggression):
-                    angles = self.angles_between(entities.pos[index], entities.pos[i])
+                    angles = angles_between(entities.pos[index], entities.pos[i])
                     return cos(angles['z']+pi), sin(angles['z']+pi)
         return 0, 0
 
@@ -72,13 +74,13 @@ class AIController:
                     if i==j: continue
 
                     if 'ability_cd' not in entities.status_effects[i]['effects']:
-                        dist = self.dist_between(entities.pos[i], entities.pos[j])
+                        dist = dist_between(entities.pos[i], entities.pos[j])
                         awareness = entities.interact_calculation(i, 'awareness', j, 'stealth')
                         aggression = entities.behaviours[i].aggression[j]
 
                         if aggression>0:
                             if dist<=awareness*aggression/2:
-                                angles = self.angles_between(entities.pos[i], entities.pos[j])
+                                angles = angles_between(entities.pos[i], entities.pos[j])
                                 attack_abilities = list(filter(lambda ability: 'attack' in ALL_ABILITIES[ability]['type'], 
                                                     entities.abilities[i]))
                                 queued_ability = choice(attack_abilities)
@@ -111,16 +113,3 @@ class AIController:
                 return True
 
         return False
-
-    def dist_between(self, pos1, pos2):
-        return sqrt((pos1[0]-pos2[0])**2+
-                    (pos1[1]-pos2[1])**2+
-                    (pos1[2]-pos2[2])**2)
-    
-    def angles_between(self, pos1, pos2):
-        angles = {
-            'x': atan2(pos2[2]-pos1[2], pos2[1]-pos1[1]),
-            'y': atan2(pos2[2]-pos1[2], pos2[0]-pos1[0]),
-            'z': atan2(pos2[1]-pos1[1], pos2[0]-pos1[0]),
-        }
-        return angles

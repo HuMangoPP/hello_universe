@@ -1,9 +1,9 @@
 import pygame as pg
-from math import atan2, cos, sin, sqrt, pi, floor, exp
+from math import atan2, cos, sin, sqrt, pi, exp
 from src.combat.abilities import BASE_AOE_RADIUS
 from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
 from src.util.settings import WIDTH
-from src.util.physics import new_vel
+from src.util.physics import new_vel, angles_between
 from src.models.creature import Creature
 from src.models.traits import Traits
 from src.models.behaviour import Behaviour
@@ -109,8 +109,7 @@ class Entities:
         for j in range(len(self.status_effects[index]['effects'])):
             if self.status_effects[index]['effects'][j] == 'intimidated':
                 source = self.status_effects[index]['source'][j]
-                angle = atan2(self.pos[source][1]-self.pos[index][1],
-                              self.pos[source][0]-self.pos[index][0])
+                angle = angles_between(self.pos[source], self.pos[index])['z']
                 x_dir, y_dir = cos(angle+pi), sin(angle+pi)
 
         self.vel[index][0] = new_vel(self.acc[index], self.vel[index][0], x_dir, dt)
@@ -137,7 +136,7 @@ class Entities:
             # angle the creature is facing
             if self.vel[i][0]**2+self.vel[i][1]**2!=0:
                 self.pos[i][3] = atan2(self.vel[i][1], self.vel[i][0])
-            
+
             # check if the entity is in bounds to
             # see if updating the model is necessary
             dx = self.pos[i][0]-camera.pos[0]
@@ -146,7 +145,7 @@ class Entities:
                 self.creature[i].move(self.pos[i], {
                     'effects': self.status_effects[i]['effects'], 
                     'time': self.status_effects[i]['time']
-                })
+                }, self.vel[i][0]**2 + self.vel[i][1]**2 != 0)
     
     def spend_energy(self, dt):
         for i in range(len(self.energy)):

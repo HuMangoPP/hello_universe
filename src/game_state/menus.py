@@ -168,7 +168,7 @@ def game_menu(screen, game_data):
             generation+=1
 
             # call the evo systems to operate on entities
-            evo_system.new_generation(entities)
+            # evo_system.new_generation(entities)
 
             # tell the ai to accept the new quests for the ais
             ai_controller.accept_quests(entities, evo_system)
