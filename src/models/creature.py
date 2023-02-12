@@ -13,17 +13,20 @@ class Creature:
         self.size = size
         self.min_size = min_size
         self.max_size = max_size
-        self.build_skeleton(pos)
         self.legs = Legs(num_pair_legs=num_pair_legs, 
                         leg_length=leg_length, 
                         arm_attachments=[], 
                         wing_attachments=[])
+        self.build_skeleton(pos)
         self.give_legs()
     
-    def build_skeleton(self, pos, a=0):
+    def build_skeleton(self, pos, a=0, upright=False):
         self.skeleton = []
         for i in range(self.num_parts):
             self.skeleton.append([pos[0]-(i+1)*2*self.size, pos[1], pos[2], a])
+        
+        if upright:
+            self.upright()
     
     def give_wings(self):
         self.legs.transform_wings()
@@ -58,6 +61,7 @@ class Creature:
                     self.legs.build_legs(self.skeleton[i])
                     if self.legs.num_legs()==self.legs.num_pair_legs:
                         break
+        
         self.upright()
 
     def change_body(self, change_in_size):
@@ -65,10 +69,11 @@ class Creature:
         if self.size<self.min_size:
             self.size = self.min_size
         if self.size > self.max_size:
+            print('new body part!')
             self.size = self.min_size
             self.num_parts+=1
             new_pos = [self.head[0], self.head[1], self.z_pos]
-            self.build_skeleton(new_pos)
+            self.build_skeleton(new_pos, upright=True)
 
     def change_legs(self):
         self.legs.num_pair_legs+=1
