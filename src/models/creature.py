@@ -122,20 +122,15 @@ class Creature:
             self.wiggle(pg.time.get_ticks())
 
     def wiggle(self, t):
-        wiggle_mag = 1
+        wiggle_mag = 0.25
         if self.skeleton:
-            for i in range(self.legs.get_torso_start(), len(self.skeleton)):
-                perp_offset = wiggle_mag*cos(t/100+pi/4*i)
+            start = self.legs.get_torso_start()
+            period = len(self.skeleton) - start 
+            for i in range(start, len(self.skeleton)):
+                perp_offset = wiggle_mag*sin(pi/period*i)*cos(t/100)
                 self.skeleton[i][0]+=perp_offset*cos(self.skeleton[i][3]+pi/2)
                 self.skeleton[i][1]+=perp_offset*sin(self.skeleton[i][3]+pi/2)
 
-    def dewiggle(self, t):
-        wiggle_mag = 1
-        if self.skeleton:
-            for i in range(len(self.skeleton)):
-                perp_offset = wiggle_mag*cos(t/100+pi/4*i)
-                self.skeleton[i][0]-=perp_offset*cos(self.skeleton[i][3]+pi/2)
-                self.skeleton[i][1]-=perp_offset*sin(self.skeleton[i][3]+pi/2)
 
     def upright(self):
         torso_segment = self.legs.get_torso_start()

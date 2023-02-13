@@ -47,12 +47,12 @@ def main():
         'size': 5,
         'min_size': 5,
         'max_size': 10,
-        'num_legs': 2,
+        'num_legs': 0,
         'leg_length': 100,
         'aggression': [],
         'herd': [],
         'abilities': BASIC_ABILITIES,
-        'traits': ['arms']
+        'traits': []
     }, BASE_STATS)
     corpses = Corpses()
     evo_system = EvoSystem(entities)
