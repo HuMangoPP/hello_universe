@@ -2,7 +2,7 @@ import pygame as pg
 from math import atan2, cos, sin, sqrt, pi, exp
 from src.combat.abilities import BASE_AOE_RADIUS
 from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
-from src.util.settings import WIDTH
+from src.util.settings import WIDTH, MAX_SIZE, MIN_SIZE
 from src.util.physics import new_vel, angles_between
 from src.models.creature import Creature
 from src.models.traits import Traits
@@ -18,7 +18,8 @@ class Entities:
         self.vel = []  
         self.spd = []     
         self.acc = []          
-        self.creature = []      
+        self.creature = []     
+        self.scale = [] 
 
         # game data
         self.stats = [] 
@@ -42,10 +43,10 @@ class Entities:
         self.creature.append(Creature(num_parts=entity_data['body_parts'], 
                                       pos=entity_data['pos'], 
                                       size=entity_data['size'], 
-                                      min_size=entity_data['min_size'],
-                                      max_size=entity_data['max_size'],
+                                      max_parts=entity_data['max_parts'],
                                       num_pair_legs=entity_data['num_legs'],
                                       leg_length=entity_data['leg_length']))
+        self.scale.append(entity_data['scale'])
 
         # game data
         self.stats.append(stats)
@@ -82,7 +83,7 @@ class Entities:
         for i in range(len(self.creature)):
             dx = self.pos[i][0]-camera.pos[0]
             dy = self.pos[i][1]-camera.pos[1]
-            if sqrt(dx**2+dy**2)<=WIDTH/2:
+            if sqrt(dx**2+dy**2)<=WIDTH/2 and abs(self.scale[i] - camera.scale) <= 2:
                 self.creature[i].render(screen, camera)
             # if self.hurt_box[i]:
             #     self.hurt_box[i].render(screen, camera)
@@ -269,11 +270,9 @@ class Entities:
             mbl = self.stats[index]['mbl']
             return round(parts*(2/(1+exp(-mbl/parts))-1))
         if preset == 'max_growth_size':
-            max_size = self.creature[index].max_size
-            num_body_parts = self.creature[index].num_parts
-            return round(max_size*(2/(1+exp(-num_body_parts/max_size))))
+            return round(MAX_SIZE*(2/(1+exp(-self.creature[index].size/MAX_SIZE))))
         if preset == 'min_growth_size':
-            return self.creature[index].min_size
+            return MIN_SIZE
         return 0
 
     def health_and_energy_ratios(self, index):

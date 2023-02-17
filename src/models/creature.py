@@ -1,18 +1,17 @@
 import pygame as pg
-from math import cos, sin, ceil, pi
+from math import cos, sin, ceil, pi, log10
 from src.models.legs import Legs
 from src.util.physics import collide, dist_between, angles_between
-from src.util.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH
+from src.util.settings import HEIGHT, MODEL_COLORS, OUT_OF_BOUNDS, WIDTH, MAX_SIZE, MIN_SIZE
 
 class Creature:
-    def __init__(self, num_parts, pos, size, min_size, max_size, num_pair_legs, leg_length):
+    def __init__(self, num_parts, pos, size, max_parts, num_pair_legs, leg_length):
         self.num_parts = num_parts
         self.head = pos
         self.z_pos = pos[2]
         self.skeleton = []
         self.size = size
-        self.min_size = min_size
-        self.max_size = max_size
+        self.max_parts = max_parts
         self.legs = Legs(num_pair_legs=num_pair_legs, 
                         leg_length=leg_length, 
                         arm_attachments=[], 
@@ -66,14 +65,21 @@ class Creature:
 
     def change_body(self, change_in_size):
         self.size+=change_in_size
-        if self.size<self.min_size:
-            self.size = self.min_size
-        if self.size > self.max_size:
+        if self.size<MIN_SIZE:
+            self.size = MIN_SIZE
+        if self.size > MAX_SIZE:
             print('new body part!')
-            self.size = self.min_size
+            self.size = MIN_SIZE
             self.num_parts+=1
             new_pos = [self.head[0], self.head[1], self.z_pos]
+            if self.num_parts > self.max_parts:
+                self.num_parts = self.legs.num_pair_legs
+                self.build_skeleton(new_pos, upright=True)
+                self.give_legs()
+                return round(log10(self.max_parts*MAX_SIZE))
+            
             self.build_skeleton(new_pos, upright=True)
+        return 0
 
     def change_legs(self):
         self.legs.num_pair_legs+=1
@@ -125,12 +131,11 @@ class Creature:
         wiggle_mag = 0.25
         if self.skeleton:
             start = self.legs.get_torso_start()
-            period = len(self.skeleton) - start 
+            period = (len(self.skeleton) - start)
             for i in range(start, len(self.skeleton)):
                 perp_offset = wiggle_mag*sin(pi/period*i)*cos(t/100)
                 self.skeleton[i][0]+=perp_offset*cos(self.skeleton[i][3]+pi/2)
                 self.skeleton[i][1]+=perp_offset*sin(self.skeleton[i][3]+pi/2)
-
 
     def upright(self):
         torso_segment = self.legs.get_torso_start()

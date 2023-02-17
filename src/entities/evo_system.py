@@ -33,8 +33,8 @@ class EvoSystem:
                 'acc': self.entities.acc[i],
                 'body_parts': int(self.entities.creature[i].num_parts),
                 'size': int(self.entities.creature[i].size),
-                'min_size': int(self.entities.creature[i].min_size),
-                'max_size': int(self.entities.creature[i].max_size),
+                'scale': int(self.entities.scale[i]),
+                'max_parts': int(self.entities.creature[i].max_parts),
                 'num_legs': int(self.entities.creature[i].legs.num_pair_legs),
                 'leg_length': int(self.entities.creature[i].legs.leg_length),
                 'aggression': self.entities.behaviours[i].aggression.copy(),
@@ -100,7 +100,9 @@ class EvoSystem:
 
     def change_physiology(self, type, index):
         if type == 'increase_body':
-            self.entities.creature[index].change_body(1.0)
+            increase_scale = self.entities.creature[index].change_body(10.0)
+            if increase_scale != 0:
+                self.entities.scale[index] += increase_scale
         elif type == 'decrease_body':
             self.entities.creature[index].change_body(-1.0)
         else:
