@@ -28,10 +28,10 @@ class Creature:
             self.upright()
     
     def give_wings(self):
-        self.legs.transform_wings()
+        self.legs.transform_leg(self.legs.free_leg(), 'wing', 1)
 
     def give_arms(self):
-        self.legs.transform_arms()
+        self.legs.transform_leg(self.legs.free_leg(), 'arm', 1)
 
     def give_legs(self):
         if self.legs.num_pair_legs == 0:
@@ -48,7 +48,10 @@ class Creature:
         for i in range(len(self.skeleton)):
             if i%ratio_body_to_legs==0:
                 self.legs.attached_segments.append(i)
-                self.legs.leg_types.append('feet')
+                self.legs.leg_types.append({
+                    'type': 'leg',
+                    'level': 1,
+                })
                 self.legs.build_legs(self.skeleton[i])
                 if self.legs.num_legs()==self.legs.num_pair_legs:
                     break
@@ -62,8 +65,19 @@ class Creature:
             return
         
         ratio_body_to_legs = ceil(self.num_parts/(self.legs.num_pair_legs+1))
-        for i in range(len(self.legs.attached_segments)):
+
+        # first add new legs
+        for i in range(self.legs.num_pair_legs-len(self.legs.attached_segments)):
+            self.legs.attached_segments.append(0)
+            self.legs.leg_types.append({
+                    'type': 'leg',
+                    'level': 1,
+                })
+
+        # then update how they are connected
+        for i in range(self.legs.num_pair_legs):
             self.legs.attached_segments[i] = i*ratio_body_to_legs
+            self.legs.build_legs(self.skeleton[self.legs.attached_segments[i]])
 
     def change_body(self, change_in_size):
         self.size+=change_in_size
@@ -85,7 +99,7 @@ class Creature:
 
     def change_legs(self):
         self.legs.num_pair_legs+=1
-        self.update_legs() # TODO: change to a different one
+        self.update_legs()
 
     def render(self, screen, camera):
 

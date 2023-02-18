@@ -187,8 +187,8 @@ class WorldEvent:
         # new body part quests
         # body part
         # potential_growth_size = entities.max_calc(index, preset='potential_growth_size')
-        max_growth_size = entities.creature_calc(index, 'max_growth_size')
-        min_growth_size = entities.creature_calc(index, 'min_growth_size')
+        max_growth_size = entities.entity_calculation(index, 'max_size')
+        min_growth_size = entities.entity_calculation(index, 'min_size')
         if entity_data['creature'].size < max_growth_size:
             all_quests.append({
                 'type': 'physiology',
@@ -201,7 +201,7 @@ class WorldEvent:
             })
         
         # base this on the mbl stat as well
-        max_legs_allowed = entities.creature_calc(index, 'max_legs_allowed')
+        max_legs_allowed = entities.entity_calculation(index, 'max_legs')
         if entity_data['creature'].legs.num_pair_legs < max_legs_allowed:
             all_quests.append({
                 'type': 'physiology',

@@ -105,7 +105,7 @@ class UserInterface:
         # energy bar, similar in style to the health
         energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         energy_bar.set_colorkey('black')
-        total_energy_calculation = entities.stat_calculation(self.player, preset='energy')
+        total_energy_calculation = entities.entity_calculation(self.player, 'energy')
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
         energy_frame = self.hud_frames['energy_frame']
         pg.draw.circle(energy_bar, GAUGE_UI['colours'][1],
@@ -207,7 +207,7 @@ class UserInterface:
         if 'aoe' in ALL_ABILITIES[ability_key]['type']:
             # aoe range
             # the radius will be calculated using entity stats
-            radius = entities.stat_calculation(self.player, preset='intimidation')
+            radius = entities.entity_calculation(self.player, 'intimidation')
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
     
     def display_statuses(self, screen, entities):

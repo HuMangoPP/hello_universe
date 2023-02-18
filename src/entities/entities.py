@@ -8,6 +8,25 @@ from src.models.creature import Creature
 from src.models.traits import Traits
 from src.models.behaviour import Behaviour
 
+sigmoid = lambda a, x : round(a * (1+exp(-x)))
+sum_stats = lambda entities, index, stats : sum([entities.stats[index][stat_type] for stat_type in stats])
+
+ENTITY_CALCULATIONS = {
+    'energy': (lambda entities, index : 100 + sum_stats(entities, index, ['def', 'mbl'])),
+    'intimidation': (lambda entities, index : BASE_AOE_RADIUS + sum_stats(entities, index, ['itl', 'pwr', 'mbl'])),
+    'awareness': (lambda entities, index : 100 + sum_stats(entities, index, ['itl', 'stl'])),
+    'stealth': (lambda entities, index : sum_stats(entities, index, ['itl', 'stl'])),
+    'damage': (lambda entities, index : sum_stats(entities, index, ['pwr', 'def', 'mbl'])),
+    'evasion': (lambda entities, index : sum_stats(entities, index, ['mbl', 'stl'])),
+    'damage_mitigate': (lambda entities, index : sum_stats(entities, index, ['def', 'mbl'])),
+    'movement': (lambda entities, index : 5 + sum_stats(entities, index, ['mbl'])),
+    'max_legs': (lambda entities, index : sigmoid(entities.creature[index].num_parts*2, 
+                                                  entities.stats[index]['mbl']/entities.creature[index].num_parts) 
+                                                  - entities.creature[index].num_parts),
+    'max_size': (lambda entities, index : sigmoid(2*MAX_SIZE, entities.creature[index].size/MAX_SIZE)),
+    'min_size': (lambda entities, index : MIN_SIZE)
+}
+
 class Entities:
     ############################# 
     # init and spawning         #
@@ -51,7 +70,7 @@ class Entities:
         # game data
         self.stats.append(stats)
         self.health.append(stats['hp'])
-        self.energy.append(self.stat_calculation(len(self.energy), preset='energy')) # energy calculation
+        self.energy.append(self.entity_calculation(len(self.energy), 'energy')) # energy calculation
         
         self.abilities.append(entity_data['abilities'])
         self.status_effects.append({
@@ -158,7 +177,7 @@ class Entities:
                 ...
             else:
                 self.energy[i]-=energy_spent*dt
-            total_energy = self.stat_calculation(i, preset='energy')
+            total_energy = self.entity_calculation(i, 'energy')
             if self.energy[i]>total_energy:
                 self.energy[i] = total_energy
 
@@ -209,91 +228,20 @@ class Entities:
     def scavenge(self, index, target_index, corpses):
         ...
 
-    def stat_calculation(self, index, preset):
-        calc = 0
-        
-        # presets
-        stats_to_calc = []
-        constants = []
-        if preset == 'energy':
-            stats_to_calc = ['def', 'pwr']
-            constants = [100]
-        elif preset == 'intimidation':
-            stats_to_calc = ['itl', 'pwr', 'mbl']
-            constants = [BASE_AOE_RADIUS]
-        elif preset == 'awareness':
-            stats_to_calc = ['itl', 'stl']
-            constants = [100]
-        elif preset == 'stealth':
-            stats_to_calc = ['itl', 'stl']
-            constants = []
-        elif preset == 'damage':
-            stats_to_calc = ['pwr', 'def', 'mbl']
-            constants = []
-        elif preset == 'evasion':
-            stats_to_calc = ['mbl', 'stl']
-            constants = []
-        elif preset == 'damage_mitigate':
-            stats_to_calc = ['def', 'mbl']
-            constants = []
-        elif preset == 'movement':
-            stats_to_calc = ['mbl']
-            constants = [5]
-
-        for stat_to_calc in stats_to_calc:
-            calc+=self.stats[index][stat_to_calc]
-        for constant in constants:
-            calc+=constant
-        return calc
-
-    def max_calc(self, index, preset):
-        calc = 0
-
-        # presets
-        stats_to_calc = []
-        constants = []
-        if preset == 'potential_growth_size':
-            stats_to_calc = ['def', 'mbl']
-            constants = []
-        
-        for stat_to_calc in stats_to_calc:
-            calc+=self.stats[index]['max'][stat_to_calc]
-        for constant in constants:
-            calc+=constant
-        
-        return calc
-    
-    def creature_calc(self, index, preset):
-        if preset == 'max_legs_allowed':
-            # once you reach over 
-            parts = self.creature[index].num_parts
-            mbl = self.stats[index]['mbl']
-            return round(parts*(2/(1+exp(-mbl/parts))-1))
-        if preset == 'max_growth_size':
-            return round(MAX_SIZE*(2/(1+exp(-self.creature[index].size/MAX_SIZE))))
-        if preset == 'min_growth_size':
-            return MIN_SIZE
-        return 0
+    def entity_calculation(self, index, calculation):
+        fn = ENTITY_CALCULATIONS[calculation]
+        return fn(self, index)
 
     def health_and_energy_ratios(self, index):
-        energy_ratio = self.energy[index]/self.stat_calculation(index, 'energy') * 100
+        energy_ratio = self.energy[index]/self.entity_calculation(index, 'energy') * 100
         health_ratio = self.health[index]/self.stats[index]['hp'] * 100
         
         return [health_ratio, energy_ratio]
 
     def interact_calculation(self, index, index_preset, target, target_preset):
         calc = 0
-        calc += self.stat_calculation(index, preset=index_preset)
-        calc -= self.stat_calculation(target, preset=target_preset)
-        return calc
-
-    # TODO: figure out how to format this to take into account other calculations like
-    # maybe size/num_parts/etc
-    def detailed_calculation(self, index, preset, fns):
-        calc = self.stat_calculation(index, preset)
-        for fn in fns:
-            calc = fn(calc)
-        
+        calc += self.entity_calculation(index, index_preset)
+        calc -= self.entity_calculation(target, target_preset)
         return calc
 
     def get_entity_quest_data(self, index):
