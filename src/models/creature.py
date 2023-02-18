@@ -43,25 +43,27 @@ class Creature:
 
         if self.legs.num_pair_legs==self.num_parts:
             ratio_body_to_legs = 1
-            print('same number of legs as body parts')
             
         self.legs.attached_segments = []
-        if ratio_body_to_legs>1:
-            for i in range(len(self.skeleton)):
-                if i%ratio_body_to_legs==0:
-                    self.legs.attached_segments.append(i)
-                    self.legs.build_legs(self.skeleton[i])
-                    if self.legs.num_legs()==self.legs.num_pair_legs:
-                        break
-        else:
-            for i in range(len(self.skeleton)):
-                if i%ratio_body_to_legs==0:
-                    self.legs.attached_segments.append(i)
-                    self.legs.build_legs(self.skeleton[i])
-                    if self.legs.num_legs()==self.legs.num_pair_legs:
-                        break
+        for i in range(len(self.skeleton)):
+            if i%ratio_body_to_legs==0:
+                self.legs.attached_segments.append(i)
+                self.legs.leg_types.append('feet')
+                self.legs.build_legs(self.skeleton[i])
+                if self.legs.num_legs()==self.legs.num_pair_legs:
+                    break
         
         self.upright()
+
+    def update_legs(self):
+        if self.legs.num_pair_legs == 0:
+            return
+        if self.legs.num_pair_legs>self.num_parts:
+            return
+        
+        ratio_body_to_legs = ceil(self.num_parts/(self.legs.num_pair_legs+1))
+        for i in range(len(self.legs.attached_segments)):
+            self.legs.attached_segments[i] = i*ratio_body_to_legs
 
     def change_body(self, change_in_size):
         self.size+=change_in_size
@@ -75,7 +77,7 @@ class Creature:
             if self.num_parts > self.max_parts:
                 self.num_parts = self.legs.num_pair_legs
                 self.build_skeleton(new_pos, upright=True)
-                self.give_legs()
+                self.update_legs() # TODO: change to a different one 
                 return round(log10(self.max_parts*MAX_SIZE))
             
             self.build_skeleton(new_pos, upright=True)
@@ -83,7 +85,7 @@ class Creature:
 
     def change_legs(self):
         self.legs.num_pair_legs+=1
-        self.give_legs()
+        self.update_legs() # TODO: change to a different one
 
     def render(self, screen, camera):
 

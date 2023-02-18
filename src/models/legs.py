@@ -10,15 +10,19 @@ class Legs:
     def __init__(self, num_pair_legs, leg_length, 
                        arm_attachments, wing_attachments,
                        size=5, step_bend = pi/6,):
+        # entity data
         self.num_pair_legs = num_pair_legs
         self.leg_length = leg_length
         self.attached_segments = []
+        self.leg_types = []
+        self.arm_attachments = arm_attachments
+        self.wing_attachments = wing_attachments
+
+        # rendering and physics
         self.feet_pos = []
         self.step_pos = []
         self.step_bend = step_bend
         self.feet_size = size
-        self.arm_attachments = arm_attachments
-        self.wing_attachments = wing_attachments
     
     def build_legs(self, body_seg_pos):
         self.feet_pos.append([body_seg_pos[0], 
@@ -33,6 +37,8 @@ class Legs:
         self.step_pos.append([body_seg_pos[0]+self.leg_length*cos(-self.step_bend), 
                                 body_seg_pos[1]+self.leg_length*sin(-self.step_bend), 
                                 0])
+
+
 
     ############################# 
     # draw                      #
@@ -121,9 +127,9 @@ class Legs:
         
         # update the renderable feet pos as neceessary
         for i in range(self.num_pair_legs):
-            if self.attached_segments[i] in self.arm_attachments:
+            if self.leg_types[i]['type'] == 'arm':
                 self.move_arms(skeleton, i)
-            elif self.attached_segments[i] in self.wing_attachments: 
+            elif self.attached_segments[i]['type'] == 'wing': 
                 self.move_wings(skeleton, i)
             elif 'in_air' in abilities or 'underwater' in abilities:
                 self.feet_pos[2*i] = skeleton[self.attached_segments[i]][:3]
@@ -166,7 +172,7 @@ class Legs:
             # use a sine wave to model the wing flap
             index = 0
             for i in range(len(self.attached_segments)):
-                if self.attached_segments[i] == self.wing_attachments[0]:
+                if self.leg_types[i]['type'] == 'wing':
                     index = i
                     break
             
@@ -215,26 +221,26 @@ class Legs:
     # evolution systems         #
     ############################# 
     def transform_wings(self):
-        for i in self.attached_segments:
-            if i not in self.arm_attachments and i not in self.wing_attachments:
-                self.wing_attachments.append(i)
+        for i in range(len(self.attached_segments)):
+            if self.leg_types[i]['type'] != 'wing' and self.leg_types[i]['type'] != 'arm':
+                self.leg_types[i]['type'] == 'wing'
                 return
 
     def transform_arms(self):
         for i in self.attached_segments:
-            if i not in self.arm_attachments and i not in self.wing_attachments:
-                self.arm_attachments.append(i)
+            if self.leg_types[i]['type'] != 'wing' and self.leg_types[i]['type'] != 'arm':
+                self.leg_types[i]['type'] == 'arm'
                 return
 
     ############################# 
     # data getters              #
     ############################# 
     def num_legs(self):
-        return len(self.attached_segments)-len(self.arm_attachments)-len(self.wing_attachments)
+        return len(filter(lambda type : type['type'] == 'leg', self.leg_types))
 
     def get_torso_start(self):
-        for i in self.attached_segments:
-            if i not in self.arm_attachments and i not in self.wing_attachments:
+        for i in range(len(self.attached_segments)):
+            if self.leg_types[i]['type'] != 'wing' and self.leg_types[i]['type'] != 'arm':
                 return i-1
 
         return -1
