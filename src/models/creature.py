@@ -13,9 +13,7 @@ class Creature:
         self.size = size
         self.max_parts = max_parts
         self.legs = Legs(num_pair_legs=num_pair_legs, 
-                        leg_length=leg_length, 
-                        arm_attachments=[], 
-                        wing_attachments=[])
+                        leg_length=leg_length, )
         self.build_skeleton(pos)
         self.give_legs()
     
@@ -98,8 +96,17 @@ class Creature:
         return 0
 
     def change_legs(self):
-        self.legs.num_pair_legs+=1
-        self.update_legs()
+        existing_leg_index = -1
+        for i in range(len(self.legs.leg_types)):
+            if self.legs.leg_types[i]['type'] == 'leg' and self.legs.leg_types[i]['level'] < 3:
+                existing_leg_index = i
+                break
+        
+        if existing_leg_index != -1:
+            self.legs.leg_types[existing_leg_index]['level'] += 1
+        else:
+            self.legs.num_pair_legs += 1
+            self.update_legs()
 
     def render(self, screen, camera):
 

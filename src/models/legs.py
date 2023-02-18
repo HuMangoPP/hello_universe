@@ -1,6 +1,6 @@
 import pygame as pg
 from math import sqrt, pi, sin, cos, exp
-from src.util.settings import MODEL_COLORS
+from src.util.settings import MODEL_COLORS, TRAIT_AND_BODY_LEVELS
 import numpy as np
 
 class Legs:
@@ -8,7 +8,6 @@ class Legs:
     # init and spawn            #
     ############################# 
     def __init__(self, num_pair_legs, leg_length, 
-                       arm_attachments, wing_attachments,
                        size=5, step_bend = pi/6,):
         # entity data
         self.num_pair_legs = num_pair_legs
@@ -35,8 +34,6 @@ class Legs:
         self.step_pos.append([body_seg_pos[0]+self.leg_length*cos(-self.step_bend), 
                                 body_seg_pos[1]+self.leg_length*sin(-self.step_bend), 
                                 0])
-
-
 
     ############################# 
     # draw                      #
@@ -221,8 +218,20 @@ class Legs:
     def transform_leg(self, index, new_type, new_level):
         self.leg_types[index] = {
             'type': new_type,
-            'new_level': new_level
+            'level': new_level
         }
+    
+    def get_wing_index(self):
+        for i in range(len(self.leg_types)):
+            if self.leg_types[i]['type'] == 'wing' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                return i
+        return -1
+    
+    def get_arm_index(self):
+        for i in range(len(self.leg_types)):
+            if self.leg_types[i]['type'] == 'arm' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                return i
+        return -1
     
     def free_leg(self):
         for i in range(len(self.attached_segments)):

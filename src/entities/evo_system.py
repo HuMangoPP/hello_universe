@@ -1,5 +1,5 @@
 from random import choice, uniform, randint
-from src.util.settings import STAT_GAP
+from src.util.settings import STAT_GAP, TRAIT_AND_BODY_LEVELS
 from math import log
 
 class EvoSystem:
@@ -62,11 +62,23 @@ class EvoSystem:
     def give_traits(self, index, trait):
         if self.entities.traits[index].new_trait:
             self.entities.traits[index].new_trait['level']+=1
+            # if it is a wing/arm, update the level
+            if trait == 'wings':
+                wing_index = self.entities.creature[index].leg.get_wing_index()
+                self.entities.creature[index].leg.transform_leg(wing_index, 'wing', self.entities.traits[index].new_trait['level'])
+            if trait == 'arms':
+                arm_index = self.entities.creature[index].leg.get_arm_index()
+                self.entities.creature[index].leg.transform_leg(arm_index, 'arm', self.entities.traits[index].new_trait['level'])
         else:
             self.entities.traits[index].new_trait = trait
-            self.entities.traits[index].new_trait['level'] = 1
+            self.entities.traits[index].new_trait['level'] = TRAIT_AND_BODY_LEVELS['start']
+            # if it is a wing/arm, update the level
+            if trait == 'wings':
+                self.entities.creature[index].give_wings()
+            if trait == 'arms':
+                self.entities.creature[index].give_arms()
         
-        if self.entities.traits[index].new_trait['level'] == 3:
+        if self.entities.traits[index].new_trait['level'] == TRAIT_AND_BODY_LEVELS['max']:
             self.entities.traits[index].give_traits(self.entities.creature[index], trait['reward'])
             self.entities.traits[index].new_trait = {}
 

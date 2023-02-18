@@ -30,12 +30,10 @@ class Traits:
         match trait:
             case 'wings':
                 self.min_stats['mbl'] = 8
-                creature.give_wings()
                 creature.upright()
             
             case 'arms':
                 self.min_stats['itl'] = 6
-                creature.give_arms()
                 creature.upright()
 
             case 'claws':

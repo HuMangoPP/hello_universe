@@ -60,6 +60,12 @@ BASE_STATS = {
     'max': BASE_MAX_STATS,
 }
 
+TRAIT_AND_BODY_LEVELS = {
+    'start': 1, # starting, does nothing, offers minimal benefits and minimal drawbacks
+    'intermediate': 2, # does something, offers some benefits and some drawbacks
+    'max': 3, # transforms into the full fledged thing
+}
+
 TRAITS = [
     'legs',
     'body_segments',
