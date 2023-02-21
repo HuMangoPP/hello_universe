@@ -117,8 +117,10 @@ class EvoSystem:
                 self.entities.scale[index] += increase_scale
         elif type == 'decrease_body':
             self.entities.creature[index].change_body(-1.0)
+        elif type == 'new_leg':
+            self.entities.creature[index].change_legs('new')
         else:
-            self.entities.creature[index].change_legs()
+            self.entities.creature[index].change_legs('upgrade')
 
     def regen(self):
         for i in range(len(self.entities.health)):

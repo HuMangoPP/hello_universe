@@ -210,7 +210,13 @@ class WorldEvent:
         if entity_data['creature'].legs.num_pair_legs < max_legs_allowed:
             all_quests.append({
                 'type': 'physiology',
-                'reward': 'leg',
+                'reward': 'new_leg',
+            })
+        
+        if entity_data['creature'].legs.get_unmaxed_leg_index() != -1:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'leg_upgrade'
             })
 
         

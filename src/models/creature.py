@@ -95,7 +95,12 @@ class Creature:
             self.build_skeleton(new_pos, upright=True)
         return 0
 
-    def change_legs(self):
+    def change_legs(self, type):
+        if type == 'new':
+            self.legs.num_pair_legs += 1
+            self.update_legs()
+            return
+        
         existing_leg_index = -1
         for i in range(len(self.legs.leg_types)):
             if self.legs.leg_types[i]['type'] == 'leg' and self.legs.leg_types[i]['level'] < 3:
@@ -104,9 +109,6 @@ class Creature:
         
         if existing_leg_index != -1:
             self.legs.leg_types[existing_leg_index]['level'] += 1
-        else:
-            self.legs.num_pair_legs += 1
-            self.update_legs()
 
     def render(self, screen, camera):
 

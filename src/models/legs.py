@@ -41,6 +41,20 @@ class Legs:
     def draw(self, screen, skeleton, camera):
         for i in range(self.num_pair_legs):
             screen_pos = []
+            if self.leg_types[i]['type'] == 'leg' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i][0:3]))
+                screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0:3]))
+                pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
+                pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
+                                            screen_pos[1])
+                
+                screen_pos = []
+                screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i+1][0:3]))
+                screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0:3]))
+                pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
+                pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
+                                            screen_pos[1])
+                continue
             # foot pos
             screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i][0:3]))
             # joint pos
@@ -102,6 +116,22 @@ class Legs:
         self.feet_pos[2*i] = self.step_pos[2*i]
         self.feet_pos[2*i+1] = self.step_pos[2*i+1]
 
+    def move_fins(self, skeleton, i):
+        # fins are lower level legs that don't yet act as legs
+        index = self.attached_segments[i]
+        x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
+        angle = skeleton[index][3]
+        offset_angle = pi/4+pi/4*(1+cos(pg.time.get_ticks()/500))
+        self.step_pos[2*i] = [x+self.leg_length/4*cos(offset_angle+angle),
+                              y+self.leg_length/4*sin(offset_angle+angle),
+                              z]
+        self.step_pos[2*i+1] = [x+self.leg_length/4*cos(-offset_angle+angle),
+                                y+self.leg_length/4*sin(-offset_angle+angle),
+                                z]
+    
+        self.feet_pos[2*i] = self.step_pos[2*i]
+        self.feet_pos[2*i+1] = self.step_pos[2*i+1]
+
     def move_feet(self, skeleton, effects):
         # update the step pos: where the feet should be 
         # it took a step
@@ -129,6 +159,8 @@ class Legs:
             elif 'in_air' in abilities or 'underwater' in abilities:
                 self.feet_pos[2*i] = skeleton[self.attached_segments[i]][:3]
                 self.feet_pos[2*i+1] = skeleton[self.attached_segments[i]][:3]
+            elif self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                self.move_fins(skeleton, i)
             else:
                 if self.dist_foot_to_body(self.feet_pos[2*i], skeleton[self.attached_segments[i]]) >= self.leg_length:
                     # if the distance from the foot to the body segment
@@ -237,6 +269,13 @@ class Legs:
         for i in range(len(self.attached_segments)):
             if self.leg_types[i]['type'] != 'wing' and self.leg_types[i]['type'] != 'arm':
                 return i
+
+    def get_unmaxed_leg_index(self):
+        for i in range(len(self.leg_types)):
+            if self.leg_types[i]['type'] == 'leg' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                return i
+        
+        return -1
 
     ############################# 
     # data getters              #
