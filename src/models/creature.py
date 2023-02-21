@@ -95,6 +95,9 @@ class Creature:
             self.build_skeleton(new_pos, upright=True)
         return 0
 
+    def increase_body_potential(self):
+        self.max_parts+=1
+
     def change_legs(self, type):
         if type == 'new':
             self.legs.num_pair_legs += 1

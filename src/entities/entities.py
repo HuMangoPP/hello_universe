@@ -2,7 +2,7 @@ import pygame as pg
 from math import atan2, cos, sin, sqrt, pi, exp
 from src.combat.abilities import BASE_AOE_RADIUS
 from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
-from src.util.settings import WIDTH, MAX_SIZE, MIN_SIZE
+from src.util.settings import WIDTH, MAX_SIZE, MIN_SIZE, MAX_NUM_PARTS
 from src.util.physics import new_vel, angles_between
 from src.models.creature import Creature
 from src.models.traits import Traits
@@ -24,7 +24,8 @@ ENTITY_CALCULATIONS = {
                                                   entities.stats[index]['mbl']/entities.creature[index].num_parts) 
                                                   - entities.creature[index].num_parts),
     'max_size': (lambda entities, index : sigmoid(2*MAX_SIZE, entities.creature[index].size/MAX_SIZE)),
-    'min_size': (lambda entities, index : MIN_SIZE)
+    'min_size': (lambda entities, index : MIN_SIZE),
+    'max_parts': (lambda entities, index : sigmoid(MAX_NUM_PARTS, entities.creature[index].max_size-MAX_NUM_PARTS+entities.consumed[index])),
 }
 
 class Entities:
@@ -50,6 +51,7 @@ class Entities:
         self.traits = []        
         self.hurt_box = []      
         self.quests = []    
+        self.consumed = []
 
         self.behaviours = []    
     
@@ -84,7 +86,8 @@ class Entities:
             index = len(self.traits)-1
             self.traits[index].give_traits(self.creature[index], trait)
         self.hurt_box.append(None)
-        self.quests.append({})
+        self.quests.append({}) # TODO: save data
+        self.consumed.append(0) # TODO: save data
 
         self.behaviours.append(Behaviour({
             'aggression': entity_data['aggression'],

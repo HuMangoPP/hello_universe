@@ -111,7 +111,9 @@ class EvoSystem:
             behaviour.shift()
 
     def change_physiology(self, type, index):
-        if type == 'increase_body':
+        if type == 'new_parts':
+            self.entities.creature[index].increase_body_potential()
+        elif type == 'increase_body':
             increase_scale = self.entities.creature[index].change_body(10.0)
             if increase_scale != 0:
                 self.entities.scale[index] += increase_scale
