@@ -12,6 +12,8 @@ from src.entities.combat_system import CombatSystem
 
 from src.combat.abilities import BASIC_ABILITIES
 
+from src.environment.environment import Environment
+
 from src.util.settings import RES, BASE_STATS
 from src.util.asset_loader import load_assets
 from src.util.font import Font
@@ -61,6 +63,8 @@ def main():
     controller = PlayerController(player)
     ai_controller = AIController(player)
 
+    environment = Environment()
+
     font = Font(pg.image.load('./assets/font/font.png'))
     ui = UserInterface(player, font, sprites)
 
@@ -77,6 +81,7 @@ def main():
         'corpses': corpses,
         'evo_system': evo_system,
         'combat_system': combat_system,
+        'environment': environment,
     }
     start_menu(screen, game_data)
 

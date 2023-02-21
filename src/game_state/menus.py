@@ -98,6 +98,7 @@ def game_menu(screen, game_data):
     corpses = game_data['corpses']
     evo_system = game_data['evo_system']
     combat_system = game_data['combat_system']
+    environment = game_data['environment']
 
     controller = game_data['controller']
     ai_controller = game_data['ai']
@@ -177,6 +178,9 @@ def game_menu(screen, game_data):
             ui.toggle_quests_menu()
             ui.update_quests(WorldEvent(entities, player))
             ui.input(events, entities, corpses, evo_system)
+
+            # update the environment based on creature actions
+            environment.new_generation(generation)
     
         pg.display.update()
         pg.display.set_caption(f'{clock.get_fps()}, {dt}')

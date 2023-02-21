@@ -3,6 +3,8 @@ from src.util.settings import STAT_GAP
 MAX_NUM_TRAITS = 5
 
 ALL_TRAITS = [
+    'digestion', # a modifier on digestion that allows for bonuses when eating
+    'autotrophic', # a modifier that allows energy regen passively
     'claws', # claws/talons
     'horn', # antler, corn, horn
     'wings', # wings, modified leg
