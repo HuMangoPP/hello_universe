@@ -259,7 +259,11 @@ class Quest_UI:
         self.hover = 0
     
     def display(self, screen, font):
-        font.render(screen, 'quests_', WIDTH/2, HEIGHT/4, (0, 255, 0), 24, 'center')
+        font.render(screen=screen, 
+                    text='quests', 
+                    x=WIDTH/2, y=HEIGHT/4, 
+                    colour=(0, 255, 0), size=24, 
+                    style='center')
         if not self.quests:
             return
 
@@ -290,8 +294,11 @@ class Quest_UI:
                 card.fill(QUEST_CARD_UI['c'][q_type])
                 card.set_alpha(a)
                 screen.blit(card, (WIDTH/2-(w+p)*rev_i-w/2, HEIGHT/2-h/2))
-                font.render(screen, f'{q_type} {reward}', 
-                            WIDTH/2-(w+p)*rev_i, HEIGHT/2, (255, 255, 255), f, 'center')
+                font.render(screen=screen, text=f'{q_type} {reward}', 
+                            x=WIDTH/2-(w+p)*rev_i, y=HEIGHT/2, 
+                            colour=(255, 255, 255), size=f, 
+                            style='center',
+                            box_width=w)
         
             for i in range(len(next)):
                 # reverse the index
@@ -311,8 +318,11 @@ class Quest_UI:
                 card.fill(QUEST_CARD_UI['c'][q_type])
                 card.set_alpha(a)
                 screen.blit(card, (WIDTH/2+(w+p)*rev_i-w/2, HEIGHT/2-h/2))
-                font.render(screen, f'{q_type} {reward}', 
-                            WIDTH/2+(w+p)*rev_i, HEIGHT/2, (255, 255, 255), f, 'center')
+                font.render(screen=screen, text=f'{q_type} {reward}', 
+                            x=WIDTH/2+(w+p)*rev_i, y=HEIGHT/2, 
+                            colour=(255, 255, 255), size=f, 
+                            style='center',
+                            box_width=w)
         
         # draw the hovered card
         q_type = self.quests[self.hover]['type']
@@ -320,8 +330,10 @@ class Quest_UI:
         card = pg.Surface((QUEST_CARD_UI['w'], QUEST_CARD_UI['h']))
         card.fill(QUEST_CARD_UI['c'][q_type])
         screen.blit(card, (WIDTH/2-QUEST_CARD_UI['w']/2, HEIGHT/2-QUEST_CARD_UI['h']/2))
-        font.render(screen, f'{q_type} {reward}',
-                    WIDTH/2, HEIGHT/2, (255, 255, 255), QUEST_CARD_UI['f'], 'center')
+        font.render(screen=screen, text=f'{q_type} {reward}',
+                    x=WIDTH/2, y=HEIGHT/2, 
+                    colour=(255, 255, 255), size=QUEST_CARD_UI['f'], 
+                    style='center', box_width=QUEST_CARD_UI['w'])
     
     def input(self, pg_events):
         for event in pg_events:

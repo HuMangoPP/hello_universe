@@ -213,6 +213,7 @@ class WorldEvent:
         
         # base this on the mbl stat as well
         max_legs_allowed = entities.entity_calculation(index, 'max_legs')
+
         if entity_data['creature'].legs.num_pair_legs < max_legs_allowed:
             all_quests.append({
                 'type': 'physiology',

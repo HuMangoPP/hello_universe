@@ -80,12 +80,14 @@ def start_menu(screen, game_data):
         r = 255*sin(time)%256
         g = 255*sin(time+pi/4)%256
         b = 255*sin(time+pi/2)%256
-        font.render(screen, 'hello, universe', WIDTH//2, 50, 
-                    (r, g, b), 
-                    24, 'center')
-        font.render(screen, 'press anywhere to continue', WIDTH//2, HEIGHT-50,
-                    (r, g, b),
-                    24, 'center')
+        font.render(screen=screen, text='hello, universe', 
+                    x=WIDTH//2, y=50, 
+                    colour=(r, g, b), 
+                    size=24, style='center')
+        font.render(screen=screen, text='press anywhere to continue', 
+                    x=WIDTH//2, y=HEIGHT-50,
+                    colour=(r, g, b),
+                    size=24, style='center')
         update_solar_system()
 
         ui.draw_mouse(screen)
@@ -207,7 +209,10 @@ def game_over(screen, font, clock, entities, camera, ui):
         ui.display(screen, entities)
         
         screen.blit(black_screen, (0, 0))
-        font.render(screen, 'you died', WIDTH/2, HEIGHT/2, (255, 0, 0), 50, 'center', text_alpha)
+        font.render(screen=screen, text='you died', 
+                    x=WIDTH/2, y=HEIGHT/2, 
+                    colour=(255, 0, 0), size=50, style='center', 
+                    alpha=text_alpha)
 
         if screen_alpha >= 255:
             text_alpha+=3

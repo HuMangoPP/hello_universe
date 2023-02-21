@@ -8,7 +8,7 @@ from src.models.creature import Creature
 from src.models.traits import Traits
 from src.models.behaviour import Behaviour
 
-sigmoid = lambda a, x : round(a * (1+exp(-x)))
+sigmoid = lambda a, x, c: round(a / (1+exp(-x)) + c)
 sum_stats = lambda entities, index, stats : sum([entities.stats[index][stat_type] for stat_type in stats])
 
 ENTITY_CALCULATIONS = {
@@ -21,11 +21,11 @@ ENTITY_CALCULATIONS = {
     'damage_mitigate': (lambda entities, index : sum_stats(entities, index, ['def', 'mbl'])),
     'movement': (lambda entities, index : 5 + sum_stats(entities, index, ['mbl'])),
     'max_legs': (lambda entities, index : sigmoid(entities.creature[index].num_parts*2, 
-                                                  entities.stats[index]['mbl']/entities.creature[index].num_parts) 
-                                                  - entities.creature[index].num_parts),
-    'max_size': (lambda entities, index : sigmoid(2*MAX_SIZE, entities.creature[index].size/MAX_SIZE)),
+                                                  entities.stats[index]['mbl']/entities.creature[index].num_parts, 
+                                                  -entities.creature[index].num_parts)),
+    'max_size': (lambda entities, index : sigmoid(2*MAX_SIZE, entities.creature[index].size/MAX_SIZE, 0)),
     'min_size': (lambda entities, index : MIN_SIZE),
-    'max_parts': (lambda entities, index : sigmoid(MAX_NUM_PARTS, entities.creature[index].max_parts-MAX_NUM_PARTS+entities.consumed[index])),
+    'max_parts': (lambda entities, index : sigmoid(MAX_NUM_PARTS, entities.creature[index].max_parts-MAX_NUM_PARTS+entities.consumed[index], 0)),
 }
 
 class Entities:
