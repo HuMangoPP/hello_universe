@@ -4,11 +4,6 @@ from random import uniform
 NUM_REGIONS = 10
 CLIMATE_START = 100
 DENSITY_START = 0.2
-RESOURCE_TYPES = {
-    'inorganic',        # chemical soup
-    'energy',           # sunlight, energy, etc 
-    'organic',          # vegetation
-}
 
 class Environment:
     def __init__(self, env_data):

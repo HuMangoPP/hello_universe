@@ -25,7 +25,7 @@ ENTITY_CALCULATIONS = {
                                                   - entities.creature[index].num_parts),
     'max_size': (lambda entities, index : sigmoid(2*MAX_SIZE, entities.creature[index].size/MAX_SIZE)),
     'min_size': (lambda entities, index : MIN_SIZE),
-    'max_parts': (lambda entities, index : sigmoid(MAX_NUM_PARTS, entities.creature[index].max_size-MAX_NUM_PARTS+entities.consumed[index])),
+    'max_parts': (lambda entities, index : sigmoid(MAX_NUM_PARTS, entities.creature[index].max_parts-MAX_NUM_PARTS+entities.consumed[index])),
 }
 
 class Entities:
@@ -52,6 +52,7 @@ class Entities:
         self.hurt_box = []      
         self.quests = []    
         self.consumed = []
+        self.digestion = []
 
         self.behaviours = []    
     
@@ -88,6 +89,7 @@ class Entities:
         self.hurt_box.append(None)
         self.quests.append({}) # TODO: save data
         self.consumed.append(0) # TODO: save data
+        self.digestion.append('inorganic') # TODO: save data
 
         self.behaviours.append(Behaviour({
             'aggression': entity_data['aggression'],
@@ -204,7 +206,8 @@ class Entities:
                 'materials': {
                     'bone': 10,
                 },
-                'creature': self.creature[i]
+                'creature': self.creature[i],
+                'digestion': 'inorganic' # TODO: change dynamically
             }
             corpses.add_new_corpse(corpse_data)
             self.pos[i:i+1] = []
@@ -224,8 +227,13 @@ class Entities:
         return False
 
     def consume(self, index, target_index, corpses):
-        self.energy[index] += corpses.nutrients[target_index]
+        if self.digestion[index] == corpses.digestion[target_index]:
+            self.energy[index] += corpses.nutrients[target_index]
+        else:
+            self.energy[index] += 0.75*corpses.nutrients[target_index]
+
         corpses.nutrients[target_index] = 0
+        self.consumed[index] += 1
         print(f'consumed')
     
     def scavenge(self, index, target_index, corpses):

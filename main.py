@@ -63,7 +63,9 @@ def main():
     controller = PlayerController(player)
     ai_controller = AIController(player)
 
-    environment = Environment()
+    environment = Environment({
+        'region_data': {},
+    })
 
     font = Font(pg.image.load('./assets/font/font.png'))
     ui = UserInterface(player, font, sprites)

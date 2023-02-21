@@ -67,10 +67,11 @@ TRAIT_AND_BODY_LEVELS = {
     'max': 3, # transforms into the full fledged thing
 }
 
-TRAITS = [
-    'legs',
-    'body_segments',
-]
+RESOURCE_TYPES = {
+    'inorganic',        # chemical soup
+    'energy',           # sunlight, energy, etc 
+    'organic',          # vegetation
+}
 
 MODEL_COLORS = {
     'skeleton': 'white',
