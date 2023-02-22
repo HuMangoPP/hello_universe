@@ -183,12 +183,20 @@ STAT_BAR_UI = {
 }
 
 ATS_UI = {
-    'bottom_pad': 75,
+    'bottom_pad': 100,
     'right_pad': 20,
-    'frame_pad': 9,
-    'icon_size': 48,
+    'frame_pad': 16,
+    'icon_size': 64,
     'reg_pad': 10,
+    'frame_width': 4,
 }
+
+HUD_HEIGHT = 164
+HUD_WIDTH = 560
+HUD_BOTTOM = HEIGHT-16
+
+HEADER = 75
+TITLE_FONT_SIZE = 24
 
 # quests
 QUEST_CARD_UI = {

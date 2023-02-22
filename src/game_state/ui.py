@@ -1,6 +1,6 @@
 from math import atan2, cos, pi, sin
 import pygame as pg
-from src.util.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ATS_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
+from src.util.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ATS_UI, QUEST_CARD_UI, HEADER, TITLE_FONT_SIZE, HUD_HEIGHT, HUD_WIDTH, HUD_BOTTOM
 from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS
 
 QUEST_LINGER_TIME = 1000
@@ -50,7 +50,9 @@ class UserInterface:
         # right
         pg.draw.line(screen, 'white', (mx-reticle_line_length, my), (mx-reticle_size-reticle_line_length, my), reticle_width)
 
-    def display(self, screen, entities):
+    def display(self, screen, entities, generation):
+
+        self.display_hud_frame(screen)
 
         # hp and energy bars
         self.display_hp(screen, entities)
@@ -67,6 +69,7 @@ class UserInterface:
         self.display_statuses(screen, entities)
 
         self.draw_mouse(screen)
+        self.display_generation(screen, generation)
 
         # quest
         if self.quest_ui['display']:
@@ -86,7 +89,38 @@ class UserInterface:
         interact = self.interaction_ui.input(pg_events)
         if interact['type'] == 'consume':
             entities.consume(self.player, interact['index'], corpses)
-        
+    
+    def display_generation(self, screen, generation):
+        frame = self.hud_frames['gen_frame']
+        screen.blit(frame,
+                    (WIDTH//2-frame.get_width()//2, HEADER-frame.get_height()//2))
+        self.font.render(screen=screen,
+                         text=f'gen {generation}',
+                         x=WIDTH//2, y=HEADER,
+                         colour=(255, 255, 255),
+                         size=TITLE_FONT_SIZE, style='center')
+        ...
+
+    def display_hud_frame(self, screen):
+        frame = self.hud_frames['enclosing_frame']
+        bottom = min(HEIGHT-HUD_HEIGHT+WIDTH//2-HUD_WIDTH-frame.get_width()//2, HUD_BOTTOM)
+        dist = bottom-(HEIGHT-HUD_HEIGHT)
+        points = [
+            (0, HEIGHT-HUD_HEIGHT),
+            (HUD_WIDTH, HEIGHT-HUD_HEIGHT),
+            (HUD_WIDTH+dist, bottom),
+            (WIDTH-HUD_WIDTH-dist, bottom),
+            (WIDTH-HUD_WIDTH, HEIGHT-HUD_HEIGHT),
+            (WIDTH, HEIGHT-HUD_HEIGHT),
+            (WIDTH, HEIGHT),
+            (0, HEIGHT),
+        ]
+        pg.draw.polygon(screen, (50, 50, 50), points)
+
+        for i in range(5):
+            pg.draw.line(screen, (255, 255, 255), points[i], points[i+1], 4)
+        screen.blit(frame, (WIDTH//2-frame.get_width()//2, bottom-frame.get_height()//2-2))
+
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
         health_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
@@ -149,8 +183,8 @@ class UserInterface:
         icon_edge_pad = left_edge_pad+ATS_UI['frame_pad']
         for i in range(len(abilities)):
             icon = self.ability_icons[abilities[i]]
-            screen.blit(icon, (icon_edge_pad+i*ATS_UI['icon_size'],
-                                HEIGHT-ATS_UI['bottom_pad']))
+            screen.blit(icon, (icon_edge_pad+i*(ATS_UI['icon_size']+ATS_UI['frame_width']),
+                                HEIGHT-frame.get_height()//2+ATS_UI['frame_width']//2))
 
     def trait_slots(self, screen, entities):
         traits = entities.traits[self.player].traits
@@ -161,8 +195,8 @@ class UserInterface:
         icon_edge_pad = left_edge_pad+ATS_UI['frame_pad']
         for i in range(len(traits)):
             icon = self.trait_icons[traits[i]]
-            screen.blit(icon, (icon_edge_pad+i*ATS_UI['icon_size'],
-                                HEIGHT-ATS_UI['bottom_pad']-ATS_UI['icon_size']))
+            screen.blit(icon, (icon_edge_pad+i*(ATS_UI['icon_size']+ATS_UI['frame_width']),
+                                HEIGHT-frame.get_height()+ATS_UI['frame_padding']))
         
         # display new traits
         if new_trait:
@@ -176,7 +210,7 @@ class UserInterface:
         right_pad = self.hud_frames['energy_frame'].get_width()
         left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
         screen.blit(frame, (left_edge_pad, 
-                    HEIGHT-ATS_UI['bottom_pad']-frame.get_height()/2))
+                    HEIGHT-frame.get_height()))
         self.ability_slots(screen, entities)
         self.trait_slots(screen, entities)
 
@@ -262,7 +296,7 @@ class Quest_UI:
         font.render(screen=screen, 
                     text='quests', 
                     x=WIDTH/2, y=HEIGHT/4, 
-                    colour=(0, 255, 0), size=24, 
+                    colour=(0, 255, 0), size=TITLE_FONT_SIZE, 
                     style='center')
         if not self.quests:
             return

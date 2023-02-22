@@ -1,7 +1,7 @@
 from math import sqrt, sin, cos, pi
 from random import randint, choice
 import pygame as pg
-from src.util.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT
+from src.util.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT, TITLE_FONT_SIZE
 from src.game_state.camera import Camera
 from src.combat.world_event import WorldEvent
 
@@ -83,11 +83,11 @@ def start_menu(screen, game_data):
         font.render(screen=screen, text='hello, universe', 
                     x=WIDTH//2, y=50, 
                     colour=(r, g, b), 
-                    size=24, style='center')
+                    size=TITLE_FONT_SIZE, style='center')
         font.render(screen=screen, text='press anywhere to continue', 
                     x=WIDTH//2, y=HEIGHT-50,
                     colour=(r, g, b),
-                    size=24, style='center')
+                    size=TITLE_FONT_SIZE, style='center')
         update_solar_system()
 
         ui.draw_mouse(screen)
@@ -156,7 +156,7 @@ def game_menu(screen, game_data):
         corpses.render(screen, camera)
         if controller.queued_ability!=-1:
             ui.ability_indicator(screen, entities, controller, camera)
-        ui.display(screen, entities)
+        ui.display(screen, entities, generation)
         # ui.arrow_to_corpse(screen, entities, player, corpses, camera)
 
         # death
