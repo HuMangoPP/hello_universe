@@ -196,14 +196,14 @@ class UserInterface:
         for i in range(len(traits)):
             icon = self.trait_icons[traits[i]]
             screen.blit(icon, (icon_edge_pad+i*(ATS_UI['icon_size']+ATS_UI['frame_width']),
-                                HEIGHT-frame.get_height()+ATS_UI['frame_padding']))
+                                HEIGHT-frame.get_height()+ATS_UI['frame_pad']))
         
         # display new traits
         if new_trait:
             icon = self.trait_icons[new_trait['reward']].copy()
             icon.fill((255, 0, 0, 100), special_flags=pg.BLEND_RGBA_ADD)
             screen.blit(icon, (icon_edge_pad+len(traits)*ATS_UI['icon_size'],
-                                HEIGHT-ATS_UI['bottom_pad']-ATS_UI['icon_size']))
+                                HEIGHT-frame.get_height()+ATS_UI['frame_pad']))
 
     def display_traits_and_abilities(self, screen, entities):
         frame = self.hud_frames['ability_and_trait_frame']
@@ -248,10 +248,10 @@ class UserInterface:
         frame = self.hud_frames['ability_and_trait_frame']
         status_effects = entities.status_effects[self.player]
         right_pad = WIDTH-self.hud_frames['energy_frame'].get_width()-2*ATS_UI['right_pad']
-        bottom_pad = HEIGHT-frame.get_height()-ATS_UI['bottom_pad']
+        bottom_pad = HEIGHT-frame.get_height()-ATS_UI['reg_pad']-ATS_UI['icon_size']//2
         for i in range(len(status_effects['effects'])):
             icon = self.status_icons[status_effects['effects'][i]]
-            screen.blit(icon, (-(i+0.5)*(icon.get_width()+ATS_UI['reg_pad'])+right_pad, bottom_pad))
+            screen.blit(icon, (-(i+1)*(icon.get_width()+ATS_UI['reg_pad'])+right_pad, bottom_pad))
 
     def arrow_to_corpse(self, screen, entities, player, corpses, camera):
         for i in range(len(corpses.pos)):

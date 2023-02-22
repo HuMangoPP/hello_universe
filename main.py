@@ -27,7 +27,7 @@ def main():
     ability_icons = load_assets('./assets/abilities', 2.0)
     trait_icons = load_assets('./assets/traits', 2.0)
     hud_frames = load_assets('./assets/hud/', 1.0)
-    status_effect_icons = load_assets('./assets/status_effects', 2.0)
+    status_effect_icons = load_assets('./assets/status_effects', 1.0)
     sprites = {}
     sprites['stat_icons'] = stat_icons
     sprites['ability_icons'] = ability_icons
