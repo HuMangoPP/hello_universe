@@ -213,6 +213,7 @@ QUEST_CARD_UI = {
     's_ratio': 2,
     'a_ratio': 2,
     'f': 12,
+    'r': 200,
 }
 
 # interactions
