@@ -1,6 +1,6 @@
-from math import atan2, cos, pi, sin
+from math import atan2, cos, pi, sin, log, exp
 import pygame as pg
-from src.util.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ATS_UI, QUEST_CARD_UI, INTERACTION_WHEEL_UI
+from src.util.settings import GAUGE_UI, STAT_BAR_UI, HEIGHT, WIDTH, ATS_UI, QUEST_CARD_UI, HEADER, TITLE_FONT_SIZE, HUD_HEIGHT, HUD_WIDTH, HUD_BOTTOM
 from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS
 
 QUEST_LINGER_TIME = 1000
@@ -50,7 +50,9 @@ class UserInterface:
         # right
         pg.draw.line(screen, 'white', (mx-reticle_line_length, my), (mx-reticle_size-reticle_line_length, my), reticle_width)
 
-    def display(self, screen, entities):
+    def display(self, screen, entities, generation):
+
+        self.display_hud_frame(screen)
 
         # hp and energy bars
         self.display_hp(screen, entities)
@@ -67,6 +69,7 @@ class UserInterface:
         self.display_statuses(screen, entities)
 
         self.draw_mouse(screen)
+        self.display_generation(screen, generation)
 
         # quest
         if self.quest_ui['display']:
@@ -86,7 +89,38 @@ class UserInterface:
         interact = self.interaction_ui.input(pg_events)
         if interact['type'] == 'consume':
             entities.consume(self.player, interact['index'], corpses)
-        
+    
+    def display_generation(self, screen, generation):
+        frame = self.hud_frames['gen_frame']
+        screen.blit(frame,
+                    (WIDTH//2-frame.get_width()//2, HEADER-frame.get_height()//2))
+        self.font.render(screen=screen,
+                         text=f'gen {generation}',
+                         x=WIDTH//2, y=HEADER,
+                         colour=(255, 255, 255),
+                         size=TITLE_FONT_SIZE, style='center')
+        ...
+
+    def display_hud_frame(self, screen):
+        frame = self.hud_frames['enclosing_frame']
+        bottom = min(HEIGHT-HUD_HEIGHT+WIDTH//2-HUD_WIDTH-frame.get_width()//2, HUD_BOTTOM)
+        dist = bottom-(HEIGHT-HUD_HEIGHT)
+        points = [
+            (0, HEIGHT-HUD_HEIGHT),
+            (HUD_WIDTH, HEIGHT-HUD_HEIGHT),
+            (HUD_WIDTH+dist, bottom),
+            (WIDTH-HUD_WIDTH-dist, bottom),
+            (WIDTH-HUD_WIDTH, HEIGHT-HUD_HEIGHT),
+            (WIDTH, HEIGHT-HUD_HEIGHT),
+            (WIDTH, HEIGHT),
+            (0, HEIGHT),
+        ]
+        pg.draw.polygon(screen, (50, 50, 50), points)
+
+        for i in range(5):
+            pg.draw.line(screen, (255, 255, 255), points[i], points[i+1], 4)
+        screen.blit(frame, (WIDTH//2-frame.get_width()//2, bottom-frame.get_height()//2-2))
+
     def display_hp(self, screen, entities):
         # health bar, taking inspiration from Diablo/PoE
         health_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
@@ -105,7 +139,7 @@ class UserInterface:
         # energy bar, similar in style to the health
         energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         energy_bar.set_colorkey('black')
-        total_energy_calculation = entities.stat_calculation(self.player, preset='energy')
+        total_energy_calculation = entities.entity_calculation(self.player, 'energy')
         energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
         energy_frame = self.hud_frames['energy_frame']
         pg.draw.circle(energy_bar, GAUGE_UI['colours'][1],
@@ -149,8 +183,8 @@ class UserInterface:
         icon_edge_pad = left_edge_pad+ATS_UI['frame_pad']
         for i in range(len(abilities)):
             icon = self.ability_icons[abilities[i]]
-            screen.blit(icon, (icon_edge_pad+i*ATS_UI['icon_size'],
-                                HEIGHT-ATS_UI['bottom_pad']))
+            screen.blit(icon, (icon_edge_pad+i*(ATS_UI['icon_size']+ATS_UI['frame_width']),
+                                HEIGHT-frame.get_height()//2+ATS_UI['frame_width']//2))
 
     def trait_slots(self, screen, entities):
         traits = entities.traits[self.player].traits
@@ -161,22 +195,22 @@ class UserInterface:
         icon_edge_pad = left_edge_pad+ATS_UI['frame_pad']
         for i in range(len(traits)):
             icon = self.trait_icons[traits[i]]
-            screen.blit(icon, (icon_edge_pad+i*ATS_UI['icon_size'],
-                                HEIGHT-ATS_UI['bottom_pad']-ATS_UI['icon_size']))
+            screen.blit(icon, (icon_edge_pad+i*(ATS_UI['icon_size']+ATS_UI['frame_width']),
+                                HEIGHT-frame.get_height()+ATS_UI['frame_pad']))
         
         # display new traits
         if new_trait:
             icon = self.trait_icons[new_trait['reward']].copy()
             icon.fill((255, 0, 0, 100), special_flags=pg.BLEND_RGBA_ADD)
             screen.blit(icon, (icon_edge_pad+len(traits)*ATS_UI['icon_size'],
-                                HEIGHT-ATS_UI['bottom_pad']-ATS_UI['icon_size']))
+                                HEIGHT-frame.get_height()+ATS_UI['frame_pad']))
 
     def display_traits_and_abilities(self, screen, entities):
         frame = self.hud_frames['ability_and_trait_frame']
         right_pad = self.hud_frames['energy_frame'].get_width()
         left_edge_pad = WIDTH-right_pad-frame.get_width()-ATS_UI['right_pad']
         screen.blit(frame, (left_edge_pad, 
-                    HEIGHT-ATS_UI['bottom_pad']-frame.get_height()/2))
+                    HEIGHT-frame.get_height()))
         self.ability_slots(screen, entities)
         self.trait_slots(screen, entities)
 
@@ -207,17 +241,17 @@ class UserInterface:
         if 'aoe' in ALL_ABILITIES[ability_key]['type']:
             # aoe range
             # the radius will be calculated using entity stats
-            radius = entities.stat_calculation(self.player, preset='intimidation')
+            radius = entities.entity_calculation(self.player, 'intimidation')
             pg.draw.circle(screen, 'cyan', (x, y), radius, 5) 
     
     def display_statuses(self, screen, entities):
         frame = self.hud_frames['ability_and_trait_frame']
         status_effects = entities.status_effects[self.player]
         right_pad = WIDTH-self.hud_frames['energy_frame'].get_width()-2*ATS_UI['right_pad']
-        bottom_pad = HEIGHT-frame.get_height()-ATS_UI['bottom_pad']
+        bottom_pad = HEIGHT-frame.get_height()-ATS_UI['reg_pad']-ATS_UI['icon_size']//2
         for i in range(len(status_effects['effects'])):
             icon = self.status_icons[status_effects['effects'][i]]
-            screen.blit(icon, (-(i+0.5)*(icon.get_width()+ATS_UI['reg_pad'])+right_pad, bottom_pad))
+            screen.blit(icon, (-(i+1)*(icon.get_width()+ATS_UI['reg_pad'])+right_pad, bottom_pad))
 
     def arrow_to_corpse(self, screen, entities, player, corpses, camera):
         for i in range(len(corpses.pos)):
@@ -257,85 +291,145 @@ class Quest_UI:
     def __init__(self, quests):
         self.quests = quests
         self.hover = 0
+        self.new_hover = 0
+        self.playing_animation = False
+        self.animation_direction = 0
     
     def display(self, screen, font):
-        font.render(screen, 'quests_', WIDTH/2, HEIGHT/4, (0, 255, 0), 24, 'center')
+        font.render(screen=screen, 
+                    text='quests', 
+                    x=WIDTH/2, y=HEIGHT/4, 
+                    colour=(0, 255, 0), size=TITLE_FONT_SIZE, 
+                    style='center')
         if not self.quests:
             return
 
-        # make prev and next auto-balance, so they have the same number of cards?
-        prev = self.quests[:self.hover]
-        next = self.quests[self.hover+1:]
-        next.reverse()
-        gradient = max(len(next), len(prev))
-        # draw the previous cards
-        if gradient!=0:
-            size_ratio = QUEST_CARD_UI['s_ratio']**(1/gradient)
-            alpha_ratio = QUEST_CARD_UI['a_ratio']**(1/gradient)
-            for i in range(len(prev)):
-                # reverse the index
-                rev_i = len(prev)-i
-                # quest type and reward to be displayed
-                q_type = prev[i]['type']
-                reward = prev[i]['reward']
-                # card width, height, padding, font size, alpha
-                w = QUEST_CARD_UI['w']/(size_ratio**rev_i)
-                h = QUEST_CARD_UI['h']/(size_ratio**rev_i)
-                p = QUEST_CARD_UI['p']/(size_ratio**rev_i)
-                f = QUEST_CARD_UI['f']/(size_ratio**rev_i)
-                a = 255/(alpha_ratio**rev_i)
+        self.play_animation()
 
-                # make the card
-                card = pg.Surface((w, h))
-                card.fill(QUEST_CARD_UI['c'][q_type])
-                card.set_alpha(a)
-                screen.blit(card, (WIDTH/2-(w+p)*rev_i-w/2, HEIGHT/2-h/2))
-                font.render(screen, f'{q_type} {reward}', 
-                            WIDTH/2-(w+p)*rev_i, HEIGHT/2, (255, 255, 255), f, 'center')
-        
-            for i in range(len(next)):
-                # reverse the index
-                rev_i = len(next)-i
-                # quest type and reward to be displayed
-                q_type = next[i]['type']
-                reward = next[i]['reward']
-                # card width, height, padding, font size, alpha
-                w = QUEST_CARD_UI['w']/(size_ratio**rev_i)
-                h = QUEST_CARD_UI['h']/(size_ratio**rev_i)
-                a = 255/(alpha_ratio**rev_i)
-                p = QUEST_CARD_UI['p']/(size_ratio**rev_i)
-                f = QUEST_CARD_UI['f']/(size_ratio**rev_i)
+        angle_sep = 2*pi/len(self.quests)
+        angles = [angle_sep*(i-self.hover) for i in range(len(self.quests))]
+        render_data = []
 
-                # make the card
-                card = pg.Surface((w, h))
-                card.fill(QUEST_CARD_UI['c'][q_type])
-                card.set_alpha(a)
-                screen.blit(card, (WIDTH/2+(w+p)*rev_i-w/2, HEIGHT/2-h/2))
-                font.render(screen, f'{q_type} {reward}', 
-                            WIDTH/2+(w+p)*rev_i, HEIGHT/2, (255, 255, 255), f, 'center')
+        for i in range(len(self.quests)):
+            x = QUEST_CARD_UI['r']*sin(angles[i])
+            z = QUEST_CARD_UI['r']*cos(angles[i])
+            render_data.append({
+                'x': x,
+                'z': z,
+                'type': self.quests[i]['type'],
+                'reward': self.quests[i]['reward'],
+            })
         
-        # draw the hovered card
-        q_type = self.quests[self.hover]['type']
-        reward = self.quests[self.hover]['reward']
-        card = pg.Surface((QUEST_CARD_UI['w'], QUEST_CARD_UI['h']))
-        card.fill(QUEST_CARD_UI['c'][q_type])
-        screen.blit(card, (WIDTH/2-QUEST_CARD_UI['w']/2, HEIGHT/2-QUEST_CARD_UI['h']/2))
-        font.render(screen, f'{q_type} {reward}',
-                    WIDTH/2, HEIGHT/2, (255, 255, 255), QUEST_CARD_UI['f'], 'center')
-    
+        for to_render in sorted(render_data, key=lambda data : data['z']):
+            q_type = to_render['type']
+            reward = to_render['reward']
+            x = to_render['x']
+            z = QUEST_CARD_UI['r']-to_render['z']
+            w = QUEST_CARD_UI['w']/log(z+exp(1))
+            h = QUEST_CARD_UI['h']/log(z+exp(1))
+            card = pg.Surface((w, h))
+            card.fill(QUEST_CARD_UI['c'][q_type])
+            screen.blit(card, (WIDTH/2+x-w/2, HEIGHT/2-h/2-z/4))
+            font.render(screen=screen, text=f'{q_type} {reward}',
+                        x=WIDTH/2+x, y=HEIGHT/2-z/4, 
+                        colour=(255, 255, 255), size=QUEST_CARD_UI['f'], 
+                        style='center', box_width=QUEST_CARD_UI['w'])
+
+        # # make prev and next auto-balance, so they have the same number of cards?
+        # prev = self.quests[:self.hover]
+        # next = self.quests[self.hover+1:]
+        # next.reverse()
+        # gradient = max(len(next), len(prev))
+        # # draw the previous cards
+        # if gradient!=0:
+        #     size_ratio = QUEST_CARD_UI['s_ratio']**(1/gradient)
+        #     alpha_ratio = QUEST_CARD_UI['a_ratio']**(1/gradient)
+        #     for i in range(len(prev)):
+        #         # reverse the index
+        #         rev_i = len(prev)-i
+        #         # quest type and reward to be displayed
+        #         q_type = prev[i]['type']
+        #         reward = prev[i]['reward']
+        #         # card width, height, padding, font size, alpha
+        #         w = QUEST_CARD_UI['w']/(size_ratio**rev_i)
+        #         h = QUEST_CARD_UI['h']/(size_ratio**rev_i)
+        #         p = QUEST_CARD_UI['p']/(size_ratio**rev_i)
+        #         f = QUEST_CARD_UI['f']/(size_ratio**rev_i)
+        #         a = 255/(alpha_ratio**rev_i)
+
+        #         # make the card
+        #         card = pg.Surface((w, h))
+        #         card.fill(QUEST_CARD_UI['c'][q_type])
+        #         card.set_alpha(a)
+        #         screen.blit(card, (WIDTH/2-(w+p)*rev_i-w/2, HEIGHT/2-h/2))
+        #         font.render(screen=screen, text=f'{q_type} {reward}', 
+        #                     x=WIDTH/2-(w+p)*rev_i, y=HEIGHT/2, 
+        #                     colour=(255, 255, 255), size=f, 
+        #                     style='center',
+        #                     box_width=w)
+        
+        #     for i in range(len(next)):
+        #         # reverse the index
+        #         rev_i = len(next)-i
+        #         # quest type and reward to be displayed
+        #         q_type = next[i]['type']
+        #         reward = next[i]['reward']
+        #         # card width, height, padding, font size, alpha
+        #         w = QUEST_CARD_UI['w']/(size_ratio**rev_i)
+        #         h = QUEST_CARD_UI['h']/(size_ratio**rev_i)
+        #         a = 255/(alpha_ratio**rev_i)
+        #         p = QUEST_CARD_UI['p']/(size_ratio**rev_i)
+        #         f = QUEST_CARD_UI['f']/(size_ratio**rev_i)
+
+        #         # make the card
+        #         card = pg.Surface((w, h))
+        #         card.fill(QUEST_CARD_UI['c'][q_type])
+        #         card.set_alpha(a)
+        #         screen.blit(card, (WIDTH/2+(w+p)*rev_i-w/2, HEIGHT/2-h/2))
+        #         font.render(screen=screen, text=f'{q_type} {reward}', 
+        #                     x=WIDTH/2+(w+p)*rev_i, y=HEIGHT/2, 
+        #                     colour=(255, 255, 255), size=f, 
+        #                     style='center',
+        #                     box_width=w)
+        
+        # # draw the hovered card
+        # q_type = self.quests[self.hover]['type']
+        # reward = self.quests[self.hover]['reward']
+        # card = pg.Surface((QUEST_CARD_UI['w'], QUEST_CARD_UI['h']))
+        # card.fill(QUEST_CARD_UI['c'][q_type])
+        # screen.blit(card, (WIDTH/2-QUEST_CARD_UI['w']/2, HEIGHT/2-QUEST_CARD_UI['h']/2))
+        # font.render(screen=screen, text=f'{q_type} {reward}',
+        #             x=WIDTH/2, y=HEIGHT/2, 
+        #             colour=(255, 255, 255), size=QUEST_CARD_UI['f'], 
+        #             style='center', box_width=QUEST_CARD_UI['w'])
+
+    def play_animation(self):
+        if self.playing_animation:
+            self.hover+=self.animation_direction
+            if self.animation_direction > 0 and self.hover >= self.new_hover:
+                self.hover = int(round(self.new_hover%len(self.quests)))
+                self.playing_animation = False
+                self.animation_direction = 0
+            if self.animation_direction < 0 and self.hover <= self.new_hover:
+                self.hover = int(round(self.new_hover%len(self.quests)))
+                self.playing_animation = False
+                self.animation_direction = 0
+
     def input(self, pg_events):
         for event in pg_events:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_RIGHT:
                     if self.quests:
-                        self.hover+=1
-                        self.hover%=len(self.quests)
+                        self.new_hover = self.hover+1
+                        self.playing_animation = True
+                        self.animation_direction = 0.1
                     else:
                         self.hover = 0
                 if event.key == pg.K_LEFT:
                     if self.quests:
-                        self.hover-=1
-                        self.hover%=len(self.quests)
+                        self.new_hover = self.hover-1
+                        self.playing_animation = True
+                        self.animation_direction = -0.1
                     else:
                         self.hover = 0
                 if event.key == pg.K_RETURN:

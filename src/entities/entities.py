@@ -1,12 +1,32 @@
 import pygame as pg
-from math import atan2, cos, sin, sqrt, pi
+from math import atan2, cos, sin, sqrt, pi, exp
 from src.combat.abilities import BASE_AOE_RADIUS
 from src.combat.status_effects import MOVEMENT_IMPAIR_EFFECTS
-from src.util.settings import WIDTH
-from src.util.physics import new_vel
+from src.util.settings import WIDTH, MAX_SIZE, MIN_SIZE, MAX_NUM_PARTS
+from src.util.physics import new_vel, angles_between
 from src.models.creature import Creature
 from src.models.traits import Traits
 from src.models.behaviour import Behaviour
+
+sigmoid = lambda a, x, c: round(a / (1+exp(-x)) + c)
+sum_stats = lambda entities, index, stats : sum([entities.stats[index][stat_type] for stat_type in stats])
+
+ENTITY_CALCULATIONS = {
+    'energy': (lambda entities, index : 100 + sum_stats(entities, index, ['def', 'mbl'])),
+    'intimidation': (lambda entities, index : BASE_AOE_RADIUS + sum_stats(entities, index, ['itl', 'pwr', 'mbl'])),
+    'awareness': (lambda entities, index : 100 + sum_stats(entities, index, ['itl', 'stl'])),
+    'stealth': (lambda entities, index : sum_stats(entities, index, ['itl', 'stl'])),
+    'damage': (lambda entities, index : sum_stats(entities, index, ['pwr', 'def', 'mbl'])),
+    'evasion': (lambda entities, index : sum_stats(entities, index, ['mbl', 'stl'])),
+    'damage_mitigate': (lambda entities, index : sum_stats(entities, index, ['def', 'mbl'])),
+    'movement': (lambda entities, index : 5 + sum_stats(entities, index, ['mbl'])),
+    'max_legs': (lambda entities, index : sigmoid(entities.creature[index].num_parts*2, 
+                                                  entities.stats[index]['mbl']/entities.creature[index].num_parts, 
+                                                  -entities.creature[index].num_parts)),
+    'max_size': (lambda entities, index : sigmoid(2*MAX_SIZE, entities.creature[index].size/MAX_SIZE, 0)),
+    'min_size': (lambda entities, index : MIN_SIZE),
+    'max_parts': (lambda entities, index : sigmoid(MAX_NUM_PARTS, entities.creature[index].max_parts-MAX_NUM_PARTS+entities.consumed[index], 0)),
+}
 
 class Entities:
     ############################# 
@@ -18,7 +38,8 @@ class Entities:
         self.vel = []  
         self.spd = []     
         self.acc = []          
-        self.creature = []      
+        self.creature = []     
+        self.scale = [] 
 
         # game data
         self.stats = [] 
@@ -30,6 +51,8 @@ class Entities:
         self.traits = []        
         self.hurt_box = []      
         self.quests = []    
+        self.consumed = []
+        self.digestion = []
 
         self.behaviours = []    
     
@@ -42,14 +65,15 @@ class Entities:
         self.creature.append(Creature(num_parts=entity_data['body_parts'], 
                                       pos=entity_data['pos'], 
                                       size=entity_data['size'], 
-                                      max_size=entity_data['max_size'],
+                                      max_parts=entity_data['max_parts'],
                                       num_pair_legs=entity_data['num_legs'],
                                       leg_length=entity_data['leg_length']))
+        self.scale.append(entity_data['scale'])
 
         # game data
         self.stats.append(stats)
         self.health.append(stats['hp'])
-        self.energy.append(self.stat_calculation(len(self.energy), preset='energy')) # energy calculation
+        self.energy.append(self.entity_calculation(len(self.energy), 'energy')) # energy calculation
         
         self.abilities.append(entity_data['abilities'])
         self.status_effects.append({
@@ -63,7 +87,9 @@ class Entities:
             index = len(self.traits)-1
             self.traits[index].give_traits(self.creature[index], trait)
         self.hurt_box.append(None)
-        self.quests.append({})
+        self.quests.append({}) # TODO: save data
+        self.consumed.append(0) # TODO: save data
+        self.digestion.append('inorganic') # TODO: save data
 
         self.behaviours.append(Behaviour({
             'aggression': entity_data['aggression'],
@@ -81,7 +107,7 @@ class Entities:
         for i in range(len(self.creature)):
             dx = self.pos[i][0]-camera.pos[0]
             dy = self.pos[i][1]-camera.pos[1]
-            if sqrt(dx**2+dy**2)<=WIDTH/2:
+            if sqrt(dx**2+dy**2)<=WIDTH/2 and abs(self.scale[i] - camera.scale) <= 2:
                 self.creature[i].render(screen, camera)
             # if self.hurt_box[i]:
             #     self.hurt_box[i].render(screen, camera)
@@ -108,8 +134,7 @@ class Entities:
         for j in range(len(self.status_effects[index]['effects'])):
             if self.status_effects[index]['effects'][j] == 'intimidated':
                 source = self.status_effects[index]['source'][j]
-                angle = atan2(self.pos[source][1]-self.pos[index][1],
-                              self.pos[source][0]-self.pos[index][0])
+                angle = angles_between(self.pos[source], self.pos[index])['z']
                 x_dir, y_dir = cos(angle+pi), sin(angle+pi)
 
         self.vel[index][0] = new_vel(self.acc[index], self.vel[index][0], x_dir, dt)
@@ -136,7 +161,7 @@ class Entities:
             # angle the creature is facing
             if self.vel[i][0]**2+self.vel[i][1]**2!=0:
                 self.pos[i][3] = atan2(self.vel[i][1], self.vel[i][0])
-            
+
             # check if the entity is in bounds to
             # see if updating the model is necessary
             dx = self.pos[i][0]-camera.pos[0]
@@ -145,7 +170,7 @@ class Entities:
                 self.creature[i].move(self.pos[i], {
                     'effects': self.status_effects[i]['effects'], 
                     'time': self.status_effects[i]['time']
-                })
+                }, self.vel[i][0]**2 + self.vel[i][1]**2 != 0)
     
     def spend_energy(self, dt):
         for i in range(len(self.energy)):
@@ -157,7 +182,7 @@ class Entities:
                 ...
             else:
                 self.energy[i]-=energy_spent*dt
-            total_energy = self.stat_calculation(i, preset='energy')
+            total_energy = self.entity_calculation(i, 'energy')
             if self.energy[i]>total_energy:
                 self.energy[i] = total_energy
 
@@ -181,7 +206,8 @@ class Entities:
                 'materials': {
                     'bone': 10,
                 },
-                'creature': self.creature[i]
+                'creature': self.creature[i],
+                'digestion': 'inorganic' # TODO: change dynamically
             }
             corpses.add_new_corpse(corpse_data)
             self.pos[i:i+1] = []
@@ -201,86 +227,32 @@ class Entities:
         return False
 
     def consume(self, index, target_index, corpses):
-        self.energy[index] += corpses.nutrients[target_index]
+        if self.digestion[index] == corpses.digestion[target_index]:
+            self.energy[index] += corpses.nutrients[target_index]
+        else:
+            self.energy[index] += 0.75*corpses.nutrients[target_index]
+
         corpses.nutrients[target_index] = 0
+        self.consumed[index] += 1
         print(f'consumed')
     
     def scavenge(self, index, target_index, corpses):
         ...
 
-    def stat_calculation(self, index, preset):
-        calc = 0
-        
-        # presets
-        stats_to_calc = []
-        constants = []
-        if preset == 'energy':
-            stats_to_calc = ['def', 'pwr']
-            constants = [100]
-        elif preset == 'intimidation':
-            stats_to_calc = ['itl', 'pwr', 'mbl']
-            constants = [BASE_AOE_RADIUS]
-        elif preset == 'awareness':
-            stats_to_calc = ['itl', 'stl']
-            constants = [100]
-        elif preset == 'stealth':
-            stats_to_calc = ['itl', 'stl']
-            constants = []
-        elif preset == 'damage':
-            stats_to_calc = ['pwr', 'def', 'mbl']
-            constants = []
-        elif preset == 'evasion':
-            stats_to_calc = ['mbl', 'stl']
-            constants = []
-        elif preset == 'damage_mitigate':
-            stats_to_calc = ['def', 'mbl']
-            constants = []
-        elif preset == 'movement':
-            stats_to_calc = ['mbl']
-            constants = [5]
+    def entity_calculation(self, index, calculation):
+        fn = ENTITY_CALCULATIONS[calculation]
+        return fn(self, index)
 
-        for stat_to_calc in stats_to_calc:
-            calc+=self.stats[index][stat_to_calc]
-        for constant in constants:
-            calc+=constant
-        return calc
-
-    def max_calc(self, index, preset):
-        calc = 0
-
-        # presets
-        stats_to_calc = []
-        constants = []
-        if preset == 'potential_growth_size':
-            stats_to_calc = ['def', 'mbl']
-            constants = []
-        
-        for stat_to_calc in stats_to_calc:
-            calc+=self.stats[index]['max'][stat_to_calc]
-        for constant in constants:
-            calc+=constant
-        
-        return calc
-    
     def health_and_energy_ratios(self, index):
-        energy_ratio = self.energy[index]/self.stat_calculation(index, 'energy') * 100
+        energy_ratio = self.energy[index]/self.entity_calculation(index, 'energy') * 100
         health_ratio = self.health[index]/self.stats[index]['hp'] * 100
         
         return [health_ratio, energy_ratio]
 
     def interact_calculation(self, index, index_preset, target, target_preset):
         calc = 0
-        calc += self.stat_calculation(index, preset=index_preset)
-        calc -= self.stat_calculation(target, preset=target_preset)
-        return calc
-
-    # TODO: figure out how to format this to take into account other calculations like
-    # maybe size/num_parts/etc
-    def detailed_calculation(self, index, preset, fns):
-        calc = self.stat_calculation(index, preset)
-        for fn in fns:
-            calc = fn(calc)
-        
+        calc += self.entity_calculation(index, index_preset)
+        calc -= self.entity_calculation(target, target_preset)
         return calc
 
     def get_entity_quest_data(self, index):

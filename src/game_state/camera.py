@@ -5,7 +5,7 @@ class Camera():
     def __init__(self, x, y, z):
         self.pos = np.array([x, y, z])
 
-        self.scale = 10
+        self.scale = -6 # micrometer scale
 
         self.transform = np.array([[1, 0, 0], [0, 1, 0], [0, -1, 1]]).transpose()
         self.inverse = np.linalg.inv(self.transform)
@@ -24,6 +24,7 @@ class Camera():
 
     def follow_entity(self, entities, following):
         self.update_pos(np.array(entities.pos[following][0:3]))
+        self.scale = entities.scale[following]
     
     def update_pos(self, pos):
         self.pos = pos

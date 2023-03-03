@@ -4,6 +4,10 @@ RES = WIDTH, HEIGHT = 1280, 720
 OUT_OF_BOUNDS = 100
 FPS = 60
 
+MIN_SIZE = 5
+MAX_SIZE = 5
+MAX_NUM_PARTS = 10
+
 NEW_GEN_TIME = 10000
 
 BASE_MIN_STATS = {
@@ -57,10 +61,17 @@ BASE_STATS = {
     'max': BASE_MAX_STATS,
 }
 
-TRAITS = [
-    'legs',
-    'body_segments',
-]
+TRAIT_AND_BODY_LEVELS = {
+    'start': 1, # starting, does nothing, offers minimal benefits and minimal drawbacks
+    'intermediate': 2, # does something, offers some benefits and some drawbacks
+    'max': 3, # transforms into the full fledged thing
+}
+
+RESOURCE_TYPES = {
+    'inorganic',        # chemical soup
+    'energy',           # sunlight, energy, etc 
+    'organic',          # vegetation
+}
 
 MODEL_COLORS = {
     'skeleton': 'white',
@@ -172,12 +183,20 @@ STAT_BAR_UI = {
 }
 
 ATS_UI = {
-    'bottom_pad': 75,
+    'bottom_pad': 100,
     'right_pad': 20,
-    'frame_pad': 9,
-    'icon_size': 48,
+    'frame_pad': 16,
+    'icon_size': 64,
     'reg_pad': 10,
+    'frame_width': 4,
 }
+
+HUD_HEIGHT = 164
+HUD_WIDTH = 560
+HUD_BOTTOM = HEIGHT-16
+
+HEADER = 75
+TITLE_FONT_SIZE = 24
 
 # quests
 QUEST_CARD_UI = {
@@ -194,6 +213,7 @@ QUEST_CARD_UI = {
     's_ratio': 2,
     'a_ratio': 2,
     'f': 12,
+    'r': 200,
 }
 
 # interactions

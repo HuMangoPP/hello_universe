@@ -91,6 +91,10 @@ ABILITY_QUESTS = {
 
 STAT_QUESTS = ['itl', 'pwr', 'def', 'mbl', 'stl']
 
+def meets_misc_req(trait, data):
+    data['trait'] = trait
+    return all([MISC_REQS[req](data) for req in TRAIT_QUESTS[trait]['misc_req']])
+
 class WorldEvent:
     def __init__(self, entities, index):
         self.quests = self.generate_quest(entities, index)
@@ -125,6 +129,7 @@ class WorldEvent:
             # if the entity is not currently trying to get a 
             # new trait, give them a random one they can accept
             possible_trait_quests = list(filter(lambda x : x not in traits, TRAIT_QUESTS.keys()))
+            possible_trait_quests = list(filter(lambda x : meets_misc_req(x, entity_data), possible_trait_quests))
             
             trait = choice(possible_trait_quests)
             all_quests.append({
@@ -184,20 +189,42 @@ class WorldEvent:
                     'reward': quest,
                 })
         
-        # # new body part quests
-        # # body part
-        # potential_growth_size = entities.max_calc(index, preset='potential_growth_size')
-        # if entity_data['creature'].size < potential_growth_size:
-        #     all_quests.append({
-        #         'type': 'physiology',
-        #         'reward': 'body',
-        #     })
+        # new body part quests
+        # body part
+        max_parts = entities.entity_calculation(index, 'max_parts')
+        max_growth_size = entities.entity_calculation(index, 'max_size')
+        min_growth_size = entities.entity_calculation(index, 'min_size')
+        if entity_data['creature'].max_parts < max_parts:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'new_parts'
+            })
+
+        if entity_data['creature'].size < max_growth_size:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'increase_body',
+            })
+        if entity_data['creature'].size > min_growth_size:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'decrease_body',
+            })
         
-        # if entity_data['creature'].legs.num_pair_legs < entity_data['creature'].num_parts:
-        #     all_quests.append({
-        #         'type': 'physiology',
-        #         'reward': 'leg',
-        #     })
+        # base this on the mbl stat as well
+        max_legs_allowed = entities.entity_calculation(index, 'max_legs')
+
+        if entity_data['creature'].legs.num_pair_legs < max_legs_allowed:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'new_leg',
+            })
+        
+        if entity_data['creature'].legs.get_unmaxed_leg_index() != -1:
+            all_quests.append({
+                'type': 'physiology',
+                'reward': 'leg_upgrade'
+            })
 
         
         return all_quests

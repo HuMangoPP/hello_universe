@@ -12,6 +12,8 @@ from src.entities.combat_system import CombatSystem
 
 from src.combat.abilities import BASIC_ABILITIES
 
+from src.environment.environment import Environment
+
 from src.util.settings import RES, BASE_STATS
 from src.util.asset_loader import load_assets
 from src.util.font import Font
@@ -22,10 +24,10 @@ def main():
     pg.mouse.set_visible(False)
     
     stat_icons = load_assets('./assets/stats', 1.0)
-    ability_icons = load_assets('./assets/abilities', 1.5)
-    trait_icons = load_assets('./assets/traits', 1.5)
+    ability_icons = load_assets('./assets/abilities', 2.0)
+    trait_icons = load_assets('./assets/traits', 2.0)
     hud_frames = load_assets('./assets/hud/', 1.0)
-    status_effect_icons = load_assets('./assets/status_effects', 1.5)
+    status_effect_icons = load_assets('./assets/status_effects', 1.0)
     sprites = {}
     sprites['stat_icons'] = stat_icons
     sprites['ability_icons'] = ability_icons
@@ -45,13 +47,14 @@ def main():
         'acc': 0.5,
         'body_parts': 5,
         'size': 5,
-        'max_size': 10,
-        'num_legs': 2,
+        'scale': -6,
+        'max_parts': 10,
+        'num_legs': 0,
         'leg_length': 100,
         'aggression': [],
         'herd': [],
         'abilities': BASIC_ABILITIES,
-        'traits': ['arms']
+        'traits': []
     }, BASE_STATS)
     corpses = Corpses()
     evo_system = EvoSystem(entities)
@@ -59,6 +62,10 @@ def main():
     
     controller = PlayerController(player)
     ai_controller = AIController(player)
+
+    environment = Environment({
+        'region_data': {},
+    })
 
     font = Font(pg.image.load('./assets/font/font.png'))
     ui = UserInterface(player, font, sprites)
@@ -76,6 +83,7 @@ def main():
         'corpses': corpses,
         'evo_system': evo_system,
         'combat_system': combat_system,
+        'environment': environment,
     }
     start_menu(screen, game_data)
 

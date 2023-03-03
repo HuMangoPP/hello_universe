@@ -1,5 +1,5 @@
-from random import choice, randint
-from src.util.settings import STAT_GAP
+from random import choice, uniform, randint
+from src.util.settings import STAT_GAP, TRAIT_AND_BODY_LEVELS
 from math import log
 
 class EvoSystem:
@@ -33,7 +33,8 @@ class EvoSystem:
                 'acc': self.entities.acc[i],
                 'body_parts': int(self.entities.creature[i].num_parts),
                 'size': int(self.entities.creature[i].size),
-                'max_size': int(self.entities.creature[i].size),
+                'scale': int(self.entities.scale[i]),
+                'max_parts': int(self.entities.creature[i].max_parts),
                 'num_legs': int(self.entities.creature[i].legs.num_pair_legs),
                 'leg_length': int(self.entities.creature[i].legs.leg_length),
                 'aggression': self.entities.behaviours[i].aggression.copy(),
@@ -61,11 +62,23 @@ class EvoSystem:
     def give_traits(self, index, trait):
         if self.entities.traits[index].new_trait:
             self.entities.traits[index].new_trait['level']+=1
+            # if it is a wing/arm, update the level
+            if trait == 'wings':
+                wing_index = self.entities.creature[index].leg.get_wing_index()
+                self.entities.creature[index].leg.transform_leg(wing_index, 'wing', self.entities.traits[index].new_trait['level'])
+            if trait == 'arms':
+                arm_index = self.entities.creature[index].leg.get_arm_index()
+                self.entities.creature[index].leg.transform_leg(arm_index, 'arm', self.entities.traits[index].new_trait['level'])
         else:
             self.entities.traits[index].new_trait = trait
-            self.entities.traits[index].new_trait['level'] = 1
+            self.entities.traits[index].new_trait['level'] = TRAIT_AND_BODY_LEVELS['start']
+            # if it is a wing/arm, update the level
+            if trait == 'wings':
+                self.entities.creature[index].give_wings()
+            if trait == 'arms':
+                self.entities.creature[index].give_arms()
         
-        if self.entities.traits[index].new_trait['level'] == 3:
+        if self.entities.traits[index].new_trait['level'] == TRAIT_AND_BODY_LEVELS['max']:
             self.entities.traits[index].give_traits(self.entities.creature[index], trait['reward'])
             self.entities.traits[index].new_trait = {}
 
@@ -74,7 +87,6 @@ class EvoSystem:
     
     def mutate(self):
         # mutation is completely random
-        # choose a random stat to decrease and increase
         for i in range(len(self.entities.stats)):
             # increasing and decreasing stats
             increase = choice(list(self.entities.stats[i].keys())[:5])
@@ -90,15 +102,27 @@ class EvoSystem:
             
             self.entities.spd[i] = self.entities.detailed_calculation(i, 'movement', [lambda calc : log(calc**2)])
 
+            # randomly increase/decrease size
+            size_change = uniform(-2, 2)
+            self.entities.creature[i].change_body(size_change)
+
     def behaviour_shift(self):
         for behaviour in self.entities.behaviours:
             behaviour.shift()
 
     def change_physiology(self, type, index):
-        if type == 'body':
-            self.entities.creature[index].improve_body()
+        if type == 'new_parts':
+            self.entities.creature[index].increase_body_potential()
+        elif type == 'increase_body':
+            increase_scale = self.entities.creature[index].change_body(10.0)
+            if increase_scale != 0:
+                self.entities.scale[index] += increase_scale
+        elif type == 'decrease_body':
+            self.entities.creature[index].change_body(-1.0)
+        elif type == 'new_leg':
+            self.entities.creature[index].change_legs('new')
         else:
-            self.entities.creature[index].improve_legs()
+            self.entities.creature[index].change_legs('upgrade')
 
     def regen(self):
         for i in range(len(self.entities.health)):

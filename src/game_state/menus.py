@@ -1,7 +1,7 @@
 from math import sqrt, sin, cos, pi
 from random import randint, choice
 import pygame as pg
-from src.util.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT
+from src.util.settings import NEW_GEN_TIME, FPS, CBODY_TEXTURE_KEY, SUN, ORBIT_RADIUS, WIDTH, HEIGHT, TITLE_FONT_SIZE
 from src.game_state.camera import Camera
 from src.combat.world_event import WorldEvent
 
@@ -80,12 +80,14 @@ def start_menu(screen, game_data):
         r = 255*sin(time)%256
         g = 255*sin(time+pi/4)%256
         b = 255*sin(time+pi/2)%256
-        font.render(screen, 'hello, universe', WIDTH//2, 50, 
-                    (r, g, b), 
-                    24, 'center')
-        font.render(screen, 'press anywhere to continue', WIDTH//2, HEIGHT-50,
-                    (r, g, b),
-                    24, 'center')
+        font.render(screen=screen, text='hello, universe', 
+                    x=WIDTH//2, y=50, 
+                    colour=(r, g, b), 
+                    size=TITLE_FONT_SIZE, style='center')
+        font.render(screen=screen, text='press anywhere to continue', 
+                    x=WIDTH//2, y=HEIGHT-50,
+                    colour=(r, g, b),
+                    size=TITLE_FONT_SIZE, style='center')
         update_solar_system()
 
         ui.draw_mouse(screen)
@@ -98,6 +100,7 @@ def game_menu(screen, game_data):
     corpses = game_data['corpses']
     evo_system = game_data['evo_system']
     combat_system = game_data['combat_system']
+    environment = game_data['environment']
 
     controller = game_data['controller']
     ai_controller = game_data['ai']
@@ -153,7 +156,7 @@ def game_menu(screen, game_data):
         corpses.render(screen, camera)
         if controller.queued_ability!=-1:
             ui.ability_indicator(screen, entities, controller, camera)
-        ui.display(screen, entities)
+        ui.display(screen, entities, generation)
         # ui.arrow_to_corpse(screen, entities, player, corpses, camera)
 
         # death
@@ -168,7 +171,7 @@ def game_menu(screen, game_data):
             generation+=1
 
             # call the evo systems to operate on entities
-            evo_system.new_generation(entities)
+            # evo_system.new_generation(entities)
 
             # tell the ai to accept the new quests for the ais
             ai_controller.accept_quests(entities, evo_system)
@@ -177,6 +180,9 @@ def game_menu(screen, game_data):
             ui.toggle_quests_menu()
             ui.update_quests(WorldEvent(entities, player))
             ui.input(events, entities, corpses, evo_system)
+
+            # update the environment based on creature actions
+            environment.new_generation(generation)
     
         pg.display.update()
         pg.display.set_caption(f'{clock.get_fps()}, {dt}')
@@ -203,7 +209,10 @@ def game_over(screen, font, clock, entities, camera, ui):
         ui.display(screen, entities)
         
         screen.blit(black_screen, (0, 0))
-        font.render(screen, 'you died', WIDTH/2, HEIGHT/2, (255, 0, 0), 50, 'center', text_alpha)
+        font.render(screen=screen, text='you died', 
+                    x=WIDTH/2, y=HEIGHT/2, 
+                    colour=(255, 0, 0), size=50, style='center', 
+                    alpha=text_alpha)
 
         if screen_alpha >= 255:
             text_alpha+=3

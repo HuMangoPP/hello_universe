@@ -1,6 +1,6 @@
 import pygame as pg
 from math import sqrt, pi, sin, cos, exp
-from src.util.settings import MODEL_COLORS
+from src.util.settings import MODEL_COLORS, TRAIT_AND_BODY_LEVELS
 import numpy as np
 
 class Legs:
@@ -8,17 +8,18 @@ class Legs:
     # init and spawn            #
     ############################# 
     def __init__(self, num_pair_legs, leg_length, 
-                       arm_attachments, wing_attachments,
                        size=5, step_bend = pi/6,):
+        # entity data
         self.num_pair_legs = num_pair_legs
         self.leg_length = leg_length
         self.attached_segments = []
+        self.leg_types = []
+
+        # rendering and physics
         self.feet_pos = []
         self.step_pos = []
         self.step_bend = step_bend
         self.feet_size = size
-        self.arm_attachments = arm_attachments
-        self.wing_attachments = wing_attachments
     
     def build_legs(self, body_seg_pos):
         self.feet_pos.append([body_seg_pos[0], 
@@ -40,6 +41,20 @@ class Legs:
     def draw(self, screen, skeleton, camera):
         for i in range(self.num_pair_legs):
             screen_pos = []
+            if self.leg_types[i]['type'] == 'leg' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i][0:3]))
+                screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0:3]))
+                pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
+                pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
+                                            screen_pos[1])
+                
+                screen_pos = []
+                screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i+1][0:3]))
+                screen_pos.append(camera.transform_to_screen(skeleton[self.attached_segments[i]][0:3]))
+                pg.draw.circle(screen, MODEL_COLORS['foot'], screen_pos[0], self.feet_size)
+                pg.draw.line(screen, MODEL_COLORS['leg'], screen_pos[0],
+                                            screen_pos[1])
+                continue
             # foot pos
             screen_pos.append(camera.transform_to_screen(self.feet_pos[2*i][0:3]))
             # joint pos
@@ -101,6 +116,22 @@ class Legs:
         self.feet_pos[2*i] = self.step_pos[2*i]
         self.feet_pos[2*i+1] = self.step_pos[2*i+1]
 
+    def move_fins(self, skeleton, i):
+        # fins are lower level legs that don't yet act as legs
+        index = self.attached_segments[i]
+        x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
+        angle = skeleton[index][3]
+        offset_angle = pi/4+pi/4*(1+cos(pg.time.get_ticks()/500))
+        self.step_pos[2*i] = [x+self.leg_length/4*cos(offset_angle+angle),
+                              y+self.leg_length/4*sin(offset_angle+angle),
+                              z]
+        self.step_pos[2*i+1] = [x+self.leg_length/4*cos(-offset_angle+angle),
+                                y+self.leg_length/4*sin(-offset_angle+angle),
+                                z]
+    
+        self.feet_pos[2*i] = self.step_pos[2*i]
+        self.feet_pos[2*i+1] = self.step_pos[2*i+1]
+
     def move_feet(self, skeleton, effects):
         # update the step pos: where the feet should be 
         # it took a step
@@ -121,13 +152,15 @@ class Legs:
         
         # update the renderable feet pos as neceessary
         for i in range(self.num_pair_legs):
-            if self.attached_segments[i] in self.arm_attachments:
+            if self.leg_types[i]['type'] == 'arm':
                 self.move_arms(skeleton, i)
-            elif self.attached_segments[i] in self.wing_attachments: 
+            elif self.leg_types[i]['type'] == 'wing': 
                 self.move_wings(skeleton, i)
             elif 'in_air' in abilities or 'underwater' in abilities:
                 self.feet_pos[2*i] = skeleton[self.attached_segments[i]][:3]
                 self.feet_pos[2*i+1] = skeleton[self.attached_segments[i]][:3]
+            elif self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                self.move_fins(skeleton, i)
             else:
                 if self.dist_foot_to_body(self.feet_pos[2*i], skeleton[self.attached_segments[i]]) >= self.leg_length:
                     # if the distance from the foot to the body segment
@@ -166,7 +199,7 @@ class Legs:
             # use a sine wave to model the wing flap
             index = 0
             for i in range(len(self.attached_segments)):
-                if self.attached_segments[i] == self.wing_attachments[0]:
+                if self.leg_types[i]['type'] == 'wing':
                     index = i
                     break
             
@@ -214,27 +247,45 @@ class Legs:
     ############################# 
     # evolution systems         #
     ############################# 
-    def transform_wings(self):
-        for i in self.attached_segments:
-            if i not in self.arm_attachments and i not in self.wing_attachments:
-                self.wing_attachments.append(i)
-                return
+    def transform_leg(self, index, new_type, new_level):
+        self.leg_types[index] = {
+            'type': new_type,
+            'level': new_level
+        }
+    
+    def get_wing_index(self):
+        for i in range(len(self.leg_types)):
+            if self.leg_types[i]['type'] == 'wing' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                return i
+        return -1
+    
+    def get_arm_index(self):
+        for i in range(len(self.leg_types)):
+            if self.leg_types[i]['type'] == 'arm' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                return i
+        return -1
+    
+    def free_leg(self):
+        for i in range(len(self.attached_segments)):
+            if self.leg_types[i]['type'] != 'wing' and self.leg_types[i]['type'] != 'arm':
+                return i
 
-    def transform_arms(self):
-        for i in self.attached_segments:
-            if i not in self.arm_attachments and i not in self.wing_attachments:
-                self.arm_attachments.append(i)
-                return
+    def get_unmaxed_leg_index(self):
+        for i in range(len(self.leg_types)):
+            if self.leg_types[i]['type'] == 'leg' and self.leg_types[i]['level'] != TRAIT_AND_BODY_LEVELS['max']:
+                return i
+        
+        return -1
 
     ############################# 
     # data getters              #
     ############################# 
     def num_legs(self):
-        return len(self.attached_segments)-len(self.arm_attachments)-len(self.wing_attachments)
+        return len(list(filter(lambda type : type['type'] == 'leg', self.leg_types)))
 
     def get_torso_start(self):
-        for i in self.attached_segments:
-            if i not in self.arm_attachments and i not in self.wing_attachments:
+        for i in range(len(self.attached_segments)):
+            if self.leg_types[i]['type'] != 'wing' and self.leg_types[i]['type'] != 'arm':
                 return i-1
 
         return -1

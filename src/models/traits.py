@@ -3,6 +3,8 @@ from src.util.settings import STAT_GAP
 MAX_NUM_TRAITS = 5
 
 ALL_TRAITS = [
+    'digestion', # a modifier on digestion that allows for bonuses when eating
+    'autotrophic', # a modifier that allows energy regen passively
     'claws', # claws/talons
     'horn', # antler, corn, horn
     'wings', # wings, modified leg
@@ -30,12 +32,10 @@ class Traits:
         match trait:
             case 'wings':
                 self.min_stats['mbl'] = 8
-                creature.give_wings()
                 creature.upright()
             
             case 'arms':
                 self.min_stats['itl'] = 6
-                creature.give_arms()
                 creature.upright()
 
             case 'claws':

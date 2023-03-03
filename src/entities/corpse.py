@@ -6,12 +6,14 @@ class Corpses:
         self.nutrients = []
         self.materials = []
         self.creature = []
+        self.type = []
 
     def add_new_corpse(self, corpse_data):
         self.pos.append(corpse_data['pos'])
         self.nutrients.append(corpse_data['nutrients'])
         self.materials.append(corpse_data['materials'])
         self.creature.append(corpse_data['creature'])
+        self.digestion.append(corpse_data['digestion'])
     
     def render(self, screen, camera):
         for pos in self.pos:
