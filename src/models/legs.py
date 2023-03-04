@@ -121,7 +121,7 @@ class Legs:
         index = self.attached_segments[i]
         x, y, z = skeleton[index][0], skeleton[index][1], skeleton[index][2]
         angle = skeleton[index][3]
-        offset_angle = pi/4+pi/4*(1+cos(pg.time.get_ticks()/500))
+        offset_angle = pi/4+pi/4*(1+cos(pg.time.get_ticks()/500 + i))
         self.step_pos[2*i] = [x+self.leg_length/4*cos(offset_angle+angle),
                               y+self.leg_length/4*sin(offset_angle+angle),
                               z]

@@ -45,7 +45,7 @@ def main():
         'pos': [0, 0, 20, 0],
         'spd': 5,
         'acc': 0.5,
-        'body_parts': 5,
+        'body_parts': 10,
         'size': 5,
         'scale': -6,
         'max_parts': 10,

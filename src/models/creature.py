@@ -62,7 +62,7 @@ class Creature:
         if self.legs.num_pair_legs>self.num_parts:
             return
         
-        ratio_body_to_legs = ceil(self.num_parts/(self.legs.num_pair_legs+1))
+        ratio_body_to_legs = self.num_parts/self.legs.num_pair_legs
 
         # first add new legs
         for i in range(self.legs.num_pair_legs-len(self.legs.attached_segments)):
@@ -74,7 +74,9 @@ class Creature:
 
         # then update how they are connected
         for i in range(self.legs.num_pair_legs):
-            self.legs.attached_segments[i] = i*ratio_body_to_legs
+            print(f'attached_seg_len {len(self.legs.attached_segments)}, index {i}')
+            self.legs.attached_segments[i] = int(i*ratio_body_to_legs)
+            print(f'skeleton_len {len(self.skeleton)}, index {self.legs.attached_segments[i]}')
             self.legs.build_legs(self.skeleton[self.legs.attached_segments[i]])
 
     def change_body(self, change_in_size):
