@@ -23,7 +23,7 @@ BASE_MAX_STATS = {
     'itl': 1,
     'pwr': 1,
     'def': 1,
-    'mbl': 1,
+    'mbl': 5,
     'hp': 1,
     'stl': 1,
 }
@@ -47,7 +47,7 @@ BASE_STATS = {
     # dodging attacks, running away from other entities to avoid
     # combat, etc
     # stamina and mobility outside of combat
-    'mbl': 5,
+    'mbl': 20,
     # stealth has to do with evasiveness during and outside 
     # of combat
     # dodging attacks/fleeing from combat

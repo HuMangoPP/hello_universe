@@ -62,27 +62,28 @@ class Creature:
         if self.legs.num_pair_legs>self.num_parts:
             return
         
-        ratio_body_to_legs = ceil(self.num_parts/(self.legs.num_pair_legs+1))
+        ratio_body_to_legs = self.num_parts/self.legs.num_pair_legs
 
         # first add new legs
         for i in range(self.legs.num_pair_legs-len(self.legs.attached_segments)):
-            self.legs.attached_segments.append(0)
-            self.legs.leg_types.append({
+            self.legs.attached_segments.insert(0, 0)
+            self.legs.leg_types.insert(0, {
                     'type': 'leg',
                     'level': 1,
                 })
 
         # then update how they are connected
         for i in range(self.legs.num_pair_legs):
-            self.legs.attached_segments[i] = i*ratio_body_to_legs
+            self.legs.attached_segments[i] = int(i*ratio_body_to_legs)
             self.legs.build_legs(self.skeleton[self.legs.attached_segments[i]])
+
+        self.upright()
 
     def change_body(self, change_in_size):
         self.size+=change_in_size
         if self.size<MIN_SIZE:
             self.size = MIN_SIZE
         if self.size > MAX_SIZE:
-            print('new body part!')
             self.size = MIN_SIZE
             self.num_parts+=1
             new_pos = [self.head[0], self.head[1], self.z_pos]
@@ -105,13 +106,15 @@ class Creature:
             return
         
         existing_leg_index = -1
-        for i in range(len(self.legs.leg_types)):
+        for i in range(len(self.legs.leg_types)-1, -1, -1):
             if self.legs.leg_types[i]['type'] == 'leg' and self.legs.leg_types[i]['level'] < 3:
                 existing_leg_index = i
                 break
         
         if existing_leg_index != -1:
             self.legs.leg_types[existing_leg_index]['level'] += 1
+
+        self.upright()
 
     def render(self, screen, camera):
 
@@ -167,6 +170,8 @@ class Creature:
 
     def upright(self):
         torso_segment = self.legs.get_torso_start()
+        for i in range(torso_segment, self.num_parts, 1):
+            self.skeleton[i][2] = self.z_pos
         for i in range(torso_segment, -1, -1):
             self.skeleton[i][2]=self.z_pos+self.size*2*(torso_segment-i)
         self.head[2]=self.z_pos+self.size*2*(torso_segment+1)

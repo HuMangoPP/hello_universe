@@ -134,17 +134,12 @@ class EvoSystem:
         match quest['type']:
             case 'upgrade':
                 self.entities.stats[index][reward]+=1
-                print(f"upgraded {reward}")
             case 'alloc':
                 self.allocate_stat(index, reward)
-                print(f"allocated {reward}")
             case 'trait':
                 self.give_traits(index, quest)
-                print(f'gained {reward}')
             case 'ability':
                 self.give_abilities(index, reward)
-                print(f'gained {reward}')
             case 'physiology':
                 self.change_physiology(reward, index)
-                print(f'gained {reward}')
         self.entities.energy[index] -= 1
