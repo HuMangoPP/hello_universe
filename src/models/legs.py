@@ -285,8 +285,8 @@ class Legs:
 
     def get_torso_start(self):
         for i in range(len(self.attached_segments)):
-            if self.leg_types[i]['type'] != 'wing' and self.leg_types[i]['type'] != 'arm':
-                return i-1
+            if self.leg_types[i]['type'] == 'leg' and self.leg_types[i]['level'] == 3:
+                return self.attached_segments[i]-1
 
         return -1
 
