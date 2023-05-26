@@ -269,3 +269,16 @@ class Entities:
             'abilities': self.abilities[index],
             'max_stats': self.traits[index].max_stats
         }
+
+    def get_save_data(self):
+        data = {
+            'position': self.pos,
+            'itl': [stat['itl'] for stat in self.stats],
+            'pwr': [stat['pwr'] for stat in self.stats],
+            'def': [stat['def'] for stat in self.stats],
+            'mbl': [stat['mbl'] for stat in self.stats],
+            'stl': [stat['stl'] for stat in self.stats],
+            'abilities': self.abilities,
+            'traits': [traits.traits for traits in self.traits],
+        }
+        return data

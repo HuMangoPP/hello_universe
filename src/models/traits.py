@@ -16,11 +16,11 @@ ALL_TRAITS = [
 ]
 
 class Traits:
-    def __init__(self, traits, min_stats, max_stats):
-        self.traits = traits
+    def __init__(self, traits_data):
+        self.traits = traits_data['traits']
         self.new_trait = {}
-        self.min_stats = min_stats
-        self.max_stats = max_stats
+        self.min_stats = traits_data['min_stats']
+        self.max_stats = traits_data['max_stats']
 
     def give_traits(self, creature, trait):
         # stops the entity from gaining more than 10 traits at any given time 
