@@ -2,8 +2,8 @@ from src.util.settings import WIDTH, HEIGHT
 import numpy as np
 
 class Camera():
-    def __init__(self, x, y, z):
-        self.pos = np.array([x, y, z])
+    def __init__(self, follow: np.ndarray):
+        self.pos = follow
 
         self.scale = -6 # micrometer scale
 
@@ -11,20 +11,20 @@ class Camera():
         self.inverse = np.linalg.inv(self.transform)
         self.collapse_z = np.array([[1, 0], [0, 1], [0, 0]]).transpose()
 
-    def transform_to_screen(self, pos):
+    def transform_to_screen(self, pos: np.ndarray):
         # returns the full transformation with the shift to the center of the screen
         return self.dir_transform(np.array(pos)-self.pos)+np.array([WIDTH//2, HEIGHT//2])
 
-    def dir_transform(self, pos):
+    def dir_transform(self, pos: np.ndarray):
         # returns the transformation but without a shift to the center of the screen
         return self.collapse_z.dot(self.transform.dot(np.array(pos)))
 
-    def screen_to_world(self, x, y):
+    def screen_to_world(self, x: float, y: float):
         return self.collapse_z.dot(self.inverse.dot(np.array([x, y, 0])))
 
-    def follow_entity(self, entities, following):
-        self.update_pos(np.array(entities.pos[following][0:3]))
-        self.scale = entities.scale[following]
+    def follow_entity(self, entity_pos: np.ndarray, entity_scale: int):
+        self.update_pos(entity_pos)
+        self.scale = entity_scale
     
-    def update_pos(self, pos):
+    def update_pos(self, pos: np.ndarray):
         self.pos = pos

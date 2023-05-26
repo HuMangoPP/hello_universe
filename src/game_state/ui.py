@@ -6,9 +6,9 @@ from src.combat.abilities import ALL_ABILITIES, BASE_AOE_RADIUS
 QUEST_LINGER_TIME = 1000
 
 class UserInterface:
-    def __init__(self, player, font, ui_sprites):
+    def __init__(self, font, ui_sprites):
         self.font = font
-        self.player = player
+        self.player = 0
         self.colorkey_all(ui_sprites)
         self.stat_icons = list(ui_sprites['stat_icons'].values())
         self.ability_icons = ui_sprites['ability_icons']
@@ -20,11 +20,6 @@ class UserInterface:
             'display': False,
             'ui': Quest_UI([])
         }
-        self.interaction_ui = Interaction_UI({
-            'bone': ui_sprites['hud_frames']['bone'],
-            'capsule': ui_sprites['hud_frames']['capsule'],
-            'nutrients': ui_sprites['hud_frames']['nutrients'],
-        })
     
     def colorkey_all(self, ui_sprites):
         for sprite_type in ui_sprites:
@@ -34,61 +29,61 @@ class UserInterface:
     ############################# 
     # hud and mouse             #
     ############################# 
-    def draw_mouse(self, screen):
+    def draw_mouse(self, display: pg.Surface):
         mx, my = pg.mouse.get_pos()
         reticle_size = 10
         reticle_width = 3
         reticle_line_length = 5
         # reticle circle
-        pg.draw.circle(screen, 'white', (mx, my), reticle_size, reticle_width)
+        pg.draw.circle(display, 'white', (mx, my), reticle_size, reticle_width)
         # down
-        pg.draw.line(screen, 'white', (mx, my+reticle_line_length), (mx, my+reticle_size+reticle_line_length), reticle_width)
+        pg.draw.line(display, 'white', (mx, my+reticle_line_length), (mx, my+reticle_size+reticle_line_length), reticle_width)
         # up
-        pg.draw.line(screen, 'white', (mx, my-reticle_line_length), (mx, my-reticle_size-reticle_line_length), reticle_width)
+        pg.draw.line(display, 'white', (mx, my-reticle_line_length), (mx, my-reticle_size-reticle_line_length), reticle_width)
         # right
-        pg.draw.line(screen, 'white', (mx+reticle_line_length, my), (mx+reticle_size+reticle_line_length, my), reticle_width)
+        pg.draw.line(display, 'white', (mx+reticle_line_length, my), (mx+reticle_size+reticle_line_length, my), reticle_width)
         # right
-        pg.draw.line(screen, 'white', (mx-reticle_line_length, my), (mx-reticle_size-reticle_line_length, my), reticle_width)
+        pg.draw.line(display, 'white', (mx-reticle_line_length, my), (mx-reticle_size-reticle_line_length, my), reticle_width)
 
-    def display(self, screen, entities, generation):
+    def render(self, display: pg.Surface, entity_data: dict, generation: int):
 
-        self.display_hud_frame(screen)
+        self.display_hud_frame(display)
 
         # hp and energy bars
-        self.display_hp(screen, entities)
+        self.display_hp(display, entity_data)
         
-        self.display_energy(screen, entities)
+        self.display_energy(display, entity_data)
 
         # stats
-        self.display_stats(screen, entities)
+        self.display_stats(display, entity_data)
 
         # traits and abilities
-        self.display_traits_and_abilities(screen, entities)
+        # self.display_traits_and_abilities(display, entities)
 
         # status effects
-        self.display_statuses(screen, entities)
+        # self.display_statuses(display, entities)
 
-        self.draw_mouse(screen)
-        self.display_generation(screen, generation)
+        self.draw_mouse(display)
+        self.display_generation(display, generation)
 
-        # quest
-        if self.quest_ui['display']:
-            self.quest_ui['ui'].display(screen, self.font)
+        # # quest
+        # if self.quest_ui['display']:
+        #     self.quest_ui['ui'].display(screen, self.font)
         
-        # interactions
-        self.interaction_ui.display(screen, self.font)
+        # # interactions
+        # self.interaction_ui.display(screen, self.font)
 
-    def input(self, pg_events, entities, corpses, evo_system):
-        if self.quest_ui['display']:
-            quest = self.quest_ui['ui'].input(pg_events)
-            if quest:
-                evo_system.rec_quest(self.player, quest)
-                self.toggle_quests_menu()
+    # def input(self, pg_events, entities, corpses, evo_system):
+    #     if self.quest_ui['display']:
+    #         quest = self.quest_ui['ui'].input(pg_events)
+    #         if quest:
+    #             evo_system.rec_quest(self.player, quest)
+    #             self.toggle_quests_menu()
         
-        self.interaction_ui.detection(entities.pos[self.player], corpses)
-        interact = self.interaction_ui.input(pg_events)
-        if interact['type'] == 'consume':
-            entities.consume(self.player, interact['index'], corpses)
+    #     self.interaction_ui.detection(entities.pos[self.player], corpses)
+    #     interact = self.interaction_ui.input(pg_events)
+    #     if interact['type'] == 'consume':
+    #         entities.consume(self.player, interact['index'], corpses)
     
     def display_generation(self, screen, generation):
         frame = self.hud_frames['gen_frame']
@@ -102,30 +97,21 @@ class UserInterface:
         ...
 
     def display_hud_frame(self, screen):
-        frame = self.hud_frames['enclosing_frame']
-        bottom = min(HEIGHT-HUD_HEIGHT+WIDTH//2-HUD_WIDTH-frame.get_width()//2, HUD_BOTTOM)
-        dist = bottom-(HEIGHT-HUD_HEIGHT)
         points = [
             (0, HEIGHT-HUD_HEIGHT),
-            (HUD_WIDTH, HEIGHT-HUD_HEIGHT),
-            (HUD_WIDTH+dist, bottom),
-            (WIDTH-HUD_WIDTH-dist, bottom),
-            (WIDTH-HUD_WIDTH, HEIGHT-HUD_HEIGHT),
             (WIDTH, HEIGHT-HUD_HEIGHT),
             (WIDTH, HEIGHT),
             (0, HEIGHT),
         ]
         pg.draw.polygon(screen, (50, 50, 50), points)
 
-        for i in range(5):
-            pg.draw.line(screen, (255, 255, 255), points[i], points[i+1], 4)
-        screen.blit(frame, (WIDTH//2-frame.get_width()//2, bottom-frame.get_height()//2-2))
+        pg.draw.lines(screen, (255,255,255),True,points)
 
-    def display_hp(self, screen, entities):
+    def display_hp(self, screen, entity_data: dict):
         # health bar, taking inspiration from Diablo/PoE
         health_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         health_bar.set_colorkey('black')
-        health_ratio = 1-entities.health[self.player]/entities.stats[self.player]['hp']
+        health_ratio = 0
         hp_frame = self.hud_frames['hp_frame']
         pg.draw.circle(health_bar, GAUGE_UI['colours'][0], 
                         (GAUGE_UI['radius'], GAUGE_UI['radius']), 
@@ -135,12 +121,11 @@ class UserInterface:
                                 HEIGHT-hp_frame.get_height()/2-GAUGE_UI['radius']))
         screen.blit(hp_frame, (0, HEIGHT-hp_frame.get_height()))
 
-    def display_energy(self, screen, entities):
+    def display_energy(self, screen, entity_data: dict):
         # energy bar, similar in style to the health
         energy_bar = pg.Surface((2*GAUGE_UI['radius'], 2*GAUGE_UI['radius']))
         energy_bar.set_colorkey('black')
-        total_energy_calculation = entities.entity_calculation(self.player, 'energy')
-        energy_ratio = 1-entities.energy[self.player]/total_energy_calculation
+        energy_ratio = 0
         energy_frame = self.hud_frames['energy_frame']
         pg.draw.circle(energy_bar, GAUGE_UI['colours'][1],
                         (GAUGE_UI['radius'], GAUGE_UI['radius']),
@@ -152,15 +137,15 @@ class UserInterface:
                                 HEIGHT-energy_frame.get_height()/2-GAUGE_UI['radius']))
         screen.blit(energy_frame, (WIDTH-energy_frame.get_width(), HEIGHT-energy_frame.get_height()))
 
-    def display_stats(self, screen, entities):
+    def display_stats(self, screen, entity_data: dict):
         # stat bars on the right
         
         stats = [
-            entities.stats[self.player]['itl'],
-            entities.stats[self.player]['pwr'],
-            entities.stats[self.player]['def'],
-            entities.stats[self.player]['mbl'],
-            entities.stats[self.player]['stl'],
+            entity_data['itl'],
+            entity_data['pwr'],
+            entity_data['def'],
+            entity_data['mbl'],
+            entity_data['stl'],
         ]
         stats_frame = self.hud_frames['stats_frame']
         left_edge_pad = self.hud_frames['hp_frame'].get_width()
