@@ -1,6 +1,6 @@
 from math import sqrt
 
-RES = WIDTH, HEIGHT = 1280, 720
+RES = WIDTH, HEIGHT = 960, 630
 OUT_OF_BOUNDS = 100
 FPS = 60
 
@@ -74,7 +74,7 @@ RESOURCE_TYPES = {
 }
 
 MODEL_COLORS = {
-    'skeleton': 'white',
+    'body': 'white',
     'head': 'red',
     'hit_box': 'yellow',
     'hurt_box': 'magenta',
