@@ -9,9 +9,9 @@ from ..models.traits import Traits
 class EntityManager:
     def __init__(self, first_entity: dict):
         # physical data
+        self.num_entities = 1
         self.pos = np.zeros((1,3), dtype=np.float32)
         self.vel = np.zeros((1,3), dtype=np.float32)
-        self.acc = np.zeros((1,3), dtype=np.float32)
         self.scale = np.ones((1,), dtype=np.float32)
         self.creature : list[Creature] = [Creature(first_entity['creature'])]
 
@@ -35,20 +35,20 @@ class EntityManager:
 
     def add_new_entities(self, num_new_entities: int, physical_data: dict, stats_data: dict, interactive_data: dict):
         # physical
-        np.concatenate([self.pos, physical_data['pos']])
-        np.concatenate([self.vel, np.zeros((num_new_entities,3), dtype=np.float32)])
-        np.concatenate([self.acc, np.zeros((num_new_entities,3), dtype=np.float32)])
-        np.concatenate([self.scale, physical_data['scale']])
+        self.num_entities += num_new_entities
+        self.pos = np.concatenate([self.pos, physical_data['pos']])
+        self.vel = np.concatenate([self.vel, np.zeros((num_new_entities,3), dtype=np.float32)])
+        self.scale = np.concatenate([self.scale, physical_data['scale']])
         self.creature = self.creature + physical_data['creature']
 
         # game
-        np.concatenate([self.stats['itl'], stats_data['itl']])
-        np.concatenate([self.stats['pwr'], stats_data['pwr']])
-        np.concatenate([self.stats['def'], stats_data['def']])
-        np.concatenate([self.stats['mbl'], stats_data['mbl']])
-        np.concatenate([self.stats['stl'], stats_data['stl']])
-        np.concatenate([self.health, stats_data['health']])
-        np.concatenate([self.energy, stats_data['energy']])
+        self.stats['itl'] = np.concatenate([self.stats['itl'], stats_data['itl']])
+        self.stats['pwr'] = np.concatenate([self.stats['pwr'], stats_data['pwr']])
+        self.stats['def'] = np.concatenate([self.stats['def'], stats_data['def']])
+        self.stats['mbl'] = np.concatenate([self.stats['mbl'], stats_data['mbl']])
+        self.stats['stl'] = np.concatenate([self.stats['stl'], stats_data['stl']])
+        self.health =  np.concatenate([self.health, stats_data['health']])
+        self.energy = np.concatenate([self.energy, stats_data['energy']])
 
         # interactive
         self.receptors = self.receptors + interactive_data['receptors']

@@ -239,6 +239,7 @@ from ..util.save_data import entity_data_to_df
 from ..util.asset_loader import load_assets
 
 from ..entities.entity_manager import EntityManager
+from ..environment.environment import Environment
 from ..game_state.camera import Camera
 from ..game_state.ui import UserInterface
 
@@ -359,6 +360,13 @@ class GameMenu:
                 }
             },
         })
+        self.environment = Environment()
+        self.environment.add_new_particles(
+            2,
+            np.array([[-100,0,0],[100,100,100]]),
+            np.array([0,2]),
+            np.array([0.5, 0.25])
+        )
         self.camera = Camera(self.entity_manager.pos[0])
         self.ui = UserInterface(self.font, self.ui_sprites)
 
@@ -379,13 +387,15 @@ class GameMenu:
         if self.generation_time <= 0:
             # store data
             save_data = self.entity_manager.get_save_data()
-            entity_data_to_df(self.current_generation, len(save_data['x']), save_data)
+            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, save_data)
 
             # update generation
             self.generation_time = 5
             self.current_generation += 1
 
             self.entity_manager.mutate()
+            # self.ui.toggle_quests_menu()
+            # self.ui.update_quests()
             print('new generation')
 
         # handle transitions
@@ -417,12 +427,14 @@ class GameMenu:
             'y': y_input,
         })
         self.entity_manager.update(self.camera, dt)
+        self.environment.update(dt)
 
         return {}
 
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
         self.entity_manager.render(self.displays[DEFAULT_DISPLAY], self.camera)
+        self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
 
         match self.transition_phase:
             case 1: 
