@@ -7,6 +7,9 @@ class Receptors:
         self.pentagon_receptors = receptor_data['pentagon']
         self.hexagon_receptors = receptor_data['hexagon']
     
+    def poll_surroundings(self):
+        ...
+    
     def zip_num_receptors(self) -> list[int]:
         return [
             self.circle_receptors,
