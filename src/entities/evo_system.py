@@ -143,3 +143,61 @@
 #             case 'physiology':
 #                 self.change_physiology(reward, index)
 #         self.entities.energy[index] -= 1
+
+STAT_EVOS = ['itl', 'pwr', 'def', 'mbl', 'stl']
+TRAIT_EVOS = {
+    'wings': {
+        'misc_req': ['free_legs'],
+        'stats_req': {'mbl': 2},
+    },
+    'arms': {
+        'misc_req': ['free_legs'],
+        'stats_req': {'itl': 2, 'mbl': 1}
+    },
+    'claws': {
+        'misc_req': ['no_dupe_trait', 'legs'],
+        'stats_req': {'pwr': 1, 'mbl': 1}
+    },
+    'horn': {
+        'misc_req': ['no_dupe_trait'],
+        'stats_req': {'pwr': 1, 'def': 1}
+    },
+    'body': {
+        'misc_req': ['no_dupe_trait'],
+        'stats_req': {'def': 1, 'stl': 1}
+    },
+    'fangs': {
+        'misc_req': ['no_dupe_trait'],
+        'stats_req': {'pwr': 2}
+    },
+    'gills': {
+        'misc_req': ['no_dupe_trait'],
+        'stats_req': {'def': 1, 'mbl': 2}
+    }
+}
+
+class EvolutionSystem:
+    def __init__(self):
+        self.evos = []
+    
+    def generate_evolutions(self, entity_manager):
+        
+        for i in range(entity_manager.num_entities):
+            all_evos = []
+
+            # stats = {
+            #     stat_key: stat_value[i]
+            #     for stat_key, stat_value in entity_data['stats']
+            # }
+            # traits_already_have = entity_data['traits'][i].traits
+
+            for evo in STAT_EVOS:
+                all_evos.append({
+                    'type': 'upgrade',
+                    'reward': evo
+                })
+            # possible_trait_evos = {
+            #     trait_key: trait_req
+            #     for trait_key, trait_req in TRAIT_EVOS.items()
+            #     if trait_key not in traits_already_have
+            # }

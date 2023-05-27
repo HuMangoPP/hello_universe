@@ -4,6 +4,7 @@ import math
 
 from ..models.creature import Creature
 from ..models.receptors import Receptors
+from ..models.brain import Brain
 from ..models.traits import Traits
 
 class EntityManager:
@@ -11,6 +12,7 @@ class EntityManager:
         # physical data
         self.num_entities = 1
         self.pos = np.zeros((1,3), dtype=np.float32)
+        self.flat_angle = np.zeros((1,), dtype=np.float32)
         self.vel = np.zeros((1,3), dtype=np.float32)
         self.scale = np.ones((1,), dtype=np.float32)
         self.creature : list[Creature] = [Creature(first_entity['creature'])]
@@ -27,6 +29,7 @@ class EntityManager:
         self.energy = np.full((1,), 100, dtype=np.float32)
 
         # interactive
+        self.brain : list[Brain] = [Brain(first_entity['brain'])]
         self.receptors : list[Receptors] = [Receptors(first_entity['receptors'])]
         self.abilities = [[]]
         self.traits : list[Traits] = [Traits(first_entity['traits'])]
@@ -37,6 +40,7 @@ class EntityManager:
         # physical
         self.num_entities += num_new_entities
         self.pos = np.concatenate([self.pos, physical_data['pos']])
+        self.flat_angle = np.concatenate([self.flat_angle, physical_data['flat_angle']])
         self.vel = np.concatenate([self.vel, np.zeros((num_new_entities,3), dtype=np.float32)])
         self.scale = np.concatenate([self.scale, physical_data['scale']])
         self.creature = self.creature + physical_data['creature']
@@ -62,11 +66,13 @@ class EntityManager:
         entity_index = mv_input['index']
         x_input, y_input = mv_input['x'], mv_input['y']
         
-        x_dir, y_dir = camera.screen_to_world(x_input, y_input)
+        x_dir,y_dir = x_input,y_input
+        # x_dir, y_dir = camera.screen_to_world(x_input, y_input)
 
         if x_dir != 0 and y_dir != 0:
-            x_dir *= math.sqrt(2)/2
-            y_dir *= math.sqrt(2)/2
+            input_vec = np.array([x_dir, y_dir])
+            input_vec = input_vec / np.linalg.norm(input_vec)
+            x_dir, y_dir = input_vec[0], input_vec[1]
 
         self.vel[entity_index] = np.array([[x_dir, y_dir, 0]])
 
@@ -74,7 +80,10 @@ class EntityManager:
         # movements
         # self.vel = self.vel + self.acc * dt
         self.pos = self.pos + 200 * self.vel * dt
-        # print(self.pos)
+        spd = np.linalg.norm(self.vel[:, 0:2], axis=1)
+        moving = spd > 0
+        flat_angles = np.arctan2(self.vel[moving,1],self.vel[moving,0])
+        self.flat_angle[moving] = flat_angles
 
         [creature.update(self.pos[i]) for i, creature in enumerate(self.creature)]
 

@@ -113,3 +113,48 @@
 #                 return True
 
 #         return False
+
+import numpy as np
+import math
+
+BASIC_MOVEMENTS = {
+    'move_forward': 0,
+    'turn_right': 1,
+    'turn_left': 2,
+}
+
+DEFAULT_TURN = math.pi/6
+
+class Agents:
+    def __init__(self, no_control: int):
+        self.no_control = no_control # defines which entity is not ai controlled
+    
+
+    def agent_input(self, entity_manager, environment, camera):
+        for i, (pos, angle, receptors, brain) in enumerate(zip(entity_manager.pos, 
+                                                  entity_manager.flat_angle,
+                                                  entity_manager.receptors,
+                                                  entity_manager.brain)):
+            if i == self.no_control: continue
+            receptors.poll_sensory(pos, angle, 100, environment)
+
+            sensory = np.array([receptors.sensory[receptor_type]
+                                for receptor_type in receptors.sensory]).flatten()
+            actions = brain.think(sensory)
+            new_angle = angle
+            if BASIC_MOVEMENTS['turn_right'] in actions:
+                new_angle += DEFAULT_TURN
+            elif BASIC_MOVEMENTS['turn_left'] in actions:
+                new_angle -= DEFAULT_TURN
+            if actions.size > 0:
+                entity_manager.input(camera, {
+                    'index': i,
+                    'x': math.cos(new_angle),
+                    'y': math.sin(new_angle)
+                })
+            else: 
+                entity_manager.input(camera, {
+                    'index': i,
+                    'x': 0,
+                    'y': 0
+                })

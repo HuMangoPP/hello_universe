@@ -67,8 +67,8 @@ class UserInterface:
         self.display_generation(display, generation)
 
         # # quest
-        # if self.quest_ui['display']:
-        #     self.quest_ui['ui'].display(screen, self.font)
+        if self.quest_ui['display']:
+            self.quest_ui['ui'].display(display, self.font)
         
         # # interactions
         # self.interaction_ui.display(screen, self.font)
@@ -256,10 +256,10 @@ class UserInterface:
             'ui': self.quest_ui['ui']
         }
     
-    def update_quests(self, world_event):
+    def update_quests(self, quests: list):
         self.quest_ui = {
             'display': self.quest_ui['display'],
-            'ui': Quest_UI(world_event.quests)
+            'ui': Quest_UI(quests)
         }
 
     def quest_anim(self, screen):

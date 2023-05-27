@@ -233,6 +233,7 @@
 
 import pygame as pg
 import numpy as np
+import math
 
 from ..util.transitions import transition_in, transition_out, TRANSITION_TIME
 from ..util.save_data import entity_data_to_df
@@ -240,6 +241,8 @@ from ..util.asset_loader import load_assets
 
 from ..entities.entity_manager import EntityManager
 from ..environment.environment import Environment
+
+from ..game_state.ai_controller import Agents
 from ..game_state.camera import Camera
 from ..game_state.ui import UserInterface
 
@@ -332,6 +335,7 @@ class GameMenu:
         # data
         self.generation_time = 5
         self.current_generation = 0
+        self.new_particle_time = 0.1
 
         # objects
         self.entity_manager = EntityManager({
@@ -343,12 +347,29 @@ class GameMenu:
                 'num_pair_legs': 2,
                 'leg_length': 100,
             },
+            'brain': { # TODO change to default later
+                'neurons': [0,0, # circle dens, angle
+                            0,0, # triangle dens, angle
+                            0,0, # square dens, angle
+                            0,0, # pentagon dens, angle 
+                            0,0, # hexagon dens, angle
+                            # no hidden neurons
+                            2, # move forward
+                            2, # turn right
+                            2, # turn left
+                            ],
+                'axons': [
+                    {'in':0,'out':10,'w':1,'i':1},
+                    {'in':1,'out':11,'w':1,'i':2},
+                    {'in':1,'out':12,'w':-1,'i':2},
+                ]
+            }, 
             'receptors': { # TODO change to default later
-                'circle': 1,
-                'triangle': 0,
-                'square': 0,
-                'pentagon': 0,
-                'hexagon': 0,
+                'circle': np.array([-math.pi/6,0,math.pi/6], dtype=np.float32),
+                'triangle': np.array([], dtype=np.float32),
+                'square': np.array([], dtype=np.float32),
+                'pentagon': np.array([], dtype=np.float32),
+                'hexagon': np.array([], dtype=np.float32),
             },
             'traits': { # TODO change to default later
                 'traits': [],
@@ -361,12 +382,13 @@ class GameMenu:
             },
         })
         self.environment = Environment()
-        self.environment.add_new_particles(
-            2,
-            np.array([[-100,0,0],[100,100,100]]),
-            np.array([0,2]),
-            np.array([0.5, 0.25])
-        )
+        # self.environment.add_new_particles(
+        #     2,
+        #     np.array([[-100,0,0],[100,100,100]]),
+        #     np.array([0,2]),
+        #     np.array([0.5, 0.25])
+        # )
+        self.ai_agents = Agents(1)
         self.camera = Camera(self.entity_manager.pos[0])
         self.ui = UserInterface(self.font, self.ui_sprites)
 
@@ -382,7 +404,27 @@ class GameMenu:
         self.transition_time = 0
     
     def update(self, events: list[pg.Event]):
+        # for event in events:
+            # if event.type == pg.MOUSEBUTTONDOWN:
+                # pos = self.camera.screen_to_world(event.pos[0], event.pos[1])
+                # self.environment.add_new_particles(
+                #     1, pos.reshape((1,3)), 
+                #     np.zeros((1,), dtype=np.int32), 
+                #     np.full((1,), 0.1, dtype=np.float32))
+
         dt = self.clock.get_time() / 1000
+
+        if pg.mouse.get_pressed()[0]:
+            self.new_particle_time -= dt
+            if self.new_particle_time < 0:
+                mpos = pg.mouse.get_pos()
+                pos = self.camera.screen_to_world(mpos[0], mpos[1])
+                self.environment.add_new_particles(
+                    1, pos.reshape((1,3)),
+                    np.zeros((1,), dtype=np.int32),
+                    np.full((1,), 0.1, dtype=np.float32)
+                )
+
         self.generation_time -= dt
         if self.generation_time <= 0:
             # store data
@@ -410,24 +452,26 @@ class GameMenu:
                 self.transition_time = 0
                 self.transition_phase = (self.transition_phase + 1) % 4
 
-        x_input = 0
-        y_input = 0
-        keys = pg.key.get_pressed()
-        if keys[pg.K_d]:
-            x_input = 1
-        if keys[pg.K_a]:
-            x_input = -1
-        if keys[pg.K_w]: 
-            y_input = -1
-        if keys[pg.K_s]:
-            y_input = 1
-        self.entity_manager.input(self.camera, {
-            'index': 0,
-            'x': x_input,
-            'y': y_input,
-        })
+        # x_input = 0
+        # y_input = 0
+        # keys = pg.key.get_pressed()
+        # if keys[pg.K_d]:
+        #     x_input = 1
+        # if keys[pg.K_a]:
+        #     x_input = -1
+        # if keys[pg.K_w]: 
+        #     y_input = -1
+        # if keys[pg.K_s]:
+        #     y_input = 1
+        # self.entity_manager.input(self.camera, {
+        #     'index': 0,
+        #     'x': x_input,
+        #     'y': y_input,
+        # })
+        self.ai_agents.agent_input(self.entity_manager, self.environment, self.camera)
         self.entity_manager.update(self.camera, dt)
         self.environment.update(dt)
+        self.camera.follow_entity(self.entity_manager.pos[0], self.entity_manager.scale[0])
 
         return {}
 

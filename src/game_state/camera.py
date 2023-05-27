@@ -20,7 +20,8 @@ class Camera():
         return self.collapse_z.dot(self.transform.dot(np.array(pos)))
 
     def screen_to_world(self, x: float, y: float):
-        return self.collapse_z.dot(self.inverse.dot(np.array([x, y, 0])))
+        pos = np.array([x,y,0])-np.array([WIDTH//2, HEIGHT//2,0])
+        return self.inverse.dot(pos)+self.pos
 
     def follow_entity(self, entity_pos: np.ndarray, entity_scale: int):
         self.update_pos(entity_pos)
