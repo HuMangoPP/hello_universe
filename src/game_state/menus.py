@@ -359,17 +359,17 @@ class GameMenu:
                             2, # turn left
                             ],
                 'axons': [
-                    {'in':0,'out':10,'w':1,'i':1},
-                    {'in':1,'out':11,'w':1,'i':2},
-                    {'in':1,'out':12,'w':-1,'i':2},
+                    {'in':0,'out':10,'w':1},
+                    {'in':1,'out':11,'w':1},
+                    {'in':1,'out':12,'w':-1},
                 ]
             }, 
             'receptors': { # TODO change to default later
-                'circle': np.array([-math.pi/6,0,math.pi/6], dtype=np.float32),
-                'triangle': np.array([], dtype=np.float32),
-                'square': np.array([], dtype=np.float32),
-                'pentagon': np.array([], dtype=np.float32),
-                'hexagon': np.array([], dtype=np.float32),
+                'circle': [3, math.pi/6, math.pi/6],
+                'triangle': [0, math.pi/6, math.pi/6],
+                'square': [0, math.pi/6, math.pi/6],
+                'pentagon': [0, math.pi/6, math.pi/6],
+                'hexagon': [0, math.pi/6, math.pi/6],
             },
             'traits': { # TODO change to default later
                 'traits': [],
@@ -390,7 +390,7 @@ class GameMenu:
         # )
         self.ai_agents = Agents(1)
         self.camera = Camera(self.entity_manager.pos[0])
-        self.ui = UserInterface(self.font, self.ui_sprites)
+        # self.ui = UserInterface(self.font, self.ui_sprites)
 
     def on_load(self):
         self.on_transition()
@@ -438,7 +438,6 @@ class GameMenu:
             self.entity_manager.mutate()
             # self.ui.toggle_quests_menu()
             # self.ui.update_quests()
-            print('new generation')
 
         # handle transitions
         if self.transition_phase > 0:
@@ -471,7 +470,7 @@ class GameMenu:
         self.ai_agents.agent_input(self.entity_manager, self.environment, self.camera)
         self.entity_manager.update(self.camera, dt)
         self.environment.update(dt)
-        self.camera.follow_entity(self.entity_manager.pos[0], self.entity_manager.scale[0])
+        # self.camera.follow_entity(self.entity_manager.pos[0], self.entity_manager.scale[0])
 
         return {}
 
@@ -488,7 +487,10 @@ class GameMenu:
             case 3:
                 transition_in(self.displays[OVERLAY_DISPLAY], self.transition_time)
         
-        self.ui.render(self.displays[DEFAULT_DISPLAY], self.entity_manager.get_ui_data(0), self.current_generation)
+        # self.ui.render(self.displays[DEFAULT_DISPLAY], self.entity_manager.get_ui_data(0), self.current_generation)
+
+        self.font.render(self.displays[DEFAULT_DISPLAY], str(self.current_generation), 
+                         25, 25, (255,255,255), size=25, style='left')
 
         displays_to_render = [DEFAULT_DISPLAY]
         if self.transition_phase > 0:
