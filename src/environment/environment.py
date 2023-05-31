@@ -45,6 +45,8 @@ SHAPE_MAP = {
     'hexagon': 4,
 }
 
+PARTICLE_LIFETIME = 0.2
+
 def draw_circle(display: pg.Surface, center: tuple, color: tuple, radius: float):
     pg.draw.circle(display, color, center, radius)
 
@@ -79,6 +81,7 @@ class Environment:
     def __init__(self):
         self.num_particles = 0
         self.positions = np.array([]) # shape=(n,3)
+        self.lifetimes = np.array([]) #shape=(n,)
         self.shapes = np.array([]) # shape=(n,)
         self.densities = np.array([]) # shape=(n,)
     
@@ -87,30 +90,29 @@ class Environment:
         self.num_particles += num_new_particles
         if self.positions.size == 0:
             self.positions = positions
+            self.lifetimes = np.full((num_new_particles,), PARTICLE_LIFETIME)
             self.shapes = shapes
             self.densities = densities
         else:
             self.positions = np.concatenate([self.positions, positions])
+            self.lifetimes = np.concatenate([self.lifetimes, np.full((num_new_particles,), PARTICLE_LIFETIME)])
             self.shapes = np.concatenate([self.shapes, shapes])
             self.densities = np.concatenate([self.densities, densities])
     
     def update(self, dt: float):
-        self.density_decay(dt)
-
-    def density_decay(self, dt: float):
-        self.densities = self.densities - dt / 10
-        keep = self.densities > 0
-        self.positions = self.positions[keep]
-        self.shapes = self.shapes[keep]
-        self.densities = self.densities[keep]
-
-    def drift(self, dt: float):
-        self.positions = self.positions + np.random.rand(self.num_particles, 3)
+        if self.num_particles > 0:
+            self.lifetimes = self.lifetimes - np.full((self.num_particles,), dt)
+            keep = self.lifetimes > 0
+            self.positions = self.positions[keep]
+            self.lifetimes = self.lifetimes[keep]
+            self.shapes = self.shapes[keep]
+            self.densities = self.densities[keep]
+            self.num_particles = np.sum(keep)
     
     def render(self, display: pg.Surface, camera):
         for pos, shape, dens in zip(self.positions, self.shapes, self.densities):
             radius = 50 * dens
-            color = np.ceil(np.array([255,255,255]) * dens)
+            color = np.ceil(np.array([0,255,0]) * dens)
             match shape:
                 case 0:
                     draw_circle(display, camera.transform_to_screen(pos),
