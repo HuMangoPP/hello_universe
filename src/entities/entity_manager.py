@@ -111,6 +111,8 @@ class EntityManager:
         # energy regen
         self.energy = self.energy + np.array([stomach.eat(pos, env) for pos, stomach in zip(self.pos, self.stomach)])
 
+        # check collision between entities
+
         # health regen
         should_regen = self.health < 100
         can_regen = self.energy > 50
