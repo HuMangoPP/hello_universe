@@ -8,6 +8,8 @@ from ..models.brain import BrainHistory, Brain
 from ..models.stomach import Stomach
 from ..models.traits import Traits
 
+from ..util.collisions import QuadTree
+
 def draw_arrowhead(display: pg.Surface, pos: np.ndarray, angle: float, radius: float, color: tuple):
     pg.draw.circle(display, color, pos, radius)
     perp = angle + math.pi/2
@@ -112,6 +114,14 @@ class EntityManager:
         self.energy = self.energy + np.array([stomach.eat(pos, env) for pos, stomach in zip(self.pos, self.stomach)])
 
         # check collision between entities
+        qtree = QuadTree(np.array([0,0]), 500, 4)
+        [qtree.insert(pos, i) for i, pos in enumerate(self.pos)]
+        for i, (pos, def_stat) in enumerate(zip(self.pos, self.stats['def'])):
+            collisions = qtree.query_data(np.array([pos[0],pos[1],10]))
+            for col_index in collisions:
+                if col_index == i: continue
+                dmg_dealt = (1 + self.stats['pwr'][col_index]) * (1 - def_stat / 100)
+                self.health[i] -= dmg_dealt
 
         # health regen
         should_regen = self.health < 100
@@ -120,6 +130,27 @@ class EntityManager:
         regen_amt = (1 + self.stats['def']) * dt
         self.energy[regen] = self.energy[regen] - regen_amt[regen]
         self.health[regen] = self.health[regen] + regen_amt[regen]
+
+        # check death
+        keep = self.health > 0
+        self.pos = self.pos[keep]
+        self.vel = self.vel[keep]
+        self.flat_angle = self.flat_angle[keep]
+        self.scale = self.scale[keep]
+
+        self.stats = {
+            stat_type: stats[keep]
+            for stat_type, stats in self.stats.items()
+        }
+        self.health = self.health[keep]
+        self.energy = self.energy[keep]
+
+        for i in range(self.num_entities-1, -1, -1):
+            if not keep[i]:
+                self.brain.pop(i)
+                self.receptors.pop(i)
+                self.stomach.pop(i)
+
 
     # evo
     def mutate(self):
