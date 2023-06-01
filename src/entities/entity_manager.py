@@ -10,6 +10,8 @@ from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
 
+from .evo_util import calculate_fitness
+
 def draw_arrowhead(display: pg.Surface, pos: np.ndarray, angle: float, radius: float, color: tuple):
     pg.draw.circle(display, color, pos, radius)
     perp = angle + math.pi/2
@@ -19,6 +21,10 @@ def draw_arrowhead(display: pg.Surface, pos: np.ndarray, angle: float, radius: f
         pos - radius * np.array([math.cos(perp), math.sin(perp)]),
     ]
     pg.draw.polygon(display, color, points)
+
+# evolution constats
+ELITISM_PERCENTILE = 50
+
 
 class EntityManager:
     def __init__(self, first_entity: dict):
@@ -32,11 +38,11 @@ class EntityManager:
 
         # game data
         self.stats = {
-            'itl': np.zeros((1,), dtype=np.float32), # shape=(n,)
-            'pwr': np.zeros((1,), dtype=np.float32), # shape=(n,)
-            'def': np.zeros((1,), dtype=np.float32), # shape=(n,)
-            'mbl': np.zeros((1,), dtype=np.float32), # shape=(n,)
-            'stl': np.zeros((1,), dtype=np.float32), # shape=(n,)
+            'itl': np.ones((1,), dtype=np.float32), # shape=(n,)
+            'pwr': np.ones((1,), dtype=np.float32), # shape=(n,)
+            'def': np.ones((1,), dtype=np.float32), # shape=(n,)
+            'mbl': np.ones((1,), dtype=np.float32), # shape=(n,)
+            'stl': np.ones((1,), dtype=np.float32), # shape=(n,)
         }
         self.health = np.full((1,), 100, dtype=np.float32) # shape=(n,)
         self.energy = np.full((1,), 100, dtype=np.float32) # shape=(n,)
@@ -153,10 +159,30 @@ class EntityManager:
 
 
     # evo
+    def new_generation(self):
+        self.calculate_fitness()
+        self.elitism()
+        
+        self.cross_breed()
+
+        self.mutate()
+
+    def calculate_fitness(self):
+        fitness_values = calculate_fitness(self.num_entities, self.health, self.energy,
+                                           self.stats, self.brain_history,
+                                           self.brain, self.stomach, self.receptors)
+        print(fitness_values)
+
+    def elitism(self):
+        ...
+    
+    def cross_breed(self):
+        ...
+
     def mutate(self):
         # mutate stats
         self.stats = {
-            stat_type: np.clip(stats + np.random.rand(stats.size)*4-2, a_min=0, a_max=100)
+            stat_type: np.clip(stats + np.random.rand(stats.size)*4-2, a_min=1, a_max=100)
             for stat_type, stats in self.stats.items()
         }
 

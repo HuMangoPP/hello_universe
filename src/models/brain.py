@@ -117,7 +117,6 @@ class Brain:
             axon_to_change = random.choice(self.axons)
             axon_to_change.weight += random.uniform(-D_WEIGHT, D_WEIGHT)
 
-    
     def add_neuron(self, neuron_type: int):
         self.neurons.append(Neuron(neuron_type))
 
@@ -142,3 +141,9 @@ class Brain:
 
     def get_energy_cost(self) -> float:
         return len([axon for axon in self.axons if axon.enabled])
+    
+    def has_axon_of_innov(self, innov: int) -> bool:
+        return innov in set([axon.innov for axon in self.axons if axon.enabled])
+
+    def get_innov(self) -> list:
+        return [axon.innov for axon in self.axons if axon.enabled]

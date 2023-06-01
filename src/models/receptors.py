@@ -51,6 +51,13 @@ VARIATION = 0.05
 def optimal_distribution(x: float, opt: float):
     return math.exp(-1/2 * ((x - opt) / VARIATION) ** 2)
 
+RECEPTOR_DATA_MAP = {
+    'num_receptors': 0,
+    'receptor_spread': 1,
+    'receptor_fov': 2,
+    'optimal_dens': 3,
+}
+
 class Receptors:
     def __init__(self, receptor_data: dict):
         self.receptors = { # [num_receptors, spread, fov, optimal_dens]
@@ -69,20 +76,24 @@ class Receptors:
                 # change the number of receptors, either add or subtract one
                 # minimum number of receptors is 0
                 change = 1 if random.uniform(0,1) > 0.5 else -1
-                self.receptors[receptor_type][0] = max(receptor_data[0] + change, 0)
+                self.receptors[receptor_type][0] = np.clip(receptor_data[0] + change,
+                                                           a_min=0, a_max=10)
             if random.uniform(0, 1) <= MUTATION_RATE:
                 # change the spread of receptors 
                 # minimum spread of receptors is 0.1 rad
-                self.receptors[receptor_type][1] = max(receptor_data[1] + random.uniform(-0.1, 0.1), MIN_SPREAD)
+                self.receptors[receptor_type][1] = np.clip(receptor_data[1] + random.uniform(-0.1, 0.1), 
+                                                           a_min=MIN_SPREAD, a_max=math.pi)
             if random.uniform(0, 1) <= MUTATION_RATE:
                 # change the fov of receptors
                 # minimum fov of receptors is 0.1 rad
-                self.receptors[receptor_type][2] = max(receptor_data[2] + random.uniform(-0.1, 0.1), MIN_FOV)
+                self.receptors[receptor_type][2] = np.clip(receptor_data[1] + random.uniform(-0.1, 0.1), 
+                                                           a_min=MIN_FOV, a_max=math.pi)
             if random.uniform(0, 1) <= MUTATION_RATE:
                 # change the optimal value of the receptor 
                 # TODO: not implemented
-                self.receptors[receptor_type][2] = max(-1, min(1, receptor_data[2] + random.uniform(-0.1, 0.1)))
-                
+                self.receptors[receptor_type][2] = np.clip(receptor_data[2] + random.uniform(-0.1, 0.1),
+                                                           a_min=-1, a_max=1)
+             
     
     def poll_sensory(self, pos: np.ndarray, facing_angle: float, sense_radius: float, env):
         # TODO sense_radius based on itl stat? num receptors?
@@ -147,4 +158,22 @@ class Receptors:
         }
         return {
             **num, **spread, **fov
+        }
+    
+    def num_receptors(self):
+        return {
+            receptor_type: receptor_data[0]
+            for receptor_type, receptor_data in self.receptors.items()
+        }
+
+    def receptor_spreads(self):
+        return {
+            receptor_type: receptor_data[1]
+            for receptor_type, receptor_data in self.receptors.items()
+        }
+
+    def receptor_fovs(self):
+        return {
+            receptor_type: receptor_data[2]
+            for receptor_type, receptor_data in self.receptors.items()
         }

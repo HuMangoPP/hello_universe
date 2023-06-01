@@ -444,7 +444,7 @@ class GameMenu:
             self.generation_time = 5
             self.current_generation += 1
 
-            self.entity_manager.mutate()
+            self.entity_manager.new_generation()
             # self.ui.toggle_quests_menu()
             # self.ui.update_quests()
 

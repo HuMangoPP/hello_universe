@@ -23,7 +23,7 @@ class Stomach:
     def mutate(self):
         if random.uniform(0, 1) <= MUTATION_RATE:
             self.optimal_dens = {
-                receptor_type: min(max(dens + random.uniform(-DIGEST_MUTATION, DIGEST_MUTATION), 0), 1)
+                receptor_type: np.clip(dens + random.uniform(-DIGEST_MUTATION, DIGEST_MUTATION), a_min=0, a_max=1)
                 for receptor_type, dens in self.optimal_dens.items()
             }
     
