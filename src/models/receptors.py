@@ -128,6 +128,9 @@ class Receptors:
                              sense_radius, display, RECEPTOR_COLORS[receptor_type])
              for offset_angle in get_receptor_angles(receptor_data[0], receptor_data[1])] 
 
+    def get_energy_cost(self) -> float:
+        return np.sum([receptor_data[0] for receptor_data in self.receptors.values()])
+
     def get_receptor_data(self) -> dict:
         # get the num, spread, and fov of each receptor type (uniform)
         num = {

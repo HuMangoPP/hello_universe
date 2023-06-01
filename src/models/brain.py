@@ -140,3 +140,5 @@ class Brain:
         meets_threshold = output_neurons > THRESHOLD_VALUE
         return np.arange(output_neurons.size)[meets_threshold]
 
+    def get_energy_cost(self) -> float:
+        return len([axon for axon in self.axons if axon.enabled])

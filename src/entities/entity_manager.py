@@ -5,6 +5,7 @@ import math
 from ..models.creature import Creature
 from ..models.receptors import Receptors
 from ..models.brain import BrainHistory, Brain
+from ..models.stomach import Stomach
 from ..models.traits import Traits
 
 def draw_arrowhead(display: pg.Surface, pos: np.ndarray, angle: float, radius: float, color: tuple):
@@ -42,10 +43,11 @@ class EntityManager:
         self.brain_history = BrainHistory()
         self.brain : list[Brain] = [Brain(first_entity['brain'], self.brain_history)]
         self.receptors : list[Receptors] = [Receptors(first_entity['receptors'])]
-        self.abilities = [[]]
-        self.traits : list[Traits] = [Traits(first_entity['traits'])]
-        self.status_effects = [[]]
-        self.hurt_box = [None]
+        self.stomach : list[Stomach] = [Stomach(first_entity['stomach'])]
+        # self.abilities = [[]]
+        # self.traits : list[Traits] = [Traits(first_entity['traits'])]
+        # self.status_effects = [[]]
+        # self.hurt_box = [None]
 
     def add_new_entities(self, num_new_entities: int, physical_data: dict, stats_data: dict, interactive_data: dict):
         # physical
@@ -67,10 +69,11 @@ class EntityManager:
         # interactive
         self.brain = self.brain + interactive_data['brain']
         self.receptors = self.receptors + interactive_data['receptors']
-        self.abilities = self.abilities + interactive_data['abilities']
-        self.status_effects = self.status_effects + [[] for _ in range(num_new_entities)]
-        self.traits = self.traits + interactive_data['traits']
-        self.hurt_box = self.hurt_box + interactive_data['hurt_box']
+        self.stomach = self.stomach + interactive_data['stomach']
+        # self.abilities = self.abilities + interactive_data['abilities']
+        # self.status_effects = self.status_effects + [[] for _ in range(num_new_entities)]
+        # self.traits = self.traits + interactive_data['traits']
+        # self.hurt_box = self.hurt_box + interactive_data['hurt_box']
 
     # update and input
     def input(self, camera, mv_input: dict):
@@ -85,12 +88,12 @@ class EntityManager:
             input_vec = input_vec / np.linalg.norm(input_vec)
             x_dir, y_dir = input_vec[0], input_vec[1]
 
-        self.vel[entity_index] = np.array([[x_dir, y_dir, 0]])
+        self.vel[entity_index] = (100 + 5 * self.stats['mbl'][entity_index]) * np.array([[x_dir, y_dir, 0]])
 
-    def update(self, camera, dt: float):
+    def update(self, camera, dt: float, env):
         # movements
         # self.vel = self.vel + self.acc * dt
-        self.pos = self.pos + 200 * self.vel * dt
+        self.pos = self.pos + self.vel * dt
         spd = np.linalg.norm(self.vel[:, 0:2], axis=1)
         moving = spd > 0
         flat_angles = np.arctan2(self.vel[moving,1],self.vel[moving,0])
@@ -98,9 +101,25 @@ class EntityManager:
 
         # [creature.update(self.pos[i]) for i, creature in enumerate(self.creature)]
 
-        # TODO spend energy based on movement
-    
-    # mutation
+        # energy cost
+        energy_spent = np.linalg.norm(self.vel, axis=1) * (self.scale / 50)
+        energy_spent = energy_spent + np.array([receptor.get_energy_cost() for receptor in self.receptors])
+        energy_spent = energy_spent + np.array([brain.get_energy_cost() for brain in self.brain])
+        energy_spent = energy_spent * dt
+        self.energy = self.energy - energy_spent
+
+        # energy regen
+        self.energy = self.energy + np.array([stomach.eat(pos, env) for pos, stomach in zip(self.pos, self.stomach)])
+
+        # health regen
+        should_regen = self.health < 100
+        can_regen = self.energy > 50
+        regen = np.logical_and(should_regen, can_regen)
+        regen_amt = (1 + self.stats['def']) * dt
+        self.energy[regen] = self.energy[regen] - regen_amt[regen]
+        self.health[regen] = self.health[regen] + regen_amt[regen]
+
+    # evo
     def mutate(self):
         # mutate stats
         self.stats = {
@@ -114,16 +133,19 @@ class EntityManager:
         # mutate brain
         [brain.mutate(itl_stat) for brain, itl_stat in zip(self.brain, self.stats['itl'])]
 
+        # mutate stomach
+        [stomach.mutate() for stomach in self.stomach]
+
     # render
     def render_health_and_energy(self, display: pg.Surface, drawpos: tuple, health: float, energy: float):
-        health_rect = pg.Rect(drawpos[0]-20, drawpos[1]-30,40,5)
-        energy_rect = pg.Rect(drawpos[0]-20, drawpos[1]-25,40,5)
-        health_bar = pg.Surface((40, 5))
-        energy_bar = pg.Surface((40, 5))
+        health_rect = pg.Rect(drawpos[0]-25, drawpos[1]-40,50,10)
+        energy_rect = pg.Rect(drawpos[0]-25, drawpos[1]-30,50,10)
+        health_bar = pg.Surface((50, 10))
+        energy_bar = pg.Surface((50, 10))
         health_bar.fill((0,0,0))
-        pg.draw.rect(health_bar, (255, 0, 0), pg.Rect(0,0,health/100*40,5))
+        pg.draw.rect(health_bar, (255, 0, 0), pg.Rect(0,0,health/100*50,10))
         energy_bar.fill((0,0,0))
-        pg.draw.rect(energy_bar, (0,0,255), pg.Rect(0,0,energy/100*40,5))
+        pg.draw.rect(energy_bar, (0,0,255), pg.Rect(0,0,energy/100*50,10))
         display.blit(health_bar, health_rect)
         display.blit(energy_bar, energy_rect)
         pg.draw.rect(display, (255,255,255), health_rect, 1)
@@ -131,9 +153,9 @@ class EntityManager:
     
     def render_stats(self, display: pg.Surface, drawpos: tuple, stats: tuple):
         for i, stat in enumerate(stats):
-            stat_bar = pg.Rect(0,0,5,stat*2)
-            stat_bar.bottom = drawpos[1]-35
-            stat_bar.centerx = drawpos[0] + (i-2)*5
+            stat_bar = pg.Rect(0,0,10,stat*2)
+            stat_bar.bottom = drawpos[1]-50
+            stat_bar.centerx = drawpos[0] + (i-2)*10
             pg.draw.rect(display, (0,255,0), stat_bar)
             pg.draw.rect(display, (255,255,255), stat_bar,1)
 
