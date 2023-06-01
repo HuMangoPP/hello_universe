@@ -37,6 +37,8 @@ import pygame as pg
 import numpy as np
 import math
 
+from ..util.collisions import QuadTree
+
 SHAPE_MAP = {
     'circle': 0,
     'triangle': 1,
@@ -45,7 +47,7 @@ SHAPE_MAP = {
     'hexagon': 4,
 }
 
-PARTICLE_LIFETIME = 0.2
+PARTICLE_LIFETIME = 100
 
 def draw_circle(display: pg.Surface, center: tuple, color: tuple, radius: float):
     pg.draw.circle(display, color, center, radius)
@@ -84,7 +86,13 @@ class Environment:
         self.lifetimes = np.array([]) #shape=(n,)
         self.shapes = np.array([]) # shape=(n,)
         self.densities = np.array([]) # shape=(n,)
+
+        self.build_qtree()
     
+    def build_qtree(self):
+        self.qtree = QuadTree(np.array([0,0]), 500, 4)
+        [self.qtree.insert(pos, data=[i, shape, density]) for i, (pos, shape, density) in enumerate(zip(self.positions, self.shapes, self.densities))]
+
     def add_new_particles(self, num_new_particles: int, 
                           positions: np.ndarray, shapes: np.ndarray, densities: np.ndarray):
         self.num_particles += num_new_particles
@@ -99,6 +107,9 @@ class Environment:
             self.shapes = np.concatenate([self.shapes, shapes])
             self.densities = np.concatenate([self.densities, densities])
     
+    def eat(self, index):
+        self.lifetimes[index] = 0
+
     def update(self, dt: float):
         if self.num_particles > 0:
             self.lifetimes = self.lifetimes - np.full((self.num_particles,), dt)
@@ -108,10 +119,12 @@ class Environment:
             self.shapes = self.shapes[keep]
             self.densities = self.densities[keep]
             self.num_particles = np.sum(keep)
+        
+        self.build_qtree()
     
     def render(self, display: pg.Surface, camera):
         for pos, shape, dens in zip(self.positions, self.shapes, self.densities):
-            radius = 50 * dens
+            radius = 7
             color = np.ceil(np.array([0,255,0]) * dens)
             match shape:
                 case 0:

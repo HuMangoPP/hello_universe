@@ -333,7 +333,7 @@ class GameMenu:
         self.goto = 'start'
 
         # data
-        self.generation_time = 5
+        self.generation_time = 10
         self.current_generation = 0
         self.new_particle_time = 0.1
 
@@ -370,6 +370,15 @@ class GameMenu:
                 'square': [0, math.pi/6, math.pi/6],
                 'pentagon': [0, math.pi/6, math.pi/6],
                 'hexagon': [0, math.pi/6, math.pi/6],
+            },
+            'stomach': { # TODO
+                'optimal_dens': {
+                    'circle': 0.5,
+                    'triangle': 0.5,
+                    'square': 0.5,
+                    'pentagon': 0.5,
+                    'hexagon': 0.5,
+                }
             },
             'traits': { # TODO change to default later
                 'traits': [],
@@ -422,7 +431,7 @@ class GameMenu:
                 self.environment.add_new_particles(
                     1, pos.reshape((1,3)),
                     np.zeros((1,), dtype=np.int32),
-                    np.full((1,), 0.1, dtype=np.float32)
+                    np.full((1,), 0.5, dtype=np.float32)
                 )
 
         self.generation_time -= dt
@@ -468,7 +477,7 @@ class GameMenu:
         #     'y': y_input,
         # })
         self.ai_agents.agent_input(self.entity_manager, self.environment, self.camera)
-        self.entity_manager.update(self.camera, dt)
+        self.entity_manager.update(self.camera, dt, self.environment)
         self.environment.update(dt)
         # self.camera.follow_entity(self.entity_manager.pos[0], self.entity_manager.scale[0])
 
