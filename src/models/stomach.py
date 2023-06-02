@@ -1,6 +1,8 @@
 import numpy as np
 import random, math
 
+from ..util.adv_math import lerp, gaussian_dist
+
 MUTATION_RATE = 0.2
 DIGEST_MUTATION = 0.1
 INV_SHAPE_MAP = [
@@ -13,11 +15,8 @@ INV_SHAPE_MAP = [
 DIGEST_THRESHOLD = 0.5
 VARIATION = 0.2
 def digest(x: float, opt: float) -> float:
-    digest_amt = math.exp(-1/2 * ((x - opt) / VARIATION) ** 2)
+    digest_amt = gaussian_dist(x, opt, VARIATION)
     return digest_amt if digest_amt > DIGEST_THRESHOLD else 0
-
-def lerp(u: np.ndarray | float, v: np.ndarray | float, t: float) -> np.ndarray:
-    return (v-u) * t + u
 
 class Stomach:
     def __init__(self, stomach_data: dict):

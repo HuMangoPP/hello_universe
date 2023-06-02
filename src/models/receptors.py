@@ -2,6 +2,8 @@ import pygame as pg
 import numpy as np
 import math, random
 
+from ..util.adv_math import lerp, gaussian_dist
+
 SINGLE_RECEPTOR_CAPACITY = 1
 SHAPE_MAP = {
     'circle': 0,
@@ -48,8 +50,6 @@ def get_receptor_angles(num_receptors: int, receptor_spread: float):
     )
 
 VARIATION = 0.05
-def optimal_distribution(x: float, opt: float):
-    return math.exp(-1/2 * ((x - opt) / VARIATION) ** 2)
 
 RECEPTOR_DATA_MAP = {
     'num_receptors': 0,
@@ -57,9 +57,6 @@ RECEPTOR_DATA_MAP = {
     'receptor_fov': 2,
     'optimal_dens': 3,
 }
-
-def lerp(u: np.ndarray | float, v: np.ndarray | float, t: float) -> np.ndarray:
-    return (v-u) * t + u
 
 class Receptors:
     def __init__(self, receptor_data: dict):
