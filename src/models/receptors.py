@@ -133,6 +133,7 @@ class Receptors:
                 avg_dens = 0
                 avg_angle = 0
             else:
+                # print(sensory)
                 avg_dens = np.average(sensory)
                 if avg_dens < DENS_THRESHOLD:
                     avg_angle = 0

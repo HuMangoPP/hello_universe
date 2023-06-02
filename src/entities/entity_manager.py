@@ -335,6 +335,17 @@ class EntityManager:
         }
 
         # get brain data
+        brain_data = [brain.get_df() for brain in self.brain]
+        first_entity = brain_data[0]
+        brain_data = {
+            brain_data_key: np.array([entity_brain_data[brain_data_key]
+                                      for entity_brain_data in brain_data])
+            for brain_data_key in first_entity
+        }
+        brain_data = {
+            'id': self.ids,
+            **brain_data
+        }
 
         # get stomach data
         stomach_data = [stomach.get_df() for stomach in self.stomach]
@@ -348,7 +359,7 @@ class EntityManager:
             'id': self.ids,
             **stomach_data
         }
-        return basic_data, receptor_data, stomach_data
+        return basic_data, receptor_data, stomach_data, brain_data
 
     ##################
     # getting data for HUD UI

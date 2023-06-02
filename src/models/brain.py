@@ -122,7 +122,7 @@ class Brain:
                 axon_data.append({
                     'in': axon.in_neuron,
                     'out': axon.out_neuron,
-                    'w': lerp(axon.weight, other_brain.get_axon_weight(axon.in_neuron, axon.out_neuron), t)
+                    'w': lerp(axon.weight, other_brain.get_axon_weight(axon.innov), t)
                 })
             else:
                 axon_data.append({
@@ -172,15 +172,21 @@ class Brain:
     def get_neuron_types(self) -> list:
         return [neuron.neuron_type for neuron in self.neurons]
 
-    def get_axon_weight(self, in_neuron: int, out_neuron: int) -> float:
+    def get_axon_weight(self, innov: int) -> float:
         for axon in self.axons:
-            if axon.in_neuron == in_neuron and axon.out_neuron == out_neuron:
+            if axon.innov == innov:
                 return axon.weight
             
-        return -1
+        return np.nan
 
     def has_axon_of_innov(self, innov: int) -> bool:
         return innov in set([axon.innov for axon in self.axons if axon.enabled])
 
     def get_innov(self) -> list:
         return [axon.innov for axon in self.axons if axon.enabled]
+
+    def get_df(self):
+        return {
+            label: self.get_axon_weight(innov)
+            for label, innov in self.brain_history.axon_pool.items()
+        }
