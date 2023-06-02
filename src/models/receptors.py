@@ -58,6 +58,9 @@ RECEPTOR_DATA_MAP = {
     'optimal_dens': 3,
 }
 
+def lerp(u: np.ndarray | float, v: np.ndarray | float, t: float) -> np.ndarray:
+    return (v-u) * t + u
+
 class Receptors:
     def __init__(self, receptor_data: dict):
         self.receptors = { # [num_receptors, spread, fov, optimal_dens]
@@ -93,7 +96,15 @@ class Receptors:
                 # TODO: not implemented
                 self.receptors[receptor_type][2] = np.clip(receptor_data[2] + random.uniform(-0.1, 0.1),
                                                            a_min=-1, a_max=1)
-             
+    
+    def cross_breed(self, other_receptors) -> dict:
+        t = random.uniform(0.25, 0.75)
+        return {
+            receptor_type: [int(round(lerp(self.receptors[receptor_type][0], other_receptors.receptors[receptor_type][0], t))),
+                            lerp(self.receptors[receptor_type][1], other_receptors.receptors[receptor_type][1], t),
+                            lerp(self.receptors[receptor_type][2], other_receptors.receptors[receptor_type][2], t)]
+            for receptor_type in self.receptors
+        }
     
     def poll_sensory(self, pos: np.ndarray, facing_angle: float, sense_radius: float, env):
         # TODO sense_radius based on itl stat? num receptors?
