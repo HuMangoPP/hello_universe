@@ -16,6 +16,9 @@ def digest(x: float, opt: float) -> float:
     digest_amt = math.exp(-1/2 * ((x - opt) / VARIATION) ** 2)
     return digest_amt if digest_amt > DIGEST_THRESHOLD else 0
 
+def lerp(u: np.ndarray | float, v: np.ndarray | float, t: float) -> np.ndarray:
+    return (v-u) * t + u
+
 class Stomach:
     def __init__(self, stomach_data: dict):
         self.optimal_dens = stomach_data['optimal_dens']
@@ -27,6 +30,14 @@ class Stomach:
                 for receptor_type, dens in self.optimal_dens.items()
             }
     
+    def cross_breed(self, other_stomach) -> dict:
+        return {
+            receptor_type: lerp(self.optimal_dens[receptor_type], 
+                                other_stomach.optimal_dens[receptor_type],
+                                random.uniform(0.25, 0.75))
+            for receptor_type in self.optimal_dens
+        }
+
     def eat(self, pos: np.ndarray, env) -> float:
         digest_amt = 0
         edible_in_range = env.qtree.query_data(np.array([pos[0],pos[1],10]))
