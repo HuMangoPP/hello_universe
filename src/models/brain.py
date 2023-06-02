@@ -1,11 +1,7 @@
 import numpy as np
 import random
 
-def relu(z: np.ndarray) -> np.ndarray:
-    return np.maximum(0, z)
-
-def softmax(z: np.ndarray) -> np.ndarray:
-     return np.exp(z) / sum(np.exp(z))
+from ..util.adv_math import lerp, relu, softmax
 
 
 NEURON_TYPES = {
@@ -40,6 +36,7 @@ class Axon:
         self.weight = weight
         self.innov = innov
         self.enabled = enabled
+    
 
 class Brain:
     def __init__(self, brain_data: dict, brain_history: BrainHistory):
@@ -117,6 +114,36 @@ class Brain:
             axon_to_change = random.choice(self.axons)
             axon_to_change.weight += random.uniform(-D_WEIGHT, D_WEIGHT)
 
+    def cross_breed(self, other_brain) -> dict:
+        t = random.uniform(0.25, 0.75)
+        axon_data = []
+        for axon in self.axons:
+            if other_brain.has_axon_of_innov(axon.innov):
+                axon_data.append({
+                    'in': axon.in_neuron,
+                    'out': axon.out_neuron,
+                    'w': lerp(axon.weight, other_brain.get_axon_weight(axon.in_neuron, axon.out_neuron), t)
+                })
+            else:
+                axon_data.append({
+                    'in': axon.in_neuron,
+                    'out': axon.out_neuron,
+                    'w': axon.weight
+                })
+        for axon in other_brain.axons:
+            if not self.has_axon_of_innov(axon.innov):
+                axon_data.append({
+                    'in': axon.in_neuron,
+                    'out': axon.out_neuron,
+                    'w': axon.weight
+                })
+
+        brain_data = {
+            'neurons': self.get_neuron_types() if len(self.neurons) > len(other_brain.neurons) else other_brain.get_neuron_types(),
+            'axons': axon_data       
+        }
+        return brain_data
+
     def add_neuron(self, neuron_type: int):
         self.neurons.append(Neuron(neuron_type))
 
@@ -142,6 +169,16 @@ class Brain:
     def get_energy_cost(self) -> float:
         return 0.5 * len([axon for axon in self.axons if axon.enabled])
     
+    def get_neuron_types(self) -> list:
+        return [neuron.neuron_type for neuron in self.neurons]
+
+    def get_axon_weight(self, in_neuron: int, out_neuron: int) -> float:
+        for axon in self.axons:
+            if axon.in_neuron == in_neuron and axon.out_neuron == out_neuron:
+                return axon.weight
+            
+        return -1
+
     def has_axon_of_innov(self, innov: int) -> bool:
         return innov in set([axon.innov for axon in self.axons if axon.enabled])
 

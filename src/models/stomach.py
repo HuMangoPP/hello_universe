@@ -32,10 +32,12 @@ class Stomach:
     def cross_breed(self, other_stomach) -> dict:
         t = random.uniform(0.25, 0.75)
         return {
-            receptor_type: lerp(self.optimal_dens[receptor_type], 
-                                other_stomach.optimal_dens[receptor_type],
-                                t)
-            for receptor_type in self.optimal_dens
+            'optimal_dens': {
+                receptor_type: lerp(self.optimal_dens[receptor_type], 
+                                    other_stomach.optimal_dens[receptor_type],
+                                    t)
+                for receptor_type in self.optimal_dens
+            }
         }
 
     def eat(self, pos: np.ndarray, env) -> float:

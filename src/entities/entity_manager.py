@@ -1,6 +1,6 @@
 import numpy as np
 import pygame as pg
-import math
+import math, random
 
 from ..models.creature import Creature
 from ..models.receptors import Receptors
@@ -9,6 +9,7 @@ from ..models.stomach import Stomach
 from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
+from ..util.adv_math import lerp
 
 from .evo_util import calculate_fitness
 
@@ -24,7 +25,6 @@ def draw_arrowhead(display: pg.Surface, pos: np.ndarray, angle: float, radius: f
 
 # evolution constats
 ELITISM_PERCENTILE = 50
-
 
 class EntityManager:
     def __init__(self, first_entity: dict):
@@ -61,7 +61,7 @@ class EntityManager:
         # physical
         self.num_entities += num_new_entities
         self.pos = np.concatenate([self.pos, physical_data['pos']])
-        self.flat_angle = np.concatenate([self.flat_angle, physical_data['flat_angle']])
+        self.flat_angle = np.concatenate([self.flat_angle, np.zeros((num_new_entities,), dtype=np.float32)])
         self.vel = np.concatenate([self.vel, np.zeros((num_new_entities,3), dtype=np.float32)])
         self.scale = np.concatenate([self.scale, physical_data['scale']])
         # self.creature = self.creature + physical_data['creature']
@@ -71,8 +71,8 @@ class EntityManager:
             stat_type: np.concatenate([self.stats[stat_type], stats_data[stat_type]])
             for stat_type in self.stats
         }
-        self.health =  np.concatenate([self.health, stats_data['health']])
-        self.energy = np.concatenate([self.energy, stats_data['energy']])
+        self.health = np.concatenate([self.health, np.full((num_new_entities,), 100)])
+        self.energy = np.concatenate([self.energy, np.full((num_new_entities,), 100)])
 
         # interactive
         self.brain = self.brain + interactive_data['brain']
@@ -161,8 +161,6 @@ class EntityManager:
     # evo
     def new_generation(self):
         self.calculate_fitness()
-        
-        self.cross_breed()
 
         self.mutate()
 
@@ -171,10 +169,36 @@ class EntityManager:
                                            self.stats, self.brain_history,
                                            self.brain, self.stomach, self.receptors)
         elitism_threshold = np.percentile(fitness_values, ELITISM_PERCENTILE)
-        print(fitness_values >= elitism_threshold)
+        self.cross_breed(fitness_values >= elitism_threshold)
 
-    def cross_breed(self):
-        ...
+    def cross_breed(self, in_gene_pool: np.ndarray):
+        num_new_entities = np.sum(in_gene_pool)
+        if num_new_entities == 0:
+            return
+        breeding_pairs = np.random.randint(0, high=num_new_entities, size=(num_new_entities,))
+        physical_data = {
+            'pos': np.array([lerp(self.pos[in_gene_pool][index], self.pos[in_gene_pool][pair], 
+                                  random.uniform(0.25, 0.75)) + np.random.uniform(low=-5, high=5, size=(3,))
+                             for index, pair in enumerate(breeding_pairs)]),
+            'scale': np.array([lerp(self.scale[in_gene_pool][index], self.scale[in_gene_pool][pair], 
+                                    random.uniform(0.25, 0.75)) 
+                               for index, pair in enumerate(breeding_pairs)])
+        }
+        stats_data = {
+            stat_type: np.array([lerp(self.stats[stat_type][index], self.stats[stat_type][pair], 
+                                      random.uniform(0.25, 0.75)) 
+                                 for index, pair in enumerate(breeding_pairs)])
+            for stat_type in self.stats
+        }
+        interactive_data = {
+            'brain': [Brain(self.brain[index].cross_breed(self.brain[pair]), self.brain_history)
+                      for index, pair in enumerate(breeding_pairs)],
+            'receptors': [Receptors(self.receptors[index].cross_breed(self.receptors[pair]))
+                          for index, pair in enumerate(breeding_pairs)],
+            'stomach': [Stomach(self.stomach[index].cross_breed(self.stomach[pair]))
+                        for index, pair in enumerate(breeding_pairs)],
+        }
+        self.add_new_entities(num_new_entities, physical_data, stats_data, interactive_data)
 
     def mutate(self):
         # mutate stats
@@ -224,8 +248,8 @@ class EntityManager:
             stats = [self.stats[stat_type][i] for stat_type in self.stats]
             self.render_stats(display, drawpos, stats)
 
-        # [receptor.render(pos, angle, 100, display, camera) 
-        #  for pos, angle, receptor in zip(self.pos, self.flat_angle, self.receptors)]
+        [receptor.render(pos, angle, 100, display, camera) 
+         for pos, angle, receptor in zip(self.pos, self.flat_angle, self.receptors)]
     
     # save data
     def get_save_data(self):
