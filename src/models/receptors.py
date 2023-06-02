@@ -140,7 +140,7 @@ class Receptors:
              for offset_angle in get_receptor_angles(receptor_data[0], receptor_data[1])] 
 
     def get_energy_cost(self) -> float:
-        return np.sum([receptor_data[0] for receptor_data in self.receptors.values()])
+        return 0.5 * np.sum([receptor_data[0] for receptor_data in self.receptors.values()])
 
     def get_receptor_data(self) -> dict:
         # get the num, spread, and fov of each receptor type (uniform)

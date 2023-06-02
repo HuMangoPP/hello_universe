@@ -161,7 +161,6 @@ class EntityManager:
     # evo
     def new_generation(self):
         self.calculate_fitness()
-        self.elitism()
         
         self.cross_breed()
 
@@ -171,11 +170,9 @@ class EntityManager:
         fitness_values = calculate_fitness(self.num_entities, self.health, self.energy,
                                            self.stats, self.brain_history,
                                            self.brain, self.stomach, self.receptors)
-        print(fitness_values)
+        elitism_threshold = np.percentile(fitness_values, ELITISM_PERCENTILE)
+        print(fitness_values >= elitism_threshold)
 
-    def elitism(self):
-        ...
-    
     def cross_breed(self):
         ...
 
@@ -227,8 +224,8 @@ class EntityManager:
             stats = [self.stats[stat_type][i] for stat_type in self.stats]
             self.render_stats(display, drawpos, stats)
 
-        [receptor.render(pos, angle, 100, display, camera) 
-         for pos, angle, receptor in zip(self.pos, self.flat_angle, self.receptors)]
+        # [receptor.render(pos, angle, 100, display, camera) 
+        #  for pos, angle, receptor in zip(self.pos, self.flat_angle, self.receptors)]
     
     # save data
     def get_save_data(self):

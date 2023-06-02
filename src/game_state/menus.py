@@ -433,6 +433,7 @@ class GameMenu:
                     np.zeros((1,), dtype=np.int32),
                     np.full((1,), 0.5, dtype=np.float32)
                 )
+                self.new_particle_time = 0.1
 
         self.generation_time -= dt
         if self.generation_time <= 0:

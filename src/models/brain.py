@@ -68,50 +68,50 @@ class Brain:
         num_neurons = len([neuron for neuron in self.neurons if neuron.neuron_type == 1])
         num_active_axons = len([axon for axon in self.axons if axon.enabled])
 
-        if num_neurons < allowed_neurons and num_active_axons < allowed_axons:
-            if random.uniform(0, 1) <= MUTATION_RATE:
-                # mutation adds neuron and splits a connection into two
-                self.add_neuron(1)
-                
-                # choose a random connection to insert a node into
-                axon_to_replace = random.choice(self.axons)
-                axon_to_replace.enabled = False
-                
-                # determine innov numbers
-                axon_label = f'{axon_to_replace.in_neuron}-{num_neurons}'
+        # if num_neurons < allowed_neurons and num_active_axons < allowed_axons:
+        if random.uniform(0, 1) <= MUTATION_RATE:
+            # mutation adds neuron and splits a connection into two
+            self.add_neuron(1)
+            
+            # choose a random connection to insert a node into
+            axon_to_replace = random.choice(self.axons)
+            axon_to_replace.enabled = False
+            
+            # determine innov numbers
+            axon_label = f'{axon_to_replace.in_neuron}-{num_neurons}'
+            if axon_label not in self.brain_history.axon_pool:
+                self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
+                self.brain_history.innov_number += 1
+            self.add_axon(axon_to_replace.in_neuron, num_neurons, axon_to_replace.weight, self.brain_history.axon_pool[axon_label])
+
+            axon_label = f'{num_neurons}-{axon_to_replace.out_neuron}'
+            if axon_label not in self.brain_history.axon_pool:
+                self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
+                self.brain_history.innov_number += 1
+            self.add_axon(num_neurons, axon_to_replace.out_neuron, 1, self.brain_history.axon_pool[axon_label])
+
+            # increase these for later parts of the algorithm
+            num_neurons += 1
+            num_active_axons += 1
+        # if num_active_axons < allowed_axons:
+        if random.uniform(0, 1) <= MUTATION_RATE:
+            # mutation adds a new random connection or changes its weight if it exists
+            # find an in and out neuron
+            in_neuron = random.choice([index for index, neuron in enumerate(self.neurons) if neuron.neuron_type in [0, 1]])
+            out_neuron = random.choice([index for index, neuron in enumerate(self.neurons) if neuron.neuron_type in [1, 2] and index != in_neuron])
+            # get all of the axons 
+            axon_labels = {f'{axon.in_neuron}-{axon.out_neuron}': axon for axon in self.axons}
+            axon_label = f'{in_neuron}-{out_neuron}'
+            if axon_label in axon_labels:
+                # change the weight of this axon
+                axon_labels[axon_label].weight += random.uniform(-D_WEIGHT, D_WEIGHT)
+            else:
+                # otherwise, add the axon
+                # determine the innov number
                 if axon_label not in self.brain_history.axon_pool:
                     self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
                     self.brain_history.innov_number += 1
-                self.add_axon(axon_to_replace.in_neuron, num_neurons, axon_to_replace.weight, self.brain_history.axon_pool[axon_label])
-
-                axon_label = f'{num_neurons}-{axon_to_replace.out_neuron}'
-                if axon_label not in self.brain_history.axon_pool:
-                    self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
-                    self.brain_history.innov_number += 1
-                self.add_axon(num_neurons, axon_to_replace.out_neuron, 1)
-
-                # increase these for later parts of the algorithm
-                num_neurons += 1
-                num_active_axons += 1
-        if num_active_axons < allowed_axons:
-            if random.uniform(0, 1) <= MUTATION_RATE:
-                # mutation adds a new random connection or changes its weight if it exists
-                # find an in and out neuron
-                in_neuron = random.choice([index for index, neuron in enumerate(self.neurons) if neuron.neuron_type in [0, 1]])
-                out_neuron = random.choice([index for index, neuron in enumerate(self.neurons) if neuron.neuron_type in [1, 2] and index != in_neuron])
-                # get all of the axons 
-                axon_labels = {f'{axon.in_neuron}-{axon.out_neuron}': axon for axon in self.axons}
-                axon_label = f'{in_neuron}-{out_neuron}'
-                if axon_label in axon_labels:
-                    # change the weight of this axon
-                    axon_labels[axon_labels].weight += random.uniform(-D_WEIGHT, D_WEIGHT)
-                else:
-                    # otherwise, add the axon
-                    # determine the innov number
-                    if axon_label not in self.brain_history.axon_pool:
-                        self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
-                        self.brain_history.innov_number += 1
-                    self.add_axon(in_neuron, out_neuron, random.uniform(0, 1), self.brain_history.axon_pool[axon_label])
+                self.add_axon(in_neuron, out_neuron, random.uniform(0, 1), self.brain_history.axon_pool[axon_label])
         if random.uniform(0, 1) <= MUTATION_RATE:
             # change a random weight
             axon_to_change = random.choice(self.axons)
@@ -140,7 +140,7 @@ class Brain:
         return np.arange(output_neurons.size)[meets_threshold]
 
     def get_energy_cost(self) -> float:
-        return len([axon for axon in self.axons if axon.enabled])
+        return 0.5 * len([axon for axon in self.axons if axon.enabled])
     
     def has_axon_of_innov(self, innov: int) -> bool:
         return innov in set([axon.innov for axon in self.axons if axon.enabled])
