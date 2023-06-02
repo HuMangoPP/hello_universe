@@ -1,11 +1,24 @@
 import numpy as np
 
+##################
+# constants
+##################
 RECEPTOR_TYPES = ['circle', 'triangle', 'square', 'pentagon', 'hexagon']
 OPT_DENS_TOLERANCE = 0.1
 ANGLE_TOLERANCE = 0.1
 
 def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray, stats: dict,
                       brain_history, brains: list, stomachs: list, receptors: list) -> np.ndarray:
+    '''
+        This function calculates the fitness of entities given their
+        health, energy, stats, brain structure, stomach structure, and receptor structure.
+
+        The function first calculates their individual fitness using their health and energy, 
+        and then shares fitness scores between entities by assigning fitness scores
+        to certain brain, stomach, and receptor structures.
+        
+        Returns a np array containing the final (shared) fitness scores for each entity.
+    '''
     # calculate the individual fitness for each creature
     # based on its health and energy
     individual_fitness = health + energy

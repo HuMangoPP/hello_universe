@@ -438,14 +438,16 @@ class GameMenu:
         self.generation_time -= dt
         if self.generation_time <= 0:
             # store data
-            save_data = self.entity_manager.get_save_data()
-            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, save_data)
+            basic_data, receptor_data, stomach_data = self.entity_manager.get_save_data()
+            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, basic_data, 'basic')
+            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, receptor_data, 'receptor')
+            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, stomach_data, 'stomach')
 
             # update generation
             self.generation_time = 1000
             self.current_generation += 1
 
-            self.entity_manager.new_generation()
+            self.entity_manager.new_generation(self.current_generation)
             # self.ui.toggle_quests_menu()
             # self.ui.update_quests()
 

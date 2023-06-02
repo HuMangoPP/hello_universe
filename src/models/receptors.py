@@ -150,7 +150,7 @@ class Receptors:
     def get_energy_cost(self) -> float:
         return 0.5 * np.sum([receptor_data[0] for receptor_data in self.receptors.values()])
 
-    def get_receptor_data(self) -> dict:
+    def get_df(self) -> dict:
         # get the num, spread, and fov of each receptor type (uniform)
         num = {
             f'num_{receptor_type}': receptor_data[0]

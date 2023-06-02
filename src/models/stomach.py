@@ -50,3 +50,6 @@ class Stomach:
                 env.eat(edible_item[0])
         
         return digest_amt
+
+    def get_df(self):
+        return self.optimal_dens
