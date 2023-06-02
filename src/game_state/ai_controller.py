@@ -135,7 +135,7 @@ class Agents:
                                                   entity_manager.flat_angle,
                                                   entity_manager.receptors,
                                                   entity_manager.brain)):
-            if i == self.no_control: continue
+            
             receptors.poll_sensory(pos, angle, 100, environment)
 
             sensory = np.array([receptors.sensory[receptor_type]

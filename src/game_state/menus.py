@@ -442,7 +442,7 @@ class GameMenu:
             entity_data_to_df(self.current_generation, self.entity_manager.num_entities, save_data)
 
             # update generation
-            self.generation_time = 5
+            self.generation_time = 1000
             self.current_generation += 1
 
             self.entity_manager.new_generation()
