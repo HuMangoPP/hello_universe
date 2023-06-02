@@ -156,7 +156,7 @@ class EntityManager:
                 self.brain.pop(i)
                 self.receptors.pop(i)
                 self.stomach.pop(i)
-
+        self.num_entities = np.sum(keep)
 
     # evo
     def new_generation(self):
