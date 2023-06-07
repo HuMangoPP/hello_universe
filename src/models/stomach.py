@@ -66,6 +66,13 @@ class StomachManager:
             for shape, existing_stomach_of_shape in self.optimal_dens.items()
         }
 
+    def keep(self, to_keep: np.ndarray):
+        self.num_stomachs = np.sum(to_keep)
+        self.optimal_dens = {
+            receptor_type: dens[to_keep]
+            for receptor_type, dens in self.optimal_dens.items()
+        }
+
     def mutate(self):
         should_mutate = np.random.rand(self.num_stomachs) <= MUTATION_RATE
         num_should_mutate = sum(should_mutate)
@@ -106,14 +113,6 @@ class StomachManager:
                 digest_amts = np.concatenate([digest_amts, np.array([digest_amt])])
         
         return digest_amts
-    
-    def keep(self, to_keep: np.ndarray):
-        self.optimal_dens = {
-            receptor_type: dens[to_keep]
-            for receptor_type, dens in self.optimal_dens.items()
-        }
-        self.num_stomachs = np.sum(to_keep)
-        # print(self.optimal_dens)
 
     def get_df(self):
         return self.optimal_dens

@@ -62,7 +62,6 @@ class EntityManager:
         # TODO change into a np array of floats with a receptor manager that operates on data
         self.receptors : list[Receptors] = [Receptors(first_entity['receptors'])]
         # TODO change into a np array of floats with a stomach manager that operates on data
-        # self.stomach : list[Stomach] = [Stomach(first_entity['stomach'])]
         self.stomach_manager = StomachManager(self.num_entities, first_entity['stomach'])
         # self.abilities = [[]]
         # self.traits : list[Traits] = [Traits(first_entity['traits'])]
@@ -99,7 +98,6 @@ class EntityManager:
         # interactive
         self.brain = self.brain + interactive_data['brain']
         self.receptors = self.receptors + interactive_data['receptors']
-        # self.stomach = self.stomach + interactive_data['stomach']
         self.stomach_manager.add_new_stomachs(num_new_entities, interactive_data['stomach'])
         # self.abilities = self.abilities + interactive_data['abilities']
         # self.status_effects = self.status_effects + [[] for _ in range(num_new_entities)]
@@ -163,7 +161,6 @@ class EntityManager:
         self.energy = self.energy - energy_spent
 
         # energy regen
-        # self.energy = self.energy + np.array([stomach.eat(pos, env) for pos, stomach in zip(self.pos, self.stomach)])
         self.energy = self.energy + self.stomach_manager.eat(self.pos, env)
 
         # check collision between entities
@@ -260,8 +257,6 @@ class EntityManager:
                       for index, pair in enumerate(breeding_pairs)],
             'receptors': [Receptors(self.receptors[index].cross_breed(self.receptors[pair]))
                           for index, pair in enumerate(breeding_pairs)],
-            # 'stomach': [Stomach(self.stomach[index].cross_breed(self.stomach[pair]))
-            #             for index, pair in enumerate(breeding_pairs)],
             'stomach': self.stomach_manager.cross_breed(num_new_entities, in_gene_pool, breeding_pairs)
         }
         self.add_new_entities(num_new_entities, physical_data, stats_data, interactive_data)
@@ -280,7 +275,6 @@ class EntityManager:
         [brain.mutate(itl_stat) for brain, itl_stat in zip(self.brain, self.stats['itl'])]
 
         # mutate stomach
-        # [stomach.mutate() for stomach in self.stomach]
         self.stomach_manager.mutate()
 
     ##################
