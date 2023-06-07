@@ -5,7 +5,7 @@ import math, random
 from ..models.creature import Creature
 from ..models.receptors import Receptors
 from ..models.brain import BrainHistory, Brain
-from ..models.stomach import Stomach
+from ..models.stomach import Stomach, StomachManager
 from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
@@ -62,7 +62,8 @@ class EntityManager:
         # TODO change into a np array of floats with a receptor manager that operates on data
         self.receptors : list[Receptors] = [Receptors(first_entity['receptors'])]
         # TODO change into a np array of floats with a stomach manager that operates on data
-        self.stomach : list[Stomach] = [Stomach(first_entity['stomach'])] 
+        # self.stomach : list[Stomach] = [Stomach(first_entity['stomach'])]
+        self.stomach_manager = StomachManager(self.num_entities, first_entity['stomach'])
         # self.abilities = [[]]
         # self.traits : list[Traits] = [Traits(first_entity['traits'])]
         # self.status_effects = [[]]
@@ -98,7 +99,8 @@ class EntityManager:
         # interactive
         self.brain = self.brain + interactive_data['brain']
         self.receptors = self.receptors + interactive_data['receptors']
-        self.stomach = self.stomach + interactive_data['stomach']
+        # self.stomach = self.stomach + interactive_data['stomach']
+        self.stomach_manager.add_new_stomachs(num_new_entities, interactive_data['stomach'])
         # self.abilities = self.abilities + interactive_data['abilities']
         # self.status_effects = self.status_effects + [[] for _ in range(num_new_entities)]
         # self.traits = self.traits + interactive_data['traits']
@@ -161,7 +163,8 @@ class EntityManager:
         self.energy = self.energy - energy_spent
 
         # energy regen
-        self.energy = self.energy + np.array([stomach.eat(pos, env) for pos, stomach in zip(self.pos, self.stomach)])
+        # self.energy = self.energy + np.array([stomach.eat(pos, env) for pos, stomach in zip(self.pos, self.stomach)])
+        self.energy = self.energy + self.stomach_manager.eat(self.pos, env)
 
         # check collision between entities
         qtree = QuadTree(np.array([0,0]), 500, 4)
@@ -181,8 +184,13 @@ class EntityManager:
         self.energy[regen] = self.energy[regen] - regen_amt[regen]
         self.health[regen] = self.health[regen] + regen_amt[regen]
 
+        # health deplete
+        should_deplete = self.energy <= 0
+        self.health[should_deplete] = self.health[should_deplete] - dt
+
         # check death
         keep = self.health > 0
+        self.ids = self.ids[keep]
         self.pos = self.pos[keep]
         self.vel = self.vel[keep]
         self.flat_angle = self.flat_angle[keep]
@@ -199,8 +207,12 @@ class EntityManager:
             if not keep[i]:
                 self.brain.pop(i)
                 self.receptors.pop(i)
-                self.stomach.pop(i)
+        
+        self.stomach_manager.keep(keep)
         self.num_entities = np.sum(keep)
+
+        if self.num_entities == 0:
+            print('extinction')
 
     ##################
     # evolution
@@ -218,7 +230,7 @@ class EntityManager:
     def calculate_fitness(self, generation: int):
         fitness_values = calculate_fitness(self.num_entities, self.health, self.energy,
                                            self.stats, self.brain_history,
-                                           self.brain, self.stomach, self.receptors)
+                                           self.brain, self.stomach_manager, self.receptors)
         elitism_threshold = np.percentile(fitness_values, ELITISM_PERCENTILE)
         self.cross_breed(fitness_values >= elitism_threshold, generation)
 
@@ -231,7 +243,7 @@ class EntityManager:
             'ids': np.char.add(np.full((num_new_entities,), f'{generation}-'), 
                                np.arange(0, num_new_entities, 1).astype(str)),
             'pos': np.array([lerp(self.pos[in_gene_pool][index], self.pos[in_gene_pool][pair], 
-                                  random.uniform(0.25, 0.75)) + np.random.uniform(low=-5, high=5, size=(3,))
+                                  random.uniform(0.25, 0.75)) + np.random.uniform(low=-15, high=15, size=(3,))
                              for index, pair in enumerate(breeding_pairs)]),
             'scale': np.array([lerp(self.scale[in_gene_pool][index], self.scale[in_gene_pool][pair], 
                                     random.uniform(0.25, 0.75)) 
@@ -248,8 +260,9 @@ class EntityManager:
                       for index, pair in enumerate(breeding_pairs)],
             'receptors': [Receptors(self.receptors[index].cross_breed(self.receptors[pair]))
                           for index, pair in enumerate(breeding_pairs)],
-            'stomach': [Stomach(self.stomach[index].cross_breed(self.stomach[pair]))
-                        for index, pair in enumerate(breeding_pairs)],
+            # 'stomach': [Stomach(self.stomach[index].cross_breed(self.stomach[pair]))
+            #             for index, pair in enumerate(breeding_pairs)],
+            'stomach': self.stomach_manager.cross_breed(num_new_entities, in_gene_pool, breeding_pairs)
         }
         self.add_new_entities(num_new_entities, physical_data, stats_data, interactive_data)
 
@@ -267,7 +280,8 @@ class EntityManager:
         [brain.mutate(itl_stat) for brain, itl_stat in zip(self.brain, self.stats['itl'])]
 
         # mutate stomach
-        [stomach.mutate() for stomach in self.stomach]
+        # [stomach.mutate() for stomach in self.stomach]
+        self.stomach_manager.mutate()
 
     ##################
     # rendering
@@ -348,16 +362,9 @@ class EntityManager:
         }
 
         # get stomach data
-        stomach_data = [stomach.get_df() for stomach in self.stomach]
-        first_entity = stomach_data[0]
-        stomach_data = {
-            stomach_data_key: np.array([entity_stomach_data[stomach_data_key]
-                                        for entity_stomach_data in stomach_data])
-            for stomach_data_key in first_entity
-        }
         stomach_data = {
             'id': self.ids,
-            **stomach_data
+            **self.stomach_manager.get_df()
         }
         return basic_data, receptor_data, stomach_data, brain_data
 

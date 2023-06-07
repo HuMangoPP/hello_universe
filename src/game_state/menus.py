@@ -372,13 +372,11 @@ class GameMenu:
                 'hexagon': [0, math.pi/6, math.pi/6],
             },
             'stomach': { # TODO
-                'optimal_dens': {
-                    'circle': 0.5,
-                    'triangle': 0.5,
-                    'square': 0.5,
-                    'pentagon': 0.5,
-                    'hexagon': 0.5,
-                }
+                'circle': np.array([0.5]),
+                'triangle': np.array([0.5]),
+                'square': np.array([0.5]),
+                'pentagon': np.array([0.5]),
+                'hexagon': np.array([0.5]),
             },
             'traits': { # TODO change to default later
                 'traits': [],
@@ -445,7 +443,7 @@ class GameMenu:
             entity_data_to_df(self.current_generation, self.entity_manager.num_entities, brain_data, 'brain')
 
             # update generation
-            self.generation_time = 1000
+            self.generation_time = 10
             self.current_generation += 1
 
             self.entity_manager.new_generation(self.current_generation)

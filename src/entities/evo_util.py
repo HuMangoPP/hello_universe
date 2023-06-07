@@ -8,7 +8,7 @@ OPT_DENS_TOLERANCE = 0.1
 ANGLE_TOLERANCE = 0.1
 
 def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray, stats: dict,
-                      brain_history, brains: list, stomachs: list, receptors: list) -> np.ndarray:
+                      brain_history, brains: list, stomach_manager, receptors: list) -> np.ndarray:
     '''
         This function calculates the fitness of entities given their
         health, energy, stats, brain structure, stomach structure, and receptor structure.
@@ -96,15 +96,15 @@ def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray,
 
     # calculate the fitness of each creature's stomach structure
     # get the optimal densities of all stomachs
-    opt_dens_of_stomachs = [stomach.optimal_dens for stomach in stomachs]
-    opt_dens_of_stomachs = {
-        receptor_type: np.array([opt_dens[receptor_type] for opt_dens in opt_dens_of_stomachs])
-        for receptor_type in RECEPTOR_TYPES
-    }
+    # opt_dens_of_stomachs = [stomach.optimal_dens for stomach in stomachs]
+    # opt_dens_of_stomachs = {
+    #     receptor_type: np.array([opt_dens[receptor_type] for opt_dens in opt_dens_of_stomachs])
+    #     for receptor_type in RECEPTOR_TYPES
+    # }
     # calculate the fitness for each creature by sharing its fitness with creature
     # in similar species
     stomach_fitness = np.zeros(shape=(num_entities,))
-    for _, opt_dens_of_type in opt_dens_of_stomachs.items():
+    for _, opt_dens_of_type in stomach_manager.optimal_dens.items():
         stomach_fitness = stomach_fitness + np.array([
             np.average(individual_fitness[np.abs(opt_dens - opt_dens_of_type) <= OPT_DENS_TOLERANCE])
             for opt_dens in opt_dens_of_type
