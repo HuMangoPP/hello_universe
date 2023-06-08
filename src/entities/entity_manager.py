@@ -3,7 +3,7 @@ import pygame as pg
 import math, random
 
 from ..models.creature import Creature
-from ..models.receptors import Receptors
+from ..models.receptors import Receptors, ReceptorManager
 from ..models.brain import BrainHistory, Brain
 from ..models.stomach import Stomach, StomachManager
 from ..models.traits import Traits
@@ -60,7 +60,8 @@ class EntityManager:
         self.brain_history = BrainHistory()
         self.brain : list[Brain] = [Brain(first_entity['brain'], self.brain_history)]
         # TODO change into a np array of floats with a receptor manager that operates on data
-        self.receptors : list[Receptors] = [Receptors(first_entity['receptors'])]
+        # self.receptors : list[Receptors] = [Receptors(first_entity['receptors'])]
+        self.receptor_manager = ReceptorManager(self.num_entities, first_entity['receptor'])
         # TODO change into a np array of floats with a stomach manager that operates on data
         self.stomach_manager = StomachManager(self.num_entities, first_entity['stomach'])
         # self.abilities = [[]]
@@ -97,7 +98,8 @@ class EntityManager:
 
         # interactive
         self.brain = self.brain + interactive_data['brain']
-        self.receptors = self.receptors + interactive_data['receptors']
+        # self.receptors = self.receptors + interactive_data['receptors']
+        self.receptor_manager.add_new_receptor_structures(num_new_entities, interactive_data['receptors'])
         self.stomach_manager.add_new_stomachs(num_new_entities, interactive_data['stomach'])
         # self.abilities = self.abilities + interactive_data['abilities']
         # self.status_effects = self.status_effects + [[] for _ in range(num_new_entities)]
@@ -155,7 +157,8 @@ class EntityManager:
 
         # energy cost
         energy_spent = np.linalg.norm(self.vel, axis=1) * (self.scale / 50)
-        energy_spent = energy_spent + np.array([receptor.get_energy_cost() for receptor in self.receptors])
+        # energy_spent = energy_spent + np.array([receptor.get_energy_cost() for receptor in self.receptors])
+        energy_spent = energy_spent + self.receptor_manager.get_energy_cost()
         energy_spent = energy_spent + np.array([brain.get_energy_cost() for brain in self.brain])
         energy_spent = energy_spent * dt
         self.energy = self.energy - energy_spent
@@ -203,8 +206,9 @@ class EntityManager:
         for i in range(self.num_entities-1, -1, -1):
             if not keep[i]:
                 self.brain.pop(i)
-                self.receptors.pop(i)
+                # self.receptors.pop(i)
         
+        self.receptor_manager.keep(keep)
         self.stomach_manager.keep(keep)
         self.num_entities = np.sum(keep)
 
@@ -227,7 +231,7 @@ class EntityManager:
     def calculate_fitness(self, generation: int):
         fitness_values = calculate_fitness(self.num_entities, self.health, self.energy,
                                            self.stats, self.brain_history,
-                                           self.brain, self.stomach_manager, self.receptors)
+                                           self.brain, self.stomach_manager, self.receptor_manager)
         elitism_threshold = np.percentile(fitness_values, ELITISM_PERCENTILE)
         self.cross_breed(fitness_values >= elitism_threshold, generation)
 
@@ -255,8 +259,7 @@ class EntityManager:
         interactive_data = {
             'brain': [Brain(self.brain[index].cross_breed(self.brain[pair]), self.brain_history)
                       for index, pair in enumerate(breeding_pairs)],
-            'receptors': [Receptors(self.receptors[index].cross_breed(self.receptors[pair]))
-                          for index, pair in enumerate(breeding_pairs)],
+            'receptors': self.receptor_manager.cross_breed(num_new_entities, in_gene_pool, breeding_pairs),
             'stomach': self.stomach_manager.cross_breed(num_new_entities, in_gene_pool, breeding_pairs)
         }
         self.add_new_entities(num_new_entities, physical_data, stats_data, interactive_data)
@@ -269,7 +272,7 @@ class EntityManager:
         }
 
         # mutate receptors, change the number of receptors, spread, or fov
-        [receptor.mutate() for receptor in self.receptors]
+        self.receptor_manager.mutate()
 
         # mutate brain
         [brain.mutate(itl_stat) for brain, itl_stat in zip(self.brain, self.stats['itl'])]
@@ -311,8 +314,8 @@ class EntityManager:
             stats = [self.stats[stat_type][i] for stat_type in self.stats]
             self.render_stats(display, drawpos, stats)
 
-        [receptor.render(pos, angle, 100, display, camera) 
-         for pos, angle, receptor in zip(self.pos, self.flat_angle, self.receptors)]
+        # [receptor.render(pos, angle, 100, display, camera) 
+        #  for pos, angle, receptor in zip(self.pos, self.flat_angle, self.receptors)]
     
     ##################
     # getting data for save
@@ -329,17 +332,9 @@ class EntityManager:
         }
 
         # get receptor data
-        receptors_data = [receptors.get_df()
-                          for receptors in self.receptors]
-        first_entity = receptors_data[0]
-        receptor_data = {
-            receptor_data_key: np.array([entity_receptor_data[receptor_data_key]
-                                         for entity_receptor_data in receptors_data])
-            for receptor_data_key in first_entity
-        }
         receptor_data = {
             'id': self.ids,
-            **receptor_data
+            **self.receptor_manager.get_df()
         }
 
         # get brain data

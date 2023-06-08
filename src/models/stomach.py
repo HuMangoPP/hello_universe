@@ -75,13 +75,14 @@ class StomachManager:
 
     def mutate(self):
         should_mutate = np.random.rand(self.num_stomachs) <= MUTATION_RATE
-        num_should_mutate = sum(should_mutate)
+        num_should_mutate = np.sum(should_mutate)
         mutations = {
             shape: np.random.uniform(-DIGEST_MUTATION, DIGEST_MUTATION, size=(num_should_mutate,))
             for shape in INV_SHAPE_MAP
         }
         for receptor_type, dens_of_type in self.optimal_dens.items():
-            self.optimal_dens[receptor_type][should_mutate] = dens_of_type[should_mutate] + mutations[receptor_type]
+            self.optimal_dens[receptor_type][should_mutate] = np.clip(dens_of_type[should_mutate] + mutations[receptor_type],
+                                                                      a_min=0, a_max=1)
     
     def cross_breed(self, num_elites: int, elite_mask: np.ndarray, breeding_pairs: np.ndarray):
         elites = {
@@ -97,6 +98,7 @@ class StomachManager:
     
     def eat(self, entity_poss: np.ndarray, env):
         digest_amts = np.array([])
+        # TODO: segregate pheromones by type in env?
         edible_in_range = [env.qtree.query_data(np.array([pos[0], pos[1], 10]))
                            for pos in entity_poss]
         for i, edible_items in enumerate(edible_in_range):

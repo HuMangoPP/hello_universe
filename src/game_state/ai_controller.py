@@ -131,15 +131,15 @@ class Agents:
     
 
     def agent_input(self, entity_manager, environment, camera):
-        for i, (pos, angle, receptors, brain) in enumerate(zip(entity_manager.pos, 
+        for i, (pos, angle, brain) in enumerate(zip(entity_manager.pos, 
                                                   entity_manager.flat_angle,
-                                                  entity_manager.receptors,
                                                   entity_manager.brain)):
             
-            receptors.poll_sensory(pos, angle, 100, environment)
+            # receptors.poll_sensory(pos, angle, 100, environment)
+            sensory_activation = entity_manager.receptor_manager.poll_receptors(i, pos, angle, 100, environment)
 
-            sensory = np.array([receptors.sensory[receptor_type]
-                                for receptor_type in receptors.sensory]).flatten()
+            sensory = np.array([sensory_activation[receptor_type]
+                                for receptor_type in sensory_activation]).flatten()
             actions = brain.think(sensory)
             new_angle = angle
             if BASIC_MOVEMENTS['turn_right'] in actions:

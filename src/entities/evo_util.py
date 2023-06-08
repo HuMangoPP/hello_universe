@@ -8,7 +8,7 @@ OPT_DENS_TOLERANCE = 0.1
 ANGLE_TOLERANCE = 0.1
 
 def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray, stats: dict,
-                      brain_history, brains: list, stomach_manager, receptors: list) -> np.ndarray:
+                      brain_history, brains: list, stomach_manager, receptor_manager) -> np.ndarray:
     '''
         This function calculates the fitness of entities given their
         health, energy, stats, brain structure, stomach structure, and receptor structure.
@@ -39,11 +39,7 @@ def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray,
 
     # calculate the fitness of the creature's receptor structure
     # calculate the fitness for the creature based on the number of receptors
-    num_receptors = [receptor.num_receptors() for receptor in receptors]
-    num_receptors = {
-        receptor_type: np.array([num[receptor_type] for num in num_receptors])
-        for receptor_type in RECEPTOR_TYPES
-    }
+    num_receptors = receptor_manager.num_of_type
     fitness_num_receptors = np.zeros(shape=(num_entities,))
     for _, num_receptors_of_type in num_receptors.items():
         fitness_num_receptors = fitness_num_receptors + np.array([
@@ -53,11 +49,7 @@ def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray,
     fitness_num_receptors = fitness_num_receptors / 5
 
     # calculate the fitness for the creature based on the spread of receptors
-    receptor_spreads = [receptor.receptor_spreads() for receptor in receptors]
-    receptor_spreads = {
-        receptor_type: np.array([spread[receptor_type] for spread in receptor_spreads])
-        for receptor_type in RECEPTOR_TYPES
-    }
+    receptor_spreads = receptor_manager.spread
     fitness_receptor_spreads = np.zeros(shape=(num_entities,))
     for _, receptor_spreads_of_type in receptor_spreads.items():
         fitness_receptor_spreads = fitness_receptor_spreads + np.array([
@@ -67,11 +59,7 @@ def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray,
     fitness_receptor_spreads = fitness_receptor_spreads / 5
 
     # calculate the fitness for the creature based on the fov of receptors
-    receptor_fovs = [receptor.receptor_fovs() for receptor in receptors]
-    receptor_fovs = {
-        receptor_type: np.array([fov[receptor_type] for fov in receptor_fovs])
-        for receptor_type in RECEPTOR_TYPES
-    }
+    receptor_fovs = receptor_manager.fov
     fitness_receptor_fovs = np.zeros(shape=(num_entities,))
     for _, receptor_fovs_of_type in receptor_fovs.items():
         fitness_receptor_fovs = fitness_receptor_fovs + np.array([
@@ -79,6 +67,9 @@ def calculate_fitness(num_entities: int, health: np.ndarray, energy: np.ndarray,
             for fov in receptor_fovs_of_type
         ])
     fitness_receptor_fovs = fitness_receptor_fovs / 5
+    
+    # calculate the fitness for the creature based on the optimal density of the receptor
+    # TODO
     receptor_fitness = fitness_num_receptors + fitness_receptor_spreads + fitness_receptor_fovs
 
     # calculate the fitness of the creature's brain structure

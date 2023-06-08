@@ -11,3 +11,6 @@ def relu(z: np.ndarray) -> np.ndarray:
 
 def softmax(z: np.ndarray) -> np.ndarray:
      return np.exp(z) / sum(np.exp(z))
+
+def proj(u: np.ndarray, v: np.ndarray) -> float:
+    return u.dot(v) / np.linalg.norm(v)

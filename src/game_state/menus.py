@@ -364,12 +364,35 @@ class GameMenu:
                     {'in':1,'out':12,'w':-1},
                 ]
             }, 
-            'receptors': { # TODO change to default later
-                'circle': [3, math.pi/6, math.pi/6],
-                'triangle': [0, math.pi/6, math.pi/6],
-                'square': [0, math.pi/6, math.pi/6],
-                'pentagon': [0, math.pi/6, math.pi/6],
-                'hexagon': [0, math.pi/6, math.pi/6],
+            'receptor': { # TODO change to default later
+                'num_of_type': {
+                    'circle': np.array([3]),
+                    'triangle': np.array([0]),
+                    'square': np.array([0]),
+                    'pentagon': np.array([0]),
+                    'hexagon': np.array([0]),
+                },
+                'spread': {
+                    'circle': np.array([math.pi/6]),
+                    'triangle': np.array([math.pi/6]),
+                    'square': np.array([math.pi/6]),
+                    'pentagon': np.array([math.pi/6]),
+                    'hexagon': np.array([math.pi/6]),
+                },
+                'fov': {
+                    'circle': np.array([math.pi/6]),
+                    'triangle': np.array([math.pi/6]),
+                    'square': np.array([math.pi/6]),
+                    'pentagon': np.array([math.pi/6]),
+                    'hexagon': np.array([math.pi/6]),
+                },
+                'opt_dens': {
+                    'circle': np.array([0.5]),
+                    'triangle': np.array([0.5]),
+                    'square': np.array([0.5]),
+                    'pentagon': np.array([0.5]),
+                    'hexagon': np.array([0.5]),
+                },
             },
             'stomach': { # TODO
                 'circle': np.array([0.5]),
