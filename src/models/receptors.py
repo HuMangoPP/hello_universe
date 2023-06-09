@@ -94,8 +94,9 @@ class Receptors:
                 shape_index = data[1]
                 for i, receptor_angle in enumerate(receptor_angles[shape_index]):
                     rel_pos = p - pos
+                    p_rel_angle = math.atan2(rel_pos[1], rel_pos[0]) - z_angle
                     r_unit_vec = np.array([math.cos(receptor_angle), math.sin(receptor_angle)])
-                    p_unit_vec = rel_pos[0:2] / np.linalg.norm(rel_pos[0:2])
+                    p_unit_vec = np.array([math.cos(p_rel_angle), math.sin(p_rel_angle)])
                     if proj(p_unit_vec, r_unit_vec) >= receptor_threshold[shape_index]:
                         receptor_sense[shape_index][i] += gaussian_dist(data[2], self.opt_dens[shape_index], VARIATION)
         
@@ -105,7 +106,6 @@ class Receptors:
                 avg_actv = 0
                 avg_angle = 0
             else:
-                print(sense)
                 avg_actv = np.average(sense)
                 if avg_actv < ACTIVATION_THRESHOLD:
                     avg_angle = 0

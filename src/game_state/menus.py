@@ -2,9 +2,11 @@ import pygame as pg
 import numpy as np
 import math
 
+
 from ..util.transitions import transition_in, transition_out, TRANSITION_TIME
 from ..util.save_data import entity_data_to_df
 from ..util.asset_loader import load_assets
+from ..util.adv_math import gaussian_dist
 
 from ..models.brain import BrainHistory
 from ..entities.entity_manager import EntityManager, Entity
@@ -17,6 +19,15 @@ from ..game_state.ui import UserInterface
 DEFAULT_DISPLAY = 'default'
 EFFECTS_DISPLAY = 'gaussian_blur'
 OVERLAY_DISPLAY = 'black_alpha'
+
+def draw_dist(box: pg.Rect, display: pg.Surface, opt: float, variation: float, width: float, height: float, step: int):
+    steps = np.arange(0, 1+1/step, 1/step)
+    points = np.array([(x * width, (1-gaussian_dist(x, opt, variation)) * height) for x in steps])
+    dist = pg.Surface(box.size)
+    dist.fill((0,0,0))
+    dist.set_colorkey((0,0,0))
+    pg.draw.lines(dist, (255, 255, 255), False, points)
+    display.blit(dist, box)
 
 class StartMenu:
     def __init__(self, client):
@@ -327,7 +338,8 @@ class DevMenu:
                 'opt_dens': np.full((5,), 0.5),
             },
             'stomach': {
-                'optimal_dens': np.full((5,), 0.5)
+                # 'opt_dens': np.full((5,), 0.5)
+                'opt_dens': np.arange(0.1, 0.6, 0.1)
             }
         })
         self.environment = Environment()
@@ -379,6 +391,8 @@ class DevMenu:
             receptor_type: activation_data
             for receptor_type, activation_data in zip(RECEPTOR_SHAPES, self.sensory_activation)
         }
+
+        self.entity.stomach.eat(self.entity.pos, self.environment)
         self.environment.update(dt)
     
     def render_sensory_activation(self):
@@ -392,6 +406,13 @@ class DevMenu:
                 pg.draw.line(self.displays[DEFAULT_DISPLAY], (255, 255, 255), center,
                             100 * np.array([math.cos(activation_data[1]), math.sin(activation_data[1])]) + center)
 
+    def render_stomach(self):
+        drawbox = pg.Rect(0, 0, 300, 200)
+        drawbox.left = 50
+        drawbox.bottom = self.height-50
+        [draw_dist(drawbox, self.displays[DEFAULT_DISPLAY], opt_dens, 0.2, 300, 200, 20)
+         for opt_dens in self.entity.stomach.opt_dens]
+
     def render_brain_structure(self):
         ...
 
@@ -401,6 +422,7 @@ class DevMenu:
         self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
 
         self.render_sensory_activation()
+        self.render_stomach()
 
         match self.transition_phase:
             case 1: 
