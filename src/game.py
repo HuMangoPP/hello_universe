@@ -4,12 +4,12 @@ import moderngl as mgl
 from .pyfont.font import Font
 from .pymgl.graphics_engine import GraphicsEngine
 
-from .game_state.menus import StartMenu, GameMenu, DevMenu
+from .game_state.menus import StartMenu, DevMenu
 
 MENU_MAP = {
     'start': 0,
-    'game': 1,
-    'dev': 2,
+    # 'game': 1,
+    'dev': 1,
 }
 
 class Client:
@@ -31,7 +31,7 @@ class Client:
         }
         self.clock = pg.time.Clock()
 
-        self.menus = [StartMenu(self), GameMenu(self), DevMenu(self)]
+        self.menus = [StartMenu(self), DevMenu(self)]
         self.current_menu = 0
 
     def update(self):

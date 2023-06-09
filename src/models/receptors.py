@@ -124,9 +124,9 @@ class Receptors:
             [draw_view_cone(camera.transform_to_screen(pos), z_angle + receptor_angle, fov, radius,
                             display, RECEPTOR_COLORS[INV_SHAPE_MAP[i]])
              for receptor_angle in receptor_angles]
-            [pg.draw.line(display, RECEPTOR_COLORS[INV_SHAPE_MAP[i]], camera.transform_to_screen(pos),
-                          camera.transform_to_screen(radius * np.array([math.cos(receptor_angle), math.sin(receptor_angle), 0])))
-             for receptor_angle in receptor_angles]
+            # [pg.draw.line(display, RECEPTOR_COLORS[INV_SHAPE_MAP[i]], camera.transform_to_screen(pos),
+            #               camera.transform_to_screen(radius * np.array([math.cos(receptor_angle), math.sin(receptor_angle), 0])))
+            #  for receptor_angle in receptor_angles]
 
 
     def get_df(self) -> dict:

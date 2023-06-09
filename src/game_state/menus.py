@@ -57,7 +57,7 @@ class StartMenu:
             if event.type == pg.MOUSEBUTTONDOWN:
                 self.transition_phase = 1
                 self.transition_time = 0
-                self.goto = 'game'
+                self.goto = 'dev'
             if event.type == pg.KEYDOWN and event.key == pg.K_d:
                 self.transition_phase = 1
                 self.transition_time = 0
@@ -94,195 +94,195 @@ class StartMenu:
             displays_to_render.append(OVERLAY_DISPLAY)
         return displays_to_render
     
-class GameMenu:
-    def __init__(self, client):
-        # import game
-        self.width, self.height = client.res
-        self.displays = client.displays
-        self.font = client.font
-        self.clock = client.clock
-        self.client = client
+# class GameMenu:
+#     def __init__(self, client):
+#         # import game
+#         self.width, self.height = client.res
+#         self.displays = client.displays
+#         self.font = client.font
+#         self.clock = client.clock
+#         self.client = client
 
-        # sprites
-        self.ui_sprites = {
-            'stat_icons': load_assets('./assets/stats', 1.0),
-            'ability_icons': load_assets('./assets/abilities', 2.0),
-            'trait_icons': load_assets('./assets/traits', 2.0),
-            'hud_frames': load_assets('./assets/hud/', 1.0),
-            'status_effect_icons': load_assets('./assets/status_effects', 1.0),
-        }
+#         # sprites
+#         self.ui_sprites = {
+#             'stat_icons': load_assets('./assets/stats', 1.0),
+#             'ability_icons': load_assets('./assets/abilities', 2.0),
+#             'trait_icons': load_assets('./assets/traits', 2.0),
+#             'hud_frames': load_assets('./assets/hud/', 1.0),
+#             'status_effect_icons': load_assets('./assets/status_effects', 1.0),
+#         }
 
-        # transition handler
-        self.goto = 'start'
+#         # transition handler
+#         self.goto = 'start'
 
-        # data
-        self.generation_time = 10
-        self.current_generation = 0
-        self.new_particle_time = 0.1
+#         # data
+#         self.generation_time = 10
+#         self.current_generation = 0
+#         self.new_particle_time = 0.1
 
-        # objects
-        self.entity_manager = EntityManager({
-            'creature': { # TODO change to default later
-                'num_parts': 5,
-                'pos': np.array([0, 0, 0], dtype=np.float32),
-                'size': 5,
-                'max_parts': 10,
-                'num_pair_legs': 2,
-                'leg_length': 100,
-            },
-            'brain': { # TODO change to default later
-                'neurons': [0,0, # circle dens, angle
-                            0,0, # triangle dens, angle
-                            0,0, # square dens, angle
-                            0,0, # pentagon dens, angle 
-                            0,0, # hexagon dens, angle
-                            # no hidden neurons
-                            2, # move forward
-                            2, # turn right
-                            2, # turn left
-                            ],
-                'axons': [
-                    {'in':0,'out':10,'w':1},
-                    {'in':1,'out':11,'w':1},
-                    {'in':1,'out':12,'w':-1},
-                ]
-            }, 
-            'receptor': { # TODO change to default later
-                'num_of_type': {
-                    'circle': np.array([3]),
-                    'triangle': np.array([0]),
-                    'square': np.array([0]),
-                    'pentagon': np.array([0]),
-                    'hexagon': np.array([0]),
-                },
-                'spread': {
-                    'circle': np.array([math.pi/6]),
-                    'triangle': np.array([math.pi/6]),
-                    'square': np.array([math.pi/6]),
-                    'pentagon': np.array([math.pi/6]),
-                    'hexagon': np.array([math.pi/6]),
-                },
-                'fov': {
-                    'circle': np.array([math.pi/6]),
-                    'triangle': np.array([math.pi/6]),
-                    'square': np.array([math.pi/6]),
-                    'pentagon': np.array([math.pi/6]),
-                    'hexagon': np.array([math.pi/6]),
-                },
-                'opt_dens': {
-                    'circle': np.array([0.5]),
-                    'triangle': np.array([0.5]),
-                    'square': np.array([0.5]),
-                    'pentagon': np.array([0.5]),
-                    'hexagon': np.array([0.5]),
-                },
-            },
-            'stomach': { # TODO
-                'circle': np.array([0.5]),
-                'triangle': np.array([0.5]),
-                'square': np.array([0.5]),
-                'pentagon': np.array([0.5]),
-                'hexagon': np.array([0.5]),
-            },
-            'traits': { # TODO change to default later
-                'traits': [],
-                'min_stats': {
-                    'itl': 0, 'pwr': 0, 'def': 0, 'mbl': 0, 'stl': 0,
-                }, 
-                'max_stats': {
-                    'itl': 1, 'pwr': 1, 'def': 1, 'mbl': 1, 'stl': 1,
-                }
-            },
-        })
-        self.environment = Environment()
-        self.ai_agents = Agents(1)
-        self.camera = Camera(self.entity_manager.pos[0])
-        # self.ui = UserInterface(self.font, self.ui_sprites)
+#         # objects
+#         self.entity_manager = EntityManager({
+#             'creature': { # TODO change to default later
+#                 'num_parts': 5,
+#                 'pos': np.array([0, 0, 0], dtype=np.float32),
+#                 'size': 5,
+#                 'max_parts': 10,
+#                 'num_pair_legs': 2,
+#                 'leg_length': 100,
+#             },
+#             'brain': { # TODO change to default later
+#                 'neurons': [0,0, # circle dens, angle
+#                             0,0, # triangle dens, angle
+#                             0,0, # square dens, angle
+#                             0,0, # pentagon dens, angle 
+#                             0,0, # hexagon dens, angle
+#                             # no hidden neurons
+#                             2, # move forward
+#                             2, # turn right
+#                             2, # turn left
+#                             ],
+#                 'axons': [
+#                     {'in':0,'out':10,'w':1},
+#                     {'in':1,'out':11,'w':1},
+#                     {'in':1,'out':12,'w':-1},
+#                 ]
+#             }, 
+#             'receptor': { # TODO change to default later
+#                 'num_of_type': {
+#                     'circle': np.array([3]),
+#                     'triangle': np.array([0]),
+#                     'square': np.array([0]),
+#                     'pentagon': np.array([0]),
+#                     'hexagon': np.array([0]),
+#                 },
+#                 'spread': {
+#                     'circle': np.array([math.pi/6]),
+#                     'triangle': np.array([math.pi/6]),
+#                     'square': np.array([math.pi/6]),
+#                     'pentagon': np.array([math.pi/6]),
+#                     'hexagon': np.array([math.pi/6]),
+#                 },
+#                 'fov': {
+#                     'circle': np.array([math.pi/6]),
+#                     'triangle': np.array([math.pi/6]),
+#                     'square': np.array([math.pi/6]),
+#                     'pentagon': np.array([math.pi/6]),
+#                     'hexagon': np.array([math.pi/6]),
+#                 },
+#                 'opt_dens': {
+#                     'circle': np.array([0.5]),
+#                     'triangle': np.array([0.5]),
+#                     'square': np.array([0.5]),
+#                     'pentagon': np.array([0.5]),
+#                     'hexagon': np.array([0.5]),
+#                 },
+#             },
+#             'stomach': { # TODO
+#                 'circle': np.array([0.5]),
+#                 'triangle': np.array([0.5]),
+#                 'square': np.array([0.5]),
+#                 'pentagon': np.array([0.5]),
+#                 'hexagon': np.array([0.5]),
+#             },
+#             'traits': { # TODO change to default later
+#                 'traits': [],
+#                 'min_stats': {
+#                     'itl': 0, 'pwr': 0, 'def': 0, 'mbl': 0, 'stl': 0,
+#                 }, 
+#                 'max_stats': {
+#                     'itl': 1, 'pwr': 1, 'def': 1, 'mbl': 1, 'stl': 1,
+#                 }
+#             },
+#         })
+#         self.environment = Environment()
+#         self.ai_agents = Agents(1)
+#         self.camera = Camera(self.entity_manager.pos[0])
+#         # self.ui = UserInterface(self.font, self.ui_sprites)
 
-    def on_load(self):
-        self.on_transition()
+#     def on_load(self):
+#         self.on_transition()
     
-    def on_transition(self):
-        # 0 -> no transition
-        # 1 -> transition out
-        # 2 -> black screen
-        # 3 -> transition in
-        self.transition_phase = 2
-        self.transition_time = 0
+#     def on_transition(self):
+#         # 0 -> no transition
+#         # 1 -> transition out
+#         # 2 -> black screen
+#         # 3 -> transition in
+#         self.transition_phase = 2
+#         self.transition_time = 0
     
-    def update(self, events: list[pg.Event]):
-        dt = self.clock.get_time() / 1000
+#     def update(self, events: list[pg.Event]):
+#         dt = self.clock.get_time() / 1000
 
-        if pg.mouse.get_pressed()[0]:
-            self.new_particle_time -= dt
-            if self.new_particle_time < 0:
-                mpos = pg.mouse.get_pos()
-                pos = self.camera.screen_to_world(mpos[0], mpos[1])
-                self.environment.add_new_particles(
-                    1, pos.reshape((1,3)),
-                    np.zeros((1,), dtype=np.int32),
-                    np.full((1,), 0.5, dtype=np.float32)
-                )
-                self.new_particle_time = 0.1
+#         if pg.mouse.get_pressed()[0]:
+#             self.new_particle_time -= dt
+#             if self.new_particle_time < 0:
+#                 mpos = pg.mouse.get_pos()
+#                 pos = self.camera.screen_to_world(mpos[0], mpos[1])
+#                 self.environment.add_new_particles(
+#                     1, pos.reshape((1,3)),
+#                     np.zeros((1,), dtype=np.int32),
+#                     np.full((1,), 0.5, dtype=np.float32)
+#                 )
+#                 self.new_particle_time = 0.1
 
-        self.generation_time -= dt
-        if self.generation_time <= 0:
-            # store data
-            basic_data, receptor_data, stomach_data, brain_data = self.entity_manager.get_save_data()
-            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, basic_data, 'basic')
-            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, receptor_data, 'receptor')
-            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, stomach_data, 'stomach')
-            entity_data_to_df(self.current_generation, self.entity_manager.num_entities, brain_data, 'brain')
+#         self.generation_time -= dt
+#         if self.generation_time <= 0:
+#             # store data
+#             basic_data, receptor_data, stomach_data, brain_data = self.entity_manager.get_save_data()
+#             entity_data_to_df(self.current_generation, self.entity_manager.num_entities, basic_data, 'basic')
+#             entity_data_to_df(self.current_generation, self.entity_manager.num_entities, receptor_data, 'receptor')
+#             entity_data_to_df(self.current_generation, self.entity_manager.num_entities, stomach_data, 'stomach')
+#             entity_data_to_df(self.current_generation, self.entity_manager.num_entities, brain_data, 'brain')
 
-            # update generation
-            self.generation_time = 10
-            self.current_generation += 1
+#             # update generation
+#             self.generation_time = 10
+#             self.current_generation += 1
 
-            self.entity_manager.new_generation(self.current_generation)
-            # self.ui.toggle_quests_menu()
-            # self.ui.update_quests()
+#             self.entity_manager.new_generation(self.current_generation)
+#             # self.ui.toggle_quests_menu()
+#             # self.ui.update_quests()
 
-        # handle transitions
-        if self.transition_phase > 0:
-            self.transition_time += dt
-            if self.transition_phase == 1 and self.transition_time > TRANSITION_TIME:
-                return {
-                    'exit': False,
-                    'goto': self.goto
-                }
-            if self.transition_time > TRANSITION_TIME:
-                self.transition_time = 0
-                self.transition_phase = (self.transition_phase + 1) % 4
+#         # handle transitions
+#         if self.transition_phase > 0:
+#             self.transition_time += dt
+#             if self.transition_phase == 1 and self.transition_time > TRANSITION_TIME:
+#                 return {
+#                     'exit': False,
+#                     'goto': self.goto
+#                 }
+#             if self.transition_time > TRANSITION_TIME:
+#                 self.transition_time = 0
+#                 self.transition_phase = (self.transition_phase + 1) % 4
 
-        self.ai_agents.agent_input(self.entity_manager, self.environment, self.camera)
-        self.entity_manager.update(self.camera, dt, self.environment)
-        self.environment.update(dt)
-        # self.camera.follow_entity(self.entity_manager.pos[0], self.entity_manager.scale[0])
+#         self.ai_agents.agent_input(self.entity_manager, self.environment, self.camera)
+#         self.entity_manager.update(self.camera, dt, self.environment)
+#         self.environment.update(dt)
+#         # self.camera.follow_entity(self.entity_manager.pos[0], self.entity_manager.scale[0])
 
-        return {}
+#         return {}
 
-    def render(self) -> list[str]:
-        self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
-        self.entity_manager.render(self.displays[DEFAULT_DISPLAY], self.camera)
-        self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
+#     def render(self) -> list[str]:
+#         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
+#         self.entity_manager.render(self.displays[DEFAULT_DISPLAY], self.camera)
+#         self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
 
-        match self.transition_phase:
-            case 1: 
-                transition_out(self.displays[OVERLAY_DISPLAY], self.transition_time)
-            case 2:
-                self.displays[OVERLAY_DISPLAY].fill((10, 10, 10))
-            case 3:
-                transition_in(self.displays[OVERLAY_DISPLAY], self.transition_time)
+#         match self.transition_phase:
+#             case 1: 
+#                 transition_out(self.displays[OVERLAY_DISPLAY], self.transition_time)
+#             case 2:
+#                 self.displays[OVERLAY_DISPLAY].fill((10, 10, 10))
+#             case 3:
+#                 transition_in(self.displays[OVERLAY_DISPLAY], self.transition_time)
         
-        # self.ui.render(self.displays[DEFAULT_DISPLAY], self.entity_manager.get_ui_data(0), self.current_generation)
+#         # self.ui.render(self.displays[DEFAULT_DISPLAY], self.entity_manager.get_ui_data(0), self.current_generation)
 
-        self.font.render(self.displays[DEFAULT_DISPLAY], str(self.current_generation), 
-                         25, 25, (255,255,255), size=25, style='left')
+#         self.font.render(self.displays[DEFAULT_DISPLAY], str(self.current_generation), 
+#                          25, 25, (255,255,255), size=25, style='left')
 
-        displays_to_render = [DEFAULT_DISPLAY]
-        if self.transition_phase > 0:
-            displays_to_render.append(OVERLAY_DISPLAY)
-        return displays_to_render
+#         displays_to_render = [DEFAULT_DISPLAY]
+#         if self.transition_phase > 0:
+#             displays_to_render.append(OVERLAY_DISPLAY)
+#         return displays_to_render
 
 RECEPTOR_SHAPES = [
     'circle', 'triangle', 'square', 'pentagon', 'hexagon'
@@ -315,21 +315,8 @@ class DevMenu:
             },
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
-                'neurons': [0,0, # circle dens, angle
-                            0,0, # triangle dens, angle
-                            0,0, # square dens, angle
-                            0,0, # pentagon dens, angle 
-                            0,0, # hexagon dens, angle
-                            # no hidden neurons
-                            2, # move forward
-                            2, # turn right
-                            2, # turn left
-                            ],
-                'axons': [
-                    {'in':0,'out':10,'w':1},
-                    {'in':1,'out':11,'w':1},
-                    {'in':1,'out':12,'w':-1},
-                ]
+                'neurons': [],
+                'axons': []
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 0, 0, 0, 0]),
