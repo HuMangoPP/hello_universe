@@ -6,6 +6,7 @@ from ..models.creature import Creature
 from ..models.receptors import Receptors, ReceptorManager
 from ..models.brain import BrainHistory, Brain
 from ..models.stomach import Stomach, StomachManager
+from ..models.skeleton import Skeleton
 from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
@@ -368,3 +369,85 @@ class EntityManager:
         return {
             **stats
         }
+
+class Entity:
+    def __init__(self, entity_data: dict):
+        self.id : str = entity_data['id']
+        self.pos : np.ndarray = entity_data['pos']
+        self.vel = np.zeros(shape=(3,))
+        self.z_angle = 0
+        self.scale = entity_data['scale']
+
+        self.stats = {
+            stat_type: stat_value
+            for stat_type, stat_value in entity_data['stats'].items()
+        }
+        self.health = 100
+        self.energy = 100
+
+        self.brain = Brain(entity_data['brain'], entity_data['brain_history'])
+        self.receptors = Receptors(entity_data['receptors'])
+        self.stomach = Stomach(entity_data['stomach'])
+        # self.skeleton = Skeleton(entity_data['skeleton'])
+
+    # update
+    def update(self, env, dt: float):
+        # movement
+        self.pos = self.pos + self.vel * dt
+        if np.linalg.norm(self.vel) > 0:
+            self.z_angle = math.atan2(self.vel[1], self.vel[0])
+        
+        # energy deplete
+        energy_spent = np.linalg.norm(self.vel) * self.scale / 50
+        energy_spent += self.receptors.get_energy_cost()
+        energy_spent += self.brain.get_energy_cost()
+        energy_spent *= dt
+        self.energy -= energy_spent
+
+        # energy regen
+        self.energy += self.stomach.eat(self.pos, env)
+
+        # health regen
+        if self.health < 100 and self.energy > 50:
+            regen_amt = (1 + self.stats['def']) * dt
+            self.health += regen_amt
+            self.energy -= regen_amt
+        
+        # health deplete
+        if self.energy <= 0:
+            self.health -= dt
+        
+        # death
+        if self.health <= 0:
+            return False
+        return True
+    
+    # rendering
+    def render_health_and_energy(self, display: pg.Surface, drawpos: tuple):
+        health_rect = pg.Rect(drawpos[0]-25, drawpos[1]-40,50,10)
+        energy_rect = pg.Rect(drawpos[0]-25, drawpos[1]-30,50,10)
+        health_bar = pg.Surface((50, 10))
+        energy_bar = pg.Surface((50, 10))
+        health_bar.fill((0,0,0))
+        pg.draw.rect(health_bar, (255, 0, 0), pg.Rect(0,0,self.health/100*50,10))
+        energy_bar.fill((0,0,0))
+        pg.draw.rect(energy_bar, (0,0,255), pg.Rect(0,0,self.energy/100*50,10))
+        display.blit(health_bar, health_rect)
+        display.blit(energy_bar, energy_rect)
+        pg.draw.rect(display, (255,255,255), health_rect, 1)
+        pg.draw.rect(display, (255,255,255), energy_rect, 1)
+
+    def render_stats(self, display: pg.Surface, drawpos: tuple):
+        for i, stat in enumerate(self.stats.values()):
+            stat_bar = pg.Rect(0,0,10,stat*2)
+            stat_bar.bottom = drawpos[1]-50
+            stat_bar.centerx = drawpos[0] + (i-2)*10
+            pg.draw.rect(display, (0,255,0), stat_bar)
+            pg.draw.rect(display, (255,255,255), stat_bar,1)
+
+    def render(self, display: pg.Surface, camera):
+        drawpos = camera.transform_to_screen(self.pos)
+        draw_arrowhead(display, drawpos, self.z_angle, 10, (255, 0, 0))
+        self.render_health_and_energy(display, drawpos)
+        self.render_stats(display, drawpos)
+        self.receptors.render(self.pos, self.z_angle, 100, display, camera)

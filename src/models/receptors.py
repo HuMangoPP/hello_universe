@@ -60,96 +60,74 @@ RECEPTOR_DATA_MAP = {
 
 class Receptors:
     def __init__(self, receptor_data: dict):
-        self.receptors = { # [num_receptors, spread, fov, optimal_dens]
-            receptor_type: receptor_data[receptor_type]
-            for receptor_type in SHAPE_MAP
-        }
+        self.num_of_type = receptor_data['num_of_type']
+        self.spread = receptor_data['spread']
+        self.fov = receptor_data['fov']
+        self.opt_dens = receptor_data['opt_dens']
 
-        self.sensory = {
-            receptor_type: np.zeros((2,), dtype=np.float32)
-            for receptor_type in self.receptors
-        }
-
+    # evo
     def mutate(self):
-        for receptor_type, receptor_data in self.receptors.items():
-            if random.uniform(0, 1) <= MUTATION_RATE:
-                # change the number of receptors, either add or subtract one
-                # minimum number of receptors is 0
-                change = 1 if random.uniform(0,1) > 0.5 else -1
-                self.receptors[receptor_type][0] = np.clip(receptor_data[0] + change,
-                                                           a_min=0, a_max=10)
-            if random.uniform(0, 1) <= MUTATION_RATE:
-                # change the spread of receptors 
-                # minimum spread of receptors is 0.1 rad
-                self.receptors[receptor_type][1] = np.clip(receptor_data[1] + random.uniform(-0.1, 0.1), 
-                                                           a_min=MIN_SPREAD, a_max=math.pi)
-            if random.uniform(0, 1) <= MUTATION_RATE:
-                # change the fov of receptors
-                # minimum fov of receptors is 0.1 rad
-                self.receptors[receptor_type][2] = np.clip(receptor_data[1] + random.uniform(-0.1, 0.1), 
-                                                           a_min=MIN_FOV, a_max=math.pi)
-            if random.uniform(0, 1) <= MUTATION_RATE:
-                # change the optimal value of the receptor 
-                # TODO: not implemented
-                self.receptors[receptor_type][2] = np.clip(receptor_data[2] + random.uniform(-0.1, 0.1),
-                                                           a_min=-1, a_max=1)
+        if random.uniform(0, 1) <= MUTATION_RATE:
+            self.num_of_type = np.clip(self.num_of_type + np.random.randint(-1, 1, size=(5,)), a_min=0, a_max=10)
+            self.spread = np.clip(self.spread + np.random.uniform(-0.1, 0.1, size=(5,)), a_min=MIN_SPREAD, a_max=math.pi)
+            self.fov = np.clip(self.fov + np.random.uniform(-0.1, 0.1, size=(5,)), a_min=MIN_FOV, a_max=math.pi)
+            self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-0.1, 0.1, size=(5,)), a_min=-1, a_max=1)
     
     def cross_breed(self, other_receptors) -> dict:
         t = random.uniform(0.25, 0.75)
         return {
-            receptor_type: [int(round(lerp(self.receptors[receptor_type][0], other_receptors.receptors[receptor_type][0], t))),
-                            lerp(self.receptors[receptor_type][1], other_receptors.receptors[receptor_type][1], t),
-                            lerp(self.receptors[receptor_type][2], other_receptors.receptors[receptor_type][2], t)]
-            for receptor_type in self.receptors
+            'num_of_type': np.round(lerp(self.num_of_type, other_receptors.num_of_type, t)).astype(int),
+            'spread': lerp(self.spread, other_receptors.spread, t),
+            'fov': lerp(self.fov, other_receptors.fov, t),
+            'opt_dens': lerp(self.opt_dens, other_receptors.opt_dens, t)
         }
     
-    def poll_sensory(self, pos: np.ndarray, facing_angle: float, sense_radius: float, env):
-        # TODO sense_radius based on itl stat? num receptors?
-        # for each type of sensor, create a list for each receptor of the sensory typee
-        sensory_for_each_receptor = {
-            receptor_type: np.zeros((receptor_data[0],), dtype=np.float32)
-            for receptor_type, receptor_data in self.receptors.items()
-        }
-        for m_pos, m_shape, m_dens in zip(env.positions, env.shapes, env.densities):
-            if np.linalg.norm(pos - m_pos) < sense_radius:
-                flat_angle = np.arctan2(m_pos[1]-pos[1], m_pos[0]-pos[0]) - facing_angle
-                receptor_data = self.receptors[INV_SHAPE_MAP[m_shape]]
-                for i, sensor_angle in enumerate(get_receptor_angles(receptor_data[0], receptor_data[1])):
-                    # determine if the messenger is within range of this sensor
-                    receptor = np.array([math.cos(sensor_angle),
-                                         math.sin(sensor_angle)])
-                    sense = np.array([math.cos(flat_angle),
-                                      math.sin(flat_angle)])
-                    proj = sense.dot(receptor) / np.linalg.norm(receptor)
-                    if proj >= math.cos(receptor_data[2]/2):
-                        sensory_for_each_receptor[INV_SHAPE_MAP[m_shape]][i] = m_dens
-
+    # functionality
+    def poll_receptors(self, pos: np.ndarray, z_angle: float, radius: float, env):
+        receptor_sense = [np.zeros(shape=(num_of_type,)) for num_of_type in self.num_of_type]
+        receptor_angles = [get_receptor_angles(num_of_type, spread) for num_of_type, spread in zip(self.num_of_type, self.spread)]
+        receptor_threshold = [math.cos(fov/2) for fov in self.fov]
+        p_pos = env.qtree.query_point(np.array([pos[0], pos[1], radius]))
+        p_data = env.qtree.query_data(np.array([pos[0], pos[1], radius]))
+        for p, data in zip(p_pos, p_data):
+            if np.linalg.norm(p - pos) <= radius:
+                shape_index = data[1]
+                for i, receptor_angle in enumerate(receptor_angles[shape_index]):
+                    rel_pos = p - pos
+                    r_unit_vec = np.array([math.cos(receptor_angle), math.sin(receptor_angle)])
+                    p_unit_vec = rel_pos[0:2] / np.linalg.norm(rel_pos[0:2])
+                    if proj(p_unit_vec, r_unit_vec) >= receptor_threshold[shape_index]:
+                        receptor_sense[shape_index][i] += gaussian_dist(data[2], self.opt_dens[shape_index], VARIATION)
         
-        for receptor_type, sensory in sensory_for_each_receptor.items():
-            # for each receptor type, determine the avg messenger density as sensed by all receptors
-            # and the avg messenger angle as sensed by all receptors 
-            # with a resolution dependent on the spread angle
-            if sensory.size == 0:
-                avg_dens = 0
+        sensory_data = []
+        for sense, receptor_angle in zip(receptor_sense, receptor_angles):
+            if sense.size == 0:
+                avg_actv = 0
                 avg_angle = 0
             else:
-                # print(sensory)
-                avg_dens = np.average(sensory)
-                if avg_dens < ACTIVATION_THRESHOLD:
+                print(sense)
+                avg_actv = np.average(sense)
+                if avg_actv < ACTIVATION_THRESHOLD:
                     avg_angle = 0
                 else:
-                    receptor_data = self.receptors[receptor_type]
-                    avg_angle = np.sum(get_receptor_angles(receptor_data[0], receptor_data[1]) * sensory) / np.sum(sensory)
-            self.sensory[receptor_type] = np.array([avg_dens, avg_angle])
-
-    def render(self, pos: np.ndarray, facing_angle: float, sense_radius: float, display: pg.Surface, camera):
-        for receptor_type, receptor_data in self.receptors.items():
-            [draw_view_cone(camera.transform_to_screen(pos), facing_angle+offset_angle, receptor_data[2],
-                             sense_radius, display, RECEPTOR_COLORS[receptor_type])
-             for offset_angle in get_receptor_angles(receptor_data[0], receptor_data[1])] 
+                    avg_angle = np.sum(sense * receptor_angle) / np.sum(sense)
+            sensory_data.append(np.array([avg_actv, avg_angle]))
+        return np.array(sensory_data)
 
     def get_energy_cost(self) -> float:
         return 0.5 * np.sum([receptor_data[0] for receptor_data in self.receptors.values()])
+
+    # render
+    def render(self, pos: np.ndarray, z_angle: float, radius: float, display: pg.Surface, camera):
+        for i, (num_of_type, spread, fov) in enumerate(zip(self.num_of_type, self.spread, self.fov)):
+            receptor_angles = get_receptor_angles(num_of_type, spread)
+            [draw_view_cone(camera.transform_to_screen(pos), z_angle + receptor_angle, fov, radius,
+                            display, RECEPTOR_COLORS[INV_SHAPE_MAP[i]])
+             for receptor_angle in receptor_angles]
+            [pg.draw.line(display, RECEPTOR_COLORS[INV_SHAPE_MAP[i]], camera.transform_to_screen(pos),
+                          camera.transform_to_screen(radius * np.array([math.cos(receptor_angle), math.sin(receptor_angle), 0])))
+             for receptor_angle in receptor_angles]
+
 
     def get_df(self) -> dict:
         # get the num, spread, and fov of each receptor type (uniform)
@@ -323,7 +301,7 @@ class ReceptorManager:
 
         return new_generation
     
-    def poll_receptors(self, index: np.ndarray, pos: np.ndarray, angle: float, radius: np.ndarray, env):
+    def poll_receptors(self, index: np.ndarray, pos: np.ndarray, angle: float, radius: float, env):
         # receptor_input_of_type = { # list of numpy arrays of different sizes
         #     receptor_type: [np.zeros(shape=(num,)) for num in num_of_type]
         #     for receptor_type, num_of_type in self.num_of_type.items()
