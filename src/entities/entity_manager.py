@@ -388,7 +388,7 @@ class Entity:
         self.brain = Brain(entity_data['brain'], entity_data['brain_history'])
         self.receptors = Receptors(entity_data['receptors'])
         self.stomach = Stomach(entity_data['stomach'])
-        # self.skeleton = Skeleton(entity_data['skeleton'])
+        self.skeleton = Skeleton(entity_data['skeleton'])
 
     # update
     def update(self, env, dt: float):
@@ -451,3 +451,4 @@ class Entity:
         self.render_health_and_energy(display, drawpos)
         self.render_stats(display, drawpos)
         self.receptors.render(self.pos, self.z_angle, 100, display, camera)
+        self.skeleton.render(display, self.pos, self.z_angle, camera)

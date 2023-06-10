@@ -327,6 +327,12 @@ class DevMenu:
             'stomach': {
                 # 'opt_dens': np.full((5,), 0.5)
                 'opt_dens': np.arange(0.1, 0.6, 0.1)
+            },
+            'skeleton': {
+                'joints': [{'jid': 'j_0', 'rel_pos': np.array([0,0,0])},
+                           {'jid': 'j_1', 'rel_pos': np.array([50,0,0])}],
+                'bones': [{'bid': 'b_0', 'joint1': 'j_0', 'joint2': 'j_1', 'depth': 0}],
+                'muscles': [],
             }
         })
         self.environment = Environment()
