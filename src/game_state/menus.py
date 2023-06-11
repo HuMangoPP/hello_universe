@@ -315,12 +315,9 @@ class DevMenu:
             },
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
-                'neurons': ['h_0', 'h_1', 'h_2'],
-                'axons': [['i_r0', 'h_0', 1],
-                          ['h_0', 'h_1', 1],
-                          ['h_1', 'o_m0', 1],
-                          ['i_r5', 'h_2', 1],
-                          ['h_2', 'o_m0', 1]]
+                'neurons': [],
+                'axons': [['i_r0', 'o_m1', 1],
+                          ['i_r2', 'o_m0', 1]]
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 0, 0, 0, 0]),
@@ -335,10 +332,13 @@ class DevMenu:
             'skeleton': {
                 'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0])},
                            {'jid': 'j1', 'rel_pos': np.array([50,0,0])},
-                           {'jid': 'j2', 'rel_pos': np.array([50,0,0])+50*np.array([math.cos(0.1),math.sin(0.1),0])}],
+                           {'jid': 'j2', 'rel_pos': np.array([50,0,0])+50*np.array([math.cos(0.2),math.sin(0.2),0])},
+                           {'jid': 'j3', 'rel_pos': np.array([0,50,0])}],
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
-                          {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1}],
-                'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'}],
+                          {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1},
+                          {'bid': 'b2', 'joint1': 'j0', 'joint2': 'j3', 'depth': 0}],
+                'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1', 'min_bend': 0.1, 'max_bend': math.pi/2},
+                            {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b2', 'min_bend': math.pi/2, 'max_bend': math.pi - 0.1}],
             }
         })
         self.environment = Environment()

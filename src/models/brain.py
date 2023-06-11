@@ -191,7 +191,7 @@ class Brain:
         output_activation = softmax(output_activation)
         output_activation = np.clip(output_activation - 1 / output_activation.size, a_min=0, a_max=None)
         return {
-            muscle_id: activation
+            muscle_id.split('_')[1]: activation
             for muscle_id, activation in zip(output_layer.keys(), output_activation)
         }
 

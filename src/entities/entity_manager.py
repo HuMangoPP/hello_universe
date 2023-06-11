@@ -396,9 +396,10 @@ class Entity:
         muscle_activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.get_joint_touching(self.pos), 
                                               self.skeleton.get_muscle_flex_amt())
-        self.pos = self.pos + self.vel * dt
-        if np.linalg.norm(self.vel) > 0:
-            self.z_angle = math.atan2(self.vel[1], self.vel[0])
+        movement, angle = self.skeleton.fire_muscles(self.pos, muscle_activations, dt)
+        self.pos = self.pos + movement
+        self.z_angle += angle
+
         
         # energy deplete
         energy_spent = np.linalg.norm(self.vel) * self.scale / 50

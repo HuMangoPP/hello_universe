@@ -6,8 +6,6 @@ import math
 FLEX_TOLERANCE = 0.01
 RELAXATION_RATE = 0.1
 PIVOT_TOLERANCE = 0.1
-MIN_BEND_ANGLE = 0.1
-MAX_BEND_ANGLE = math.pi - 0.1
 
 class Joint:
     def __init__(self, joint_data: dict):
@@ -44,29 +42,52 @@ class Bone:
             return joints[self.joint1].rel_pos - joints[self.joint2].rel_pos
 
 class Muscle:
-    def __init__(self, muscle_data: dict):
+    def __init__(self, muscle_data: dict, bones: dict, joints: dict):
         self.bone1 : str = muscle_data['bone1']
         self.bone2 : str = muscle_data['bone2']
-        self.cumul_flex = MIN_BEND_ANGLE
+        self.min_bend = muscle_data['min_bend']
+        self.max_bend = muscle_data['max_bend']
 
-    def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, stationary_bone: str | None):
-        if self.cumul_flex + flex_amt < MAX_BEND_ANGLE:
-            self.cumul_flex += flex_amt
-            return self.rotate_bones(pos, flex_amt, joints, bones, stationary_bone)
-        return np.zeros((3,))
+        # find the current bend
+        bone1 = bones[self.bone1]
+        bone2 = bones[self.bone2]
+        pivot_joint = bone1.joint1
+        if bone1.joint2 in [bone2.joint1, bone2.joint2]:
+            pivot_joint = bone1.joint2
+        bone1_vec = bone1.get_bone_vec(pivot_joint, joints)
+        bone2_vec = bone2.get_bone_vec(pivot_joint, joints)
+        angle = math.acos(bone1_vec.dot(-bone2_vec) / np.linalg.norm(bone1_vec) / np.linalg.norm(bone2_vec))
+        self.cumul_flex = angle
 
-    def relax(self, pos: np.ndarray, dt: float, joints: dict, bones: dict, stationary_bone: str | None):
-        if self.cumul_flex - dt > MIN_BEND_ANGLE:
-            self.cumul_flex -= dt
-            return self.rotate_bones(pos, -dt, joints, bones, stationary_bone)
-        return np.zeros((3,))
+    def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, 
+             stationary_bone: str | None, fixed_bone: str) -> tuple[np.ndarray, float]:
+        angle = flex_amt if stationary_bone is not None else flex_amt * 2
+        if self.cumul_flex + angle < self.max_bend:
+            self.cumul_flex += angle
+            return self.rotate_bones(pos, flex_amt, joints, bones, stationary_bone, fixed_bone)
+        return np.zeros((3,)), 0
 
-    def rotate_bones(self, pos: np.ndarray, angle: float, joints: dict, bones: dict, stationary_bone: str | None):
+    def relax(self, pos: np.ndarray, dt: float, joints: dict, bones: dict, 
+              stationary_bone: str | None, fixed_bone: str) -> tuple[np.ndarray, float]:
+        angle = dt if stationary_bone is not None else dt * 2
+        if self.cumul_flex - angle > self.min_bend:
+            self.cumul_flex -= angle
+            return self.rotate_bones(pos, -dt, joints, bones, stationary_bone, fixed_bone)
+        return np.zeros((3,)), 0
+
+    def rotate_bones(self, pos: np.ndarray, angle: float, joints: dict, bones: dict, 
+                     stationary_bone: str | None, fixed_bone: str) -> tuple[np.ndarray, float]:
         pivot_joint = bones[self.bone1].joint1
         if bones[self.bone1].joint2 in [bones[self.bone2].joint1, bones[self.bone2].joint2]:
             pivot_joint = bones[self.bone1].joint2
         bone1_vec = bones[self.bone1].get_bone_vec(pivot_joint, joints)
         bone2_vec = bones[self.bone2].get_bone_vec(pivot_joint, joints)
+
+        # check fixed bone
+        entity_should_turn = False
+        if fixed_bone in [self.bone1, self.bone2]:
+            entity_should_turn = True
+            angle *= 2
 
         # set up the joints that have been rotated and which joints need to be rotated
         rotated_joints = set([pivot_joint])
@@ -75,7 +96,7 @@ class Muscle:
         rotation_axis = np.cross(bone1_vec, bone2_vec)
         rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
         bone1_rotation_drag = np.zeros((3,))
-        if stationary_bone != self.bone1:
+        if self.bone1 != stationary_bone and self.bone1 != fixed_bone:
             while joints_to_rotate:
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
@@ -99,7 +120,7 @@ class Muscle:
         joints_to_rotate = [bones[self.bone2].joint1, bones[self.bone2].joint2]
         rotation_axis = -rotation_axis
         bone2_rotation_drag = np.zeros((3,))
-        if stationary_bone != self.bone2:
+        if self.bone2 != stationary_bone and self.bone2 != fixed_bone:
             while joints_to_rotate:
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
@@ -119,7 +140,10 @@ class Muscle:
                 # just rotated this joint or this joint should not have been rotated
                 joints_to_rotate = joints_to_rotate[1:]
         
-        return -(bone1_rotation_drag + bone2_rotation_drag)
+        if entity_should_turn:
+            return -(bone1_rotation_drag + bone2_rotation_drag), angle/2
+        else:
+            return -(bone1_rotation_drag + bone2_rotation_drag), 0
 
 class Skeleton:
     def __init__(self, skeleton_data: dict):
@@ -132,12 +156,17 @@ class Skeleton:
             for bone_data in skeleton_data['bones']
         }
         self.muscles = {
-            muscle_data['mid']: Muscle(muscle_data)
+            muscle_data['mid']: Muscle(muscle_data, self.bones, self.joints)
             for muscle_data in skeleton_data['muscles']
         }
         self.num_joints = len(skeleton_data['joints'])
         self.num_bones = len(skeleton_data['bones'])
         self.num_muscles = len(skeleton_data['muscles'])
+
+        if self.num_bones > 0:
+            self.fixed_bone = skeleton_data['bones'][0]['bid']
+        else:
+            self.fixed_bone = None
     
     def add_new_structure(self, new_joint_pos: np.ndarray, existing_jid: str, existing_bid: str):
         # add joint
@@ -154,6 +183,8 @@ class Skeleton:
             bone_depth = 0
         # add bone
         new_bid = f'b_{self.num_bones}'
+        if self.fixed_bone is None:
+            self.fixed_bone = new_bid
         self.num_bones += 1
         self.bones[new_bid] = Bone({
             'joint1': new_jid,
@@ -165,21 +196,27 @@ class Skeleton:
         self.num_muscles += 1
         self.muscles[new_mid] = Muscle({
             'bone1': existing_bid,
-            'bone2': new_bid
-        })
+            'bone2': new_bid,
+            'min_bend': 0.1,
+            'max_bend': math.pi - 0.1
+        }, self.bones, self.joints)
     
     def add_new_muscle(self, bid1: str, bid2: str):
         new_mid = f'm_{self.num_muscles}'
         self.num_muscles += 1
         self.muscles[new_mid] = Muscle({
             'bone1': bid1,
-            'bone2': bid2
-        })
+            'bone2': bid2,
+            'min_bend': 0.1,
+            'max_bend': math.pi - 0.1
+        },
+        self.bones, self.joints)
 
     def mutate(self):
         ...
 
-    def fire_muscles(self, pos: np.ndarray, muscle_activations: dict, dt: float) -> np.ndarray:
+    def fire_muscles(self, pos: np.ndarray, muscle_activations: dict, dt: float) -> tuple[np.ndarray, float]:
+        net_movement, net_angle = np.zeros((3,)), 0
         for muscle_id, activation in muscle_activations.items():
             # a muscle flexes one bone out of the two it is connected with
             # it flexes the bone that is furthest away from the body
@@ -190,10 +227,14 @@ class Skeleton:
             elif self.bones[muscle.bone2].depth < self.bones[muscle.bone1].depth:
                 bone_closer_to_body = muscle.bone2
             if activation > 0:
-                return self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body)
+                movement, angle = self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
             else:
-                return self.muscles[muscle_id].relax(pos, dt, self.joints, self.bones, bone_closer_to_body)
-    
+                movement, angle = self.muscles[muscle_id].relax(pos, dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
+            net_movement = net_movement + movement
+            net_angle += angle
+        
+        return net_movement, angle
+
     def get_joint_touching(self, pos: np.ndarray):
         return {jid: int(np.linalg.norm(pos + joint.rel_pos) <= PIVOT_TOLERANCE)
                 for jid, joint in self.joints.items()}
