@@ -329,10 +329,12 @@ class DevMenu:
                 'opt_dens': np.arange(0.1, 0.6, 0.1)
             },
             'skeleton': {
-                'joints': [{'jid': 'j_0', 'rel_pos': np.array([0,0,0])},
-                           {'jid': 'j_1', 'rel_pos': np.array([50,0,0])}],
-                'bones': [{'bid': 'b_0', 'joint1': 'j_0', 'joint2': 'j_1', 'depth': 0}],
-                'muscles': [],
+                'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0])},
+                           {'jid': 'j1', 'rel_pos': np.array([50,0,0])},
+                           {'jid': 'j2', 'rel_pos': np.array([50,0,0])+50*np.array([math.cos(0.1),math.sin(0.1),0])}],
+                'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
+                          {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1}],
+                'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'}],
             }
         })
         self.environment = Environment()
@@ -366,6 +368,13 @@ class DevMenu:
                 )
                 self.new_particle_time = 0.1
         
+        keys = pg.key.get_pressed()
+        if keys[pg.K_SPACE]:
+            muscle_activations = {'m0': 1}
+        else:
+            muscle_activations = {'m0': 0}
+        self.entity.pos = self.entity.pos + self.entity.skeleton.fire_muscles(self.entity.pos, muscle_activations, dt)
+
         # handle transitions
         if self.transition_phase > 0:
             self.transition_time += dt
