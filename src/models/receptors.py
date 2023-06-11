@@ -115,7 +115,7 @@ class Receptors:
         return np.array(sensory_data)
 
     def get_energy_cost(self) -> float:
-        return 0.5 * np.sum([receptor_data[0] for receptor_data in self.receptors.values()])
+        return 0.5 * np.sum([num_of_type for num_of_type in self.num_of_type])
 
     # render
     def render(self, pos: np.ndarray, z_angle: float, radius: float, display: pg.Surface, camera):

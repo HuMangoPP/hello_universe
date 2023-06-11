@@ -194,6 +194,14 @@ class Skeleton:
             else:
                 return self.muscles[muscle_id].relax(pos, dt, self.joints, self.bones, bone_closer_to_body)
     
+    def get_joint_touching(self, pos: np.ndarray):
+        return {jid: int(np.linalg.norm(pos + joint.rel_pos) <= PIVOT_TOLERANCE)
+                for jid, joint in self.joints.items()}
+
+    def get_muscle_flex_amt(self):
+        return {mid: muscle.cumul_flex
+                for mid, muscle in self.muscles.items()}
+
     def render(self, display: pg.Surface, pos: np.ndarray, angle: np.ndarray, camera):
         joint_drawpos = {
             jid: camera.transform_to_screen(joint.get_abs_pos(pos, angle)) for jid, joint in self.joints.items()}

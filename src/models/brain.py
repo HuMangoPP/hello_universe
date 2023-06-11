@@ -187,9 +187,9 @@ class Brain:
             activated_neurons = new_neurons
             axons_to_fire = [axon for axon in self.axons if axon.in_neuron in activated_neurons and axon.enabled]
 
-        output_activation = np.array([activation for activation in self.muscle.key])
+        output_activation = np.array(list(output_layer.values()))
         output_activation = softmax(output_activation)
-        output_activation = np.clip(output_activation - 1 / output_activation.size, a_min=0)
+        output_activation = np.clip(output_activation - 1 / output_activation.size, a_min=0, a_max=None)
         return {
             muscle_id: activation
             for muscle_id, activation in zip(output_layer.keys(), output_activation)

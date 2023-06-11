@@ -368,12 +368,13 @@ class DevMenu:
                 )
                 self.new_particle_time = 0.1
         
-        keys = pg.key.get_pressed()
-        if keys[pg.K_SPACE]:
-            muscle_activations = {'m0': 1}
-        else:
-            muscle_activations = {'m0': 0}
-        self.entity.pos = self.entity.pos + self.entity.skeleton.fire_muscles(self.entity.pos, muscle_activations, dt)
+        # keys = pg.key.get_pressed()
+        # if keys[pg.K_SPACE]:
+        #     muscle_activations = {'m0': 1}
+        # else:
+        #     muscle_activations = {'m0': 0}
+        # self.entity.pos = self.entity.pos + self.entity.skeleton.fire_muscles(self.entity.pos, muscle_activations, dt)
+        self.entity.update(self.environment, dt)
 
         # handle transitions
         if self.transition_phase > 0:
@@ -394,7 +395,6 @@ class DevMenu:
             for receptor_type, activation_data in zip(RECEPTOR_SHAPES, self.sensory_activation)
         }
 
-        self.entity.stomach.eat(self.entity.pos, self.environment)
         self.environment.update(dt)
     
     def render_sensory_activation(self):
