@@ -315,8 +315,12 @@ class DevMenu:
             },
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
-                'neurons': [],
-                'axons': []
+                'neurons': ['h_0', 'h_1', 'h_2'],
+                'axons': [['i_r0', 'h_0', 1],
+                          ['h_0', 'h_1', 1],
+                          ['h_1', 'o_m0', 1],
+                          ['i_r5', 'h_2', 1],
+                          ['h_2', 'o_m0', 1]]
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 0, 0, 0, 0]),
@@ -416,7 +420,38 @@ class DevMenu:
          for opt_dens in self.entity.stomach.opt_dens]
 
     def render_brain_structure(self):
-        ...
+        input_layer = [nid for nid in self.entity.brain.neuron_ids if nid.split('_')[0] == 'i']
+        input_layer = {nid: (self.width - 300, 50 + 15 * i) for i, nid in enumerate(input_layer)}
+        
+        output_layer = [nid for nid in self.entity.brain.neuron_ids if nid.split('_')[0] == 'o']
+        output_layer = {nid: (self.width - 50, 50 + 15 * i) for i, nid in enumerate(output_layer)}
+
+        hidden_nodes = self.entity.brain.get_hidden_layers()
+        num_hidden_layers = len(hidden_nodes)
+        x_offset = 250 / (num_hidden_layers + 1)
+
+        [pg.draw.circle(self.displays[DEFAULT_DISPLAY], (255, 0, 0), pos, 5)
+         for pos in output_layer.values()]
+        [pg.draw.circle(self.displays[DEFAULT_DISPLAY], (255, 0, 0), pos, 5)
+         for pos in input_layer.values()]
+        hidden_layer = {}
+        for i, layer in enumerate(hidden_nodes):
+            x = self.width - 300 + (i + 1) * x_offset
+            for j, node in enumerate(layer):
+                y = 50 + 15 * j
+                pg.draw.circle(self.displays[DEFAULT_DISPLAY], (255, 0, 0), (x,y), 5)
+                hidden_layer[node] = (x,y)
+        all_neurons = {
+            **input_layer,
+            **output_layer,
+            **hidden_layer
+        }
+        for axon in self.entity.brain.axons:
+            if axon.in_neuron not in all_neurons or axon.out_neuron not in all_neurons:
+                continue
+            pg.draw.line(self.displays[DEFAULT_DISPLAY], (255, 0, 0),
+                         all_neurons[axon.in_neuron], all_neurons[axon.out_neuron])
+
 
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
@@ -425,6 +460,7 @@ class DevMenu:
 
         self.render_sensory_activation()
         self.render_stomach()
+        self.render_brain_structure()
 
         match self.transition_phase:
             case 1: 

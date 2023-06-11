@@ -32,7 +32,7 @@ class Brain:
         self.brain_history = brain_history
         self.neuron_ids = set()
         self.neurons = set(brain_data['neurons'])
-        self.axons = []
+        self.axons : list[Axon] = []
         for axon_data in brain_data['axons']:
             axon_label = f'{axon_data[0]}->{axon_data[1]}'
             if axon_label not in self.brain_history.axon_pool:
@@ -206,3 +206,12 @@ class Brain:
             label: self.get_axon_weight(innov)
             for label, innov in self.brain_history.axon_pool.items()
         }
+    
+    def get_hidden_layers(self):
+        layers = []
+        current_layer = [axon.out_neuron for axon in self.axons if axon.in_neuron.split('_')[0] == 'i' and axon.enabled and axon.out_neuron.split('_')[0] == 'h']
+        while current_layer:
+            layers.append(current_layer)
+            current_layer = set(current_layer)
+            current_layer = [axon.out_neuron for axon in self.axons if axon.in_neuron in current_layer and axon.enabled and axon.out_neuron.split('_')[0] == 'h']
+        return layers

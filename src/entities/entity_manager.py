@@ -393,10 +393,9 @@ class Entity:
     # update
     def update(self, env, dt: float):
         # movement
-        muscle_activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env),
+        muscle_activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.get_joint_touching(self.pos), 
                                               self.skeleton.get_muscle_flex_amt())
-        print(muscle_activations)
         self.pos = self.pos + self.vel * dt
         if np.linalg.norm(self.vel) > 0:
             self.z_angle = math.atan2(self.vel[1], self.vel[0])
