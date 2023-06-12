@@ -1,11 +1,13 @@
 from scipy.spatial.transform import Rotation
 import numpy as np
 import pygame as pg
-import math
+import math, random
 
 FLEX_TOLERANCE = 0.01
 RELAXATION_RATE = 0.1
 PIVOT_TOLERANCE = 0.1
+MUTATION_RATE = 0.1
+MAX_FLEXED_ANGLE = math.pi - 0.1
 
 class Joint:
     def __init__(self, joint_data: dict):
@@ -45,8 +47,6 @@ class Muscle:
     def __init__(self, muscle_data: dict, bones: dict, joints: dict):
         self.bone1 : str = muscle_data['bone1']
         self.bone2 : str = muscle_data['bone2']
-        self.min_bend = muscle_data['min_bend']
-        self.max_bend = muscle_data['max_bend']
 
         # find the current bend
         bone1 = bones[self.bone1]
@@ -58,11 +58,12 @@ class Muscle:
         bone2_vec = bone2.get_bone_vec(pivot_joint, joints)
         angle = math.acos(bone1_vec.dot(-bone2_vec) / np.linalg.norm(bone1_vec) / np.linalg.norm(bone2_vec))
         self.cumul_flex = angle
+        self.relaxed_angle = angle
 
     def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, 
              stationary_bone: str | None, fixed_bone: str) -> tuple[np.ndarray, float]:
         angle = flex_amt if stationary_bone is not None else flex_amt * 2
-        if self.cumul_flex + angle < self.max_bend:
+        if self.cumul_flex + angle < MAX_FLEXED_ANGLE:
             self.cumul_flex += angle
             return self.rotate_bones(pos, flex_amt, joints, bones, stationary_bone, fixed_bone)
         return np.zeros((3,)), 0
@@ -70,7 +71,7 @@ class Muscle:
     def relax(self, pos: np.ndarray, dt: float, joints: dict, bones: dict, 
               stationary_bone: str | None, fixed_bone: str) -> tuple[np.ndarray, float]:
         angle = dt if stationary_bone is not None else dt * 2
-        if self.cumul_flex - angle > self.min_bend:
+        if self.cumul_flex - angle > self.relaxed_angle:
             self.cumul_flex -= angle
             return self.rotate_bones(pos, -dt, joints, bones, stationary_bone, fixed_bone)
         return np.zeros((3,)), 0
@@ -145,6 +146,9 @@ class Muscle:
         else:
             return -(bone1_rotation_drag + bone2_rotation_drag), 0
 
+    def has_bone(self, bid: str):
+        return bid in [self.bone1, self.bone2]
+
 class Skeleton:
     def __init__(self, skeleton_data: dict):
         self.joints = {
@@ -167,24 +171,27 @@ class Skeleton:
             self.fixed_bone = skeleton_data['bones'][0]['bid']
         else:
             self.fixed_bone = None
+        
+        if self.num_joints > 0:
+            self.root_joint = skeleton_data['joints'][0]['jid']
+        else:
+            self.root_joint = None
     
-    def add_new_structure(self, new_joint_pos: np.ndarray, existing_jid: str, existing_bid: str):
+    def add_extension(self, new_joint_pos: np.ndarray, existing_jid: str, existing_bid: str):
+        '''
+            Adds an extension to an existing bone and connects a muscle. The new bone will always have a depth
+            value one greater than the bone it is extending from.
+        '''
         # add joint
-        new_jid = f'j_{self.num_joints}'
+        new_jid = f'j{self.num_joints}'
         self.num_joints += 1
         self.joints[new_jid] = Joint({
             'rel_pos': new_joint_pos,
         })
         # find the depth of this bone
-        bone_depths = np.array([bone.depth for bone in self.bones.values() if existing_jid in [bone.joint1, bone.joint2]])
-        if bone_depths.size > 0:
-            bone_depth = np.min(bone_depths) + 1
-        else:
-            bone_depth = 0
+        bone_depth = self.bones[existing_bid].depth + 1
         # add bone
-        new_bid = f'b_{self.num_bones}'
-        if self.fixed_bone is None:
-            self.fixed_bone = new_bid
+        new_bid = f'b{self.num_bones}'
         self.num_bones += 1
         self.bones[new_bid] = Bone({
             'joint1': new_jid,
@@ -192,28 +199,92 @@ class Skeleton:
             'depth': bone_depth,
         })
         # add muscle
-        new_mid = f'm_{self.num_muscles}'
+        new_mid = f'm{self.num_muscles}'
         self.num_muscles += 1
         self.muscles[new_mid] = Muscle({
             'bone1': existing_bid,
             'bone2': new_bid,
-            'min_bend': 0.1,
-            'max_bend': math.pi - 0.1
         }, self.bones, self.joints)
     
+    def add_new_structure(self, new_joint_pos: np.ndarray):
+        '''
+            Adds a new branch structure from the root joint and adds a muscle to connect
+            to the fixed bone unless the new structure is the fixed bone itself.
+        '''
+        # adds to the root joint
+        new_jid = f'j{self.num_joints}'
+        self.num_joints += 1
+        self.joints[new_jid] = Joint({
+            'rel_pos': new_joint_pos,
+        })
+
+        # find the depth of this bone
+        # add bone
+        new_bid = f'b{self.num_bones}'
+        if self.fixed_bone is None:
+            self.fixed_bone = new_bid
+        self.num_bones += 1
+        self.bones[new_bid] = Bone({
+            'joint1': self.root_joint,
+            'joint2': new_jid,
+            'depth': 0,
+        })
+
+        # add muscle
+        if self.fixed_bone != new_bid:
+            new_mid = f'm{self.num_muscles}'
+            self.num_muscles += 1
+            self.muscles[new_mid] = Muscle({
+                'bone1': self.fixed_bone,
+                'bone2': new_bid,
+            }, self.bones, self.joints)
+
     def add_new_muscle(self, bid1: str, bid2: str):
-        new_mid = f'm_{self.num_muscles}'
+        new_mid = f'm{self.num_muscles}'
         self.num_muscles += 1
         self.muscles[new_mid] = Muscle({
             'bone1': bid1,
             'bone2': bid2,
-            'min_bend': 0.1,
-            'max_bend': math.pi - 0.1
-        },
-        self.bones, self.joints)
+        })
 
     def mutate(self):
-        ...
+        if random.uniform(0, 1) <= MUTATION_RATE:
+            # structure
+            new_joint_dir = np.random.uniform(0, 1, (3,))
+            while np.linalg.norm(new_joint_dir) == 0:
+                new_joint_dir = np.random.uniform(0, 1, (3,))
+            new_joint_dir = new_joint_dir / np.linalg.norm(new_joint_dir)
+            self.add_new_structure(50 * new_joint_dir)
+
+        if random.uniform(0, 1) <= MUTATION_RATE and self.bones:
+            # extension
+            bid = random.choice(list(self.bones.keys()))
+            jid = self.bones[bid].bone1 if random.uniform(0, 1) <= 0.5 else self.bones[bid].bone2
+            bone_vec = -self.bones[bid].get_bone_vec(jid, self.joints)
+            rotation_axis = np.random.uniform(0, 1, size=(3,))
+            if np.linalg.norm(rotation_axis) == 0:
+                rotation_axis = np.array([0,0,1])
+            else:
+                rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
+            r_matrix = Rotation.from_quat(np.concatenate([rotation_axis * math.sin(0.1), np.array([math.cos(0.1)])])).as_matrix()
+            new_rel_pos = r_matrix.dot(bone_vec) + self.joints[jid].rel_pos
+            self.add_extension(new_rel_pos, jid, bid)
+
+        if random.uniform(0, 1) <= MUTATION_RATE:
+            # add muscle
+            random_jid = random.choice(list(self.joints.keys()))
+            bones_with_joint = [bid for bid, bone in self.bones if random_jid in [bone.joint1, bone.joint2]]
+            if len(bones_with_joint) >= 2:
+                # choose two random bones
+                bindex1 = random.randint(0, len(bones_with_joint))
+                bindex2 = random.randint(0, len(bones_with_joint) - 1)
+                bid1 = bones_with_joint[bindex1]
+                bones_with_joint.pop(bindex1)
+                bid2 = bones_with_joint[bindex2]
+                # check if this muscle already exists
+                muscle_exists = [mid for mid, muscle in self.muscles if muscle.has_bone(bid1) and muscle.has_bone(bid2)]
+                if not muscle_exists:
+                    self.add_new_muscle(bid1, bid2)
 
     def fire_muscles(self, pos: np.ndarray, muscle_activations: dict, dt: float) -> tuple[np.ndarray, float]:
         net_movement, net_angle = np.zeros((3,)), 0

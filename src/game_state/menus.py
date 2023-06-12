@@ -337,8 +337,8 @@ class DevMenu:
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
                           {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1},
                           {'bid': 'b2', 'joint1': 'j0', 'joint2': 'j3', 'depth': 0}],
-                'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1', 'min_bend': 0.1, 'max_bend': math.pi/2},
-                            {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b2', 'min_bend': math.pi/2, 'max_bend': math.pi - 0.1}],
+                'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
+                            {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b2'}],
             }
         })
         self.environment = Environment()
