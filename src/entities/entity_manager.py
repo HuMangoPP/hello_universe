@@ -397,8 +397,12 @@ class Entity:
                                               self.skeleton.get_joint_touching(self.pos), 
                                               self.skeleton.get_muscle_flex_amt())
         movement, angle = self.skeleton.fire_muscles(self.pos, muscle_activations, dt)
-        self.pos = self.pos + movement
+        r_matrix = np.array([[math.cos(self.z_angle), -math.sin(self.z_angle), 0],
+                             [math.sin(self.z_angle),  math.cos(self.z_angle), 0],
+                             [0,                0,               1]])
         self.z_angle += angle
+        self.pos = self.pos + r_matrix.dot(movement)
+        
 
         
         # energy deplete
