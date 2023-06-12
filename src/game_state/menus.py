@@ -316,12 +316,12 @@ class DevMenu:
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
-                'axons': [['i_r0', 'o_m1', 1],
-                          ['i_r2', 'o_m0', 1]]
+                'axons': [['i_r0', 'o_m0', 1],
+                          ['i_r2', 'o_m1', 1]]
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 0, 0, 0, 0]),
-                'spread': np.full((5,), np.pi/6),
+                'spread': np.full((5,), np.pi/6), 
                 'fov': np.full((5,), np.pi/6),
                 'opt_dens': np.full((5,), 0.5),
             },
@@ -331,11 +331,11 @@ class DevMenu:
             },
             'skeleton': {
                 'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0])},
-                           {'jid': 'j1', 'rel_pos': np.array([50,0,0])},
-                           {'jid': 'j2', 'rel_pos': np.array([50,0,0])+50*np.array([math.cos(0.2),math.sin(0.2),0])},
-                           {'jid': 'j3', 'rel_pos': np.array([0,50,0])}],
+                           {'jid': 'j1', 'rel_pos': np.array([0,0,50])},
+                           {'jid': 'j2', 'rel_pos': np.array([0,50,0])},
+                           {'jid': 'j3', 'rel_pos': np.array([0,-50,0])}],
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
-                          {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1},
+                          {'bid': 'b1', 'joint1': 'j0', 'joint2': 'j2', 'depth': 0},
                           {'bid': 'b2', 'joint1': 'j0', 'joint2': 'j3', 'depth': 0}],
                 'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
                             {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b2'}],

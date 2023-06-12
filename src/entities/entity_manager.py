@@ -375,7 +375,7 @@ class Entity:
         self.id : str = entity_data['id']
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
-        self.z_angle = 0
+        self.z_angle = math.pi/2
         self.scale = entity_data['scale']
 
         self.stats = {
