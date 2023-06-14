@@ -6,20 +6,23 @@ import math, random
 FLEX_TOLERANCE = 0.01
 RELAXATION_RATE = 0.1
 PIVOT_TOLERANCE = 0.01
-MUTATION_RATE = 0.1
+MUTATION_RATE = 0.05
 MAX_FLEXED_ANGLE = math.pi - 0.1
 
 class Joint:
     def __init__(self, joint_data: dict):
+        self.rest_pos : np.ndarray = joint_data['rel_pos'].copy() # saved rest position for reference
         self.rel_pos : np.ndarray = joint_data['rel_pos'] # relative position of joint to body
     
     def rotate(self, entity_pos: np.ndarray, pivot_point: np.ndarray, 
                angle: float, rotation_axis: np.ndarray) -> np.ndarray:
+        is_pivot = np.abs(entity_pos[2] + self.rel_pos[2]) <= PIVOT_TOLERANCE
         r_matrix = Rotation.from_quat(np.concatenate([math.sin(angle/2) * rotation_axis, np.array([math.cos(angle/2)])])).as_matrix()
         new_rel_pos = r_matrix.dot(self.rel_pos - pivot_point) + pivot_point
         rotation_offset = new_rel_pos - self.rel_pos
         self.rel_pos = new_rel_pos
-        if np.abs(entity_pos[2] + self.rel_pos[2]) <= PIVOT_TOLERANCE:
+        is_pivot = is_pivot and np.abs(entity_pos[2] + self.rel_pos[2]) <= PIVOT_TOLERANCE
+        if is_pivot:
             return rotation_offset
         return np.zeros(shape=(3,))
 
@@ -63,8 +66,8 @@ class Muscle:
     def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, 
              stationary_bone: str | None, fixed_bone: str) -> dict:
         angle = flex_amt if stationary_bone is not None else flex_amt * 2
-        if self.cumul_flex + flex_amt < MAX_FLEXED_ANGLE:
-            self.cumul_flex += flex_amt
+        if self.cumul_flex + angle < MAX_FLEXED_ANGLE:
+            self.cumul_flex += angle
             return self.rotate_bones(pos, flex_amt, joints, bones, stationary_bone, fixed_bone)
         return {
             'movement': np.zeros((3,))
@@ -73,8 +76,8 @@ class Muscle:
     def relax(self, pos: np.ndarray, dt: float, joints: dict, bones: dict, 
               stationary_bone: str | None, fixed_bone: str) -> dict:
         angle = dt if stationary_bone is not None else dt * 2
-        if self.cumul_flex - dt > self.relaxed_angle:
-            self.cumul_flex -= dt
+        if self.cumul_flex - angle > self.relaxed_angle:
+            self.cumul_flex -= angle
             return self.rotate_bones(pos, -dt, joints, bones, stationary_bone, fixed_bone)
         return {
             'movement': np.zeros((3,))
@@ -90,8 +93,6 @@ class Muscle:
         bone2_vec = bones[self.bone2].get_bone_vec(pivot_joint, joints)
 
         # check fixed bone
-        # if fixed_bone in [self.bone1, self.bone2]:
-        #     angle *= 2
         should_rotate = np.abs(pos[2] + joints[pivot_joint].rel_pos[2]) <= PIVOT_TOLERANCE
 
         # set up the joints that have been rotated and which joints need to be rotated
@@ -201,6 +202,7 @@ class Skeleton:
         else:
             self.root_joint = None
     
+    # evo
     def add_extension(self, new_joint_pos: np.ndarray, existing_jid: str, existing_bid: str):
         '''
             Adds an extension to an existing bone and connects a muscle. The new bone will always have a depth
@@ -310,6 +312,7 @@ class Skeleton:
                 if not muscle_exists:
                     self.add_new_muscle(bid1, bid2)
 
+    # functionality
     def fire_muscles(self, pos: np.ndarray, muscle_activations: dict, dt: float) -> tuple[np.ndarray, float]:
         net_movement = np.zeros((3,))
         net_angle = 0
@@ -347,6 +350,7 @@ class Skeleton:
         return {mid: muscle.cumul_flex
                 for mid, muscle in self.muscles.items()}
 
+    # render
     def render(self, display: pg.Surface, pos: np.ndarray, angle: np.ndarray, camera):
         joint_drawpos = {
             jid: camera.transform_to_screen(joint.get_abs_pos(pos, angle)) 
@@ -354,3 +358,25 @@ class Skeleton:
         }
         [pg.draw.circle(display, (0, 255, 0), drawpos, 2) for drawpos in joint_drawpos.values()]
         [pg.draw.line(display, (0, 255, 0), joint_drawpos[bone.joint1], joint_drawpos[bone.joint2]) for bone in self.bones.values()]
+
+    # data
+    def get_df(self) -> dict:
+        joints = {
+            jid: tuple([float(c) for c in joint.rest_pos]) for jid, joint in self.joints.items()
+        }
+        bones = {
+            bid: {
+                'joint1': bone.joint1,
+                'joint2': bone.joint2,
+                'depth': bone.depth
+            } for bid, bone in self.bones.items()
+        }
+        muscles = {
+            mid: [muscle.bone1, muscle.bone2]
+            for mid, muscle in self.muscles.items()
+        }
+        return {
+            'joints': joints,
+            'bones': bones,
+            'muscles': muscles,
+        }

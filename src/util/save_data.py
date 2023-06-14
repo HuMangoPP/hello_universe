@@ -20,12 +20,15 @@ def write_entity_data_as_csv(generation: int, data: dict, csv_file: str) -> pd.D
 
 def write_entity_data_as_json(generation: int, data: dict, json_file: str) -> dict:
     fpath = f'./assets/data/{json_file}.json'
-    with open(fpath, 'w+') as f:
+    with open(fpath, 'r') as f:
         json_data = json.load(f)
         gen_key = f'gen_{generation}'
         if gen_key in json_data:
             json_data[gen_key].append(data)
         else:
             json_data[gen_key] = [data]
-        json.dump(json_data, f)
+    
+    with open(fpath, 'w') as f:
+        f.write(json.dumps(json_data, indent=4))
+        return json_data
 

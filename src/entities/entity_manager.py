@@ -491,4 +491,4 @@ class Entity:
             **self.skeleton.get_df()
         }
 
-        return basic, receptor, stomach, brain
+        return basic, receptor, stomach, brain, skeleton

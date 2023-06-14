@@ -305,7 +305,7 @@ class DevMenu:
         self.new_particle_time = 0.1
         self.entity = Entity({
             'id': '0-0',
-            'pos': np.array([0,0,0]),
+            'pos': np.array([0,0,0], dtype=np.float32),
             'scale': 1,
             'stats': {
                 'itl': 1,
@@ -331,12 +331,12 @@ class DevMenu:
                 'opt_dens': np.arange(0.1, 0.6, 0.1)
             },
             'skeleton': {
-                'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0])},
-                           {'jid': 'j1', 'rel_pos': np.array([0,0,25])},
-                           {'jid': 'j2', 'rel_pos': np.array([0,25,0])},
-                           {'jid': 'j3', 'rel_pos': np.array([25,50,0])},
-                           {'jid': 'j4', 'rel_pos': np.array([0,-25,0])},
-                           {'jid': 'j5', 'rel_pos': np.array([25,-50,0])}],
+                'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0], dtype=np.float32)},
+                           {'jid': 'j1', 'rel_pos': np.array([0,0,25], dtype=np.float32)},
+                           {'jid': 'j2', 'rel_pos': np.array([0,25,0], dtype=np.float32)},
+                           {'jid': 'j3', 'rel_pos': np.array([25,50,0], dtype=np.float32)},
+                           {'jid': 'j4', 'rel_pos': np.array([0,-25,0], dtype=np.float32)},
+                           {'jid': 'j5', 'rel_pos': np.array([25,-50,0], dtype=np.float32)}],
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
                           {'bid': 'b1', 'joint1': 'j0', 'joint2': 'j2', 'depth': 0},
                           {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 1},
@@ -370,11 +370,12 @@ class DevMenu:
         for event in events:
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 # save data
-                basic, receptor, stomach, brain = self.entity.get_df()
+                basic, receptor, stomach, brain, skeleton = self.entity.get_df()
                 write_entity_data_as_csv(self.generation, basic, 'basic')
                 write_entity_data_as_csv(self.generation, receptor, 'receptor')
                 write_entity_data_as_csv(self.generation, stomach, 'stomach')
                 write_entity_data_as_csv(self.generation, brain, 'brain')
+                write_entity_data_as_json(self.generation, skeleton, 'skeleton')
                 self.generation += 1
 
         if pg.mouse.get_pressed()[0]:
