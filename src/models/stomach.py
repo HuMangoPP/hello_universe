@@ -22,6 +22,7 @@ class Stomach:
     def __init__(self, stomach_data: dict):
         self.opt_dens = stomach_data['opt_dens']
     
+    # evo
     def mutate(self):
         if random.uniform(0, 1) <= MUTATION_RATE:
             self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-DIGEST_MUTATION, DIGEST_MUTATION, size=(5,)), a_min=0, a_max=1)
@@ -32,6 +33,7 @@ class Stomach:
             'opt_dens': lerp(self.opt_dens, other_stomach.opt_dens, t)
         }
 
+    # func
     def eat(self, pos: np.ndarray, env) -> float:
         digest_amt = 0
         edible_in_range = env.qtree.query_data(np.array([pos[0],pos[1],10]))
@@ -43,8 +45,12 @@ class Stomach:
         
         return digest_amt
 
+    # data
     def get_df(self):
-        return self.optimal_dens
+        return {
+            receptor_type: opt_dens
+            for receptor_type, opt_dens in zip(INV_SHAPE_MAP, self.opt_dens)
+        }
 
 class StomachManager:
     def __init__(self, num_stomachs: int, stomach_data: dict):

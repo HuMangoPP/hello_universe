@@ -375,7 +375,7 @@ class Entity:
         self.id : str = entity_data['id']
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
-        self.z_angle = math.pi/2
+        self.z_angle = 0
         self.scale = entity_data['scale']
 
         self.stats = {
@@ -460,3 +460,35 @@ class Entity:
         self.render_stats(display, drawpos)
         self.receptors.render(self.pos, self.z_angle, 100, display, camera)
         self.skeleton.render(display, self.pos, self.z_angle, camera)
+    
+    # data
+    def get_df(self):
+        basic = {
+            'id': self.id,
+            'x': self.pos[0],
+            'y': self.pos[1],
+            'z': self.pos[2],
+            'z_angle': self.z_angle,
+            'health': self.health,
+            'energy': self.energy,
+            'scale': self.scale,
+            **self.stats
+        }
+        receptor = {
+            'id': self.id,
+            **self.receptors.get_df()
+        }
+        stomach = {
+            'id': self.id,
+            **self.stomach.get_df()
+        }
+        brain = {
+            'id': self.id,
+            **self.brain.get_df()
+        }
+        skeleton = {
+            'id': self.id,
+            **self.skeleton.get_df()
+        }
+
+        return basic, receptor, stomach, brain

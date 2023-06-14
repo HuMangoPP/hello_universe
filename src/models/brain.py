@@ -19,12 +19,10 @@ class BrainHistory:
         self.innov_number = 1
 
 class Axon:
-    def __init__(self, in_neuron: str, out_neuron: str, weight: float,
-                 innov: int, enabled=True):
+    def __init__(self, in_neuron: str, out_neuron: str, weight: float, enabled=True):
         self.in_neuron = in_neuron
         self.out_neuron = out_neuron
         self.weight = weight
-        self.innov = innov
         self.enabled = enabled
     
 class Brain:
@@ -32,7 +30,7 @@ class Brain:
         self.brain_history = brain_history
         self.neuron_ids = set()
         self.neurons = set(brain_data['neurons'])
-        self.axons : list[Axon] = []
+        self.axons : dict[int, Axon] = {}
         for axon_data in brain_data['axons']:
             axon_label = f'{axon_data[0]}->{axon_data[1]}'
             if axon_label not in self.brain_history.axon_pool:
@@ -45,7 +43,7 @@ class Brain:
         self.neuron_ids.add(neuron_id)
 
     def add_axon(self, in_neuron: str, out_neuron: str, weight: float, innov: int):
-        self.axons.append(Axon(in_neuron, out_neuron, weight, innov))
+        self.axons[innov] = Axon(in_neuron, out_neuron, weight)
     
     # evo
     def mutate(self, itl_stat: float):
@@ -56,7 +54,7 @@ class Brain:
         # determine the number of neurons (not including sensors or effectors)
         # and enabled axons
         num_neurons = len(self.neurons)
-        active_axons = [axon for axon in self.axons if axon.enabled]
+        active_axons = [axon for axon in self.axons.values() if axon.enabled]
 
         # adds new neuron and connects it on both sides
         if random.uniform(0, 1) <= MUTATION_RATE:
@@ -87,11 +85,11 @@ class Brain:
             out_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] in 'ho' and neuron_id != in_neuron])
             
             # get all of the axons 
-            axon_labels = {f'{axon.in_neuron}->{axon.out_neuron}': axon for axon in self.axons}
             axon_label = f'{in_neuron}->{out_neuron}'
-            if axon_label in axon_labels:
+            innov = self.brain_history.axon_pool[axon_label]
+            if innov in self.axons:
                 # change the weight of this axon
-                axon_labels[axon_label].weight += random.uniform(-D_WEIGHT, D_WEIGHT)
+                self.axons[innov].weight += random.uniform(-D_WEIGHT, D_WEIGHT)
             else:
                 # otherwise, add the axon
                 # determine the innov number
@@ -108,8 +106,8 @@ class Brain:
     def cross_breed(self, other_brain) -> dict:
         t = random.uniform(0.25, 0.75)
         axon_data = []
-        for axon in self.axons:
-            if other_brain.has_axon_of_innov(axon.innov):
+        for innov, axon in self.axons.items():
+            if innov in other_brain.axons:
                 axon_data.append([
                     axon.in_neuron,
                     axon.out_neuron,
@@ -121,8 +119,8 @@ class Brain:
                     axon.out_neuron,
                     axon.weight,
                 ])
-        for axon in other_brain.axons:
-            if not self.has_axon_of_innov(axon.innov):
+        for innov, axon in other_brain.axons.items():
+            if innov not in self.axons:
                 axon_data.append([
                     axon.in_neuron,
                     axon.out_neuron,
@@ -166,7 +164,7 @@ class Brain:
 
         # disable axons that are no longer used, an axon is no longer used if it
         # does not have an input or output neuron
-        for axon in self.axons:
+        for axon in self.axons.values():
             if axon.in_neuron.split('_')[0] == 'i' and axon.in_neuron not in input_layer:
                 axon.enabled = False
             elif axon.out_neuron.split('_')[0] == 'o' and axon.out_neuron not in output_layer:
@@ -176,7 +174,7 @@ class Brain:
             neuron_id: activation
             for neuron_id, activation in input_layer.items()
         }
-        axons_to_fire = [axon for axon in self.axons if axon.in_neuron in activated_neurons and axon.enabled]
+        axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
         while axons_to_fire:
             new_neurons = {}
             for axon in axons_to_fire:
@@ -185,7 +183,7 @@ class Brain:
                 else:
                     new_neurons[axon.out_neuron] = relu(activated_neurons[axon.in_neuron] * axon.weight)
             activated_neurons = new_neurons
-            axons_to_fire = [axon for axon in self.axons if axon.in_neuron in activated_neurons and axon.enabled]
+            axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
 
         output_activation = np.array(list(output_layer.values()))
         output_activation = softmax(output_activation)
@@ -196,22 +194,22 @@ class Brain:
         }
 
     def get_energy_cost(self) -> float:
-        return 0.5 * len([axon for axon in self.axons if axon.enabled])
+        return 0.5 * len([axon for axon in self.axons.values() if axon.enabled])
 
-    def has_axon_of_innov(self, innov: int) -> bool:
-        return innov in set([axon.innov for axon in self.axons if axon.enabled])
-
-    def get_df(self):
-        return {
-            label: self.get_axon_weight(innov)
-            for label, innov in self.brain_history.axon_pool.items()
-        }
-    
+    # rendering
     def get_hidden_layers(self):
         layers = []
-        current_layer = [axon.out_neuron for axon in self.axons if axon.in_neuron.split('_')[0] == 'i' and axon.enabled and axon.out_neuron.split('_')[0] == 'h']
+        current_layer = [axon.out_neuron for axon in self.axons.values() if axon.in_neuron.split('_')[0] == 'i' and axon.enabled and axon.out_neuron.split('_')[0] == 'h']
         while current_layer:
             layers.append(current_layer)
             current_layer = set(current_layer)
-            current_layer = [axon.out_neuron for axon in self.axons if axon.in_neuron in current_layer and axon.enabled and axon.out_neuron.split('_')[0] == 'h']
+            current_layer = [axon.out_neuron for axon in self.axons.values() if axon.in_neuron in current_layer and axon.enabled and axon.out_neuron.split('_')[0] == 'h']
         return layers
+
+    # data
+    def get_df(self):
+        return {
+            axon_label: self.axons[innov].weight if innov in self.axons else np.nan
+            for axon_label, innov in self.brain_history.axon_pool.items()
+        }
+    

@@ -128,41 +128,27 @@ class Receptors:
             #               camera.transform_to_screen(radius * np.array([math.cos(receptor_angle), math.sin(receptor_angle), 0])))
             #  for receptor_angle in receptor_angles]
 
-
+    # data
     def get_df(self) -> dict:
         # get the num, spread, and fov of each receptor type (uniform)
         num = {
-            f'num_{receptor_type}': receptor_data[0]
-            for receptor_type, receptor_data in self.receptors.items()
+            f'num_{receptor_type}': num_of_type
+            for receptor_type, num_of_type in zip(INV_SHAPE_MAP, self.num_of_type)
         }
         spread = {
-            f'spread_{receptor_type}': receptor_data[1]
-            for receptor_type, receptor_data in self.receptors.items()
+            f'spread_{receptor_type}': spread
+            for receptor_type, spread in zip(INV_SHAPE_MAP, self.spread)
         }
         fov = {
-            f'fov_{receptor_type}': receptor_data[2]
-            for receptor_type, receptor_data in self.receptors.items()
+            f'fov_{receptor_type}': fov
+            for receptor_type, fov in zip(INV_SHAPE_MAP, self.fov)
+        }
+        opt_dens = {
+            f'dens_{receptor_type}': opt_dens
+            for receptor_type, opt_dens in zip(INV_SHAPE_MAP, self.opt_dens)
         }
         return {
-            **num, **spread, **fov
-        }
-    
-    def num_receptors(self):
-        return {
-            receptor_type: receptor_data[0]
-            for receptor_type, receptor_data in self.receptors.items()
-        }
-
-    def receptor_spreads(self):
-        return {
-            receptor_type: receptor_data[1]
-            for receptor_type, receptor_data in self.receptors.items()
-        }
-
-    def receptor_fovs(self):
-        return {
-            receptor_type: receptor_data[2]
-            for receptor_type, receptor_data in self.receptors.items()
+            **num, **spread, **fov, **opt_dens
         }
 
 class ReceptorManager:

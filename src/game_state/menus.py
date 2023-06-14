@@ -4,7 +4,7 @@ import math
 
 
 from ..util.transitions import transition_in, transition_out, TRANSITION_TIME
-from ..util.save_data import entity_data_to_df
+from ..util.save_data import write_entity_data_as_csv, write_entity_data_as_json
 from ..util.asset_loader import load_assets
 from ..util.adv_math import gaussian_dist
 
@@ -301,6 +301,7 @@ class DevMenu:
         self.goto = 'start'
     
         # objects
+        self.generation = 0
         self.new_particle_time = 0.1
         self.entity = Entity({
             'id': '0-0',
@@ -316,8 +317,8 @@ class DevMenu:
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
-                'axons': [['i_r2', 'o_m0', 1],
-                          ['i_r0', 'o_m1', 1]]
+                'axons': [['i_r0', 'o_m3', 1],
+                          ['i_r2', 'o_m1', 1]]
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 0, 0, 0, 0]),
@@ -331,14 +332,20 @@ class DevMenu:
             },
             'skeleton': {
                 'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0])},
-                           {'jid': 'j1', 'rel_pos': np.array([0,0,50])},
-                           {'jid': 'j2', 'rel_pos': np.array([0,50,0])},
-                           {'jid': 'j3', 'rel_pos': np.array([50,50,0])}],
+                           {'jid': 'j1', 'rel_pos': np.array([0,0,25])},
+                           {'jid': 'j2', 'rel_pos': np.array([0,25,0])},
+                           {'jid': 'j3', 'rel_pos': np.array([25,50,0])},
+                           {'jid': 'j4', 'rel_pos': np.array([0,-25,0])},
+                           {'jid': 'j5', 'rel_pos': np.array([25,-50,0])}],
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
                           {'bid': 'b1', 'joint1': 'j0', 'joint2': 'j2', 'depth': 0},
-                          {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 1}],
+                          {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 1},
+                          {'bid': 'b3', 'joint1': 'j0', 'joint2': 'j4', 'depth': 0},
+                          {'bid': 'b4', 'joint1': 'j4', 'joint2': 'j5', 'depth': 1}],
                 'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
-                            {'mid': 'm1', 'bone1': 'b1', 'bone2': 'b2'}],
+                            {'mid': 'm1', 'bone1': 'b1', 'bone2': 'b2'},
+                            {'mid': 'm2', 'bone1': 'b0', 'bone2': 'b3'},
+                            {'mid': 'm3', 'bone1': 'b3', 'bone2': 'b4'}],
             }
         })
         self.environment = Environment()
@@ -359,6 +366,16 @@ class DevMenu:
 
     def update(self, events: list[pg.Event]):
         dt = self.clock.get_time() / 1000
+
+        for event in events:
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                # save data
+                basic, receptor, stomach, brain = self.entity.get_df()
+                write_entity_data_as_csv(self.generation, basic, 'basic')
+                write_entity_data_as_csv(self.generation, receptor, 'receptor')
+                write_entity_data_as_csv(self.generation, stomach, 'stomach')
+                write_entity_data_as_csv(self.generation, brain, 'brain')
+                self.generation += 1
 
         if pg.mouse.get_pressed()[0]:
             self.new_particle_time -= dt
@@ -446,7 +463,7 @@ class DevMenu:
             **output_layer,
             **hidden_layer
         }
-        for axon in self.entity.brain.axons:
+        for axon in self.entity.brain.axons.values():
             if axon.in_neuron not in all_neurons or axon.out_neuron not in all_neurons:
                 continue
             pg.draw.line(self.displays[DEFAULT_DISPLAY], (255, 0, 0),
