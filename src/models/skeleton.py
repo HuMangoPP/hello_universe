@@ -3,28 +3,38 @@ import numpy as np
 import pygame as pg
 import math, random
 
-FLEX_TOLERANCE = 0.01
+from ..util.adv_math import angle_between, find_poi
+
+# tolerance epsilon
+FLEX_TOLERANCE = 0.01 # muscle needs to be activated above this threshold to flex
+PIVOT_TOLERANCE = 0.01 # the z position of a joint must be below this threshold to be considered a pivot
+PARALLEL_TOLERANCE = 0.05 # the angle between two vectors must be below this threshold to be considered parallel
+DRAG_TOLERANCE = 5 # the distance between the joint and its estimated position must be below for movement to occur
+# rates
 RELAXATION_RATE = 0.1
-PIVOT_TOLERANCE = 0.01
 MUTATION_RATE = 0.05
+# boundaries
 MAX_FLEXED_ANGLE = math.pi - 0.1
 
 class Joint:
     def __init__(self, joint_data: dict):
         self.rest_pos : np.ndarray = joint_data['rel_pos'].copy() # saved rest position for reference
         self.rel_pos : np.ndarray = joint_data['rel_pos'] # relative position of joint to body
+        self.new_rel_pos : np.ndarray = joint_data['rel_pos']
     
     def rotate(self, entity_pos: np.ndarray, pivot_point: np.ndarray, 
-               angle: float, rotation_axis: np.ndarray) -> np.ndarray:
-        is_pivot = np.abs(entity_pos[2] + self.rel_pos[2]) <= PIVOT_TOLERANCE
+               angle: float, rotation_axis: np.ndarray):
         r_matrix = Rotation.from_quat(np.concatenate([math.sin(angle/2) * rotation_axis, np.array([math.cos(angle/2)])])).as_matrix()
-        new_rel_pos = r_matrix.dot(self.rel_pos - pivot_point) + pivot_point
-        rotation_offset = new_rel_pos - self.rel_pos
-        self.rel_pos = new_rel_pos
-        is_pivot = is_pivot and np.abs(entity_pos[2] + self.rel_pos[2]) <= PIVOT_TOLERANCE
-        if is_pivot:
-            return rotation_offset
-        return np.zeros(shape=(3,))
+        self.new_rel_pos = r_matrix.dot(self.rel_pos - pivot_point) + pivot_point
+
+    def is_pivot(self, pos: np.ndarray) -> bool:
+        return np.abs(pos[2] + self.rel_pos[2]) <= PIVOT_TOLERANCE and np.abs(pos[2] + self.new_rel_pos[2]) <= PIVOT_TOLERANCE
+
+    def update_movement(self):
+        self.rel_pos = self.new_rel_pos
+
+    def rollback_movement(self):
+        self.new_rel_pos = self.rel_pos
 
     def get_abs_pos(self, pos: np.ndarray, angle: float):
         r_matrix = np.array([
@@ -59,15 +69,16 @@ class Muscle:
             pivot_joint = bone1.joint2
         bone1_vec = bone1.get_bone_vec(pivot_joint, joints)
         bone2_vec = bone2.get_bone_vec(pivot_joint, joints)
-        angle = math.acos(bone1_vec.dot(-bone2_vec) / np.linalg.norm(bone1_vec) / np.linalg.norm(bone2_vec))
+        angle = angle_between(bone1_vec, bone2_vec)
         self.cumul_flex = angle
         self.relaxed_angle = angle
+        self.new_cumul_flex = angle
 
     def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, 
              stationary_bone: str | None, fixed_bone: str) -> dict:
         angle = flex_amt if stationary_bone is not None else flex_amt * 2
-        if self.cumul_flex + angle < MAX_FLEXED_ANGLE:
-            self.cumul_flex += angle
+        if self.new_cumul_flex + angle < MAX_FLEXED_ANGLE:
+            self.new_cumul_flex += angle
             return self.rotate_bones(pos, flex_amt, joints, bones, stationary_bone, fixed_bone)
         return {
             'movement': np.zeros((3,))
@@ -76,8 +87,8 @@ class Muscle:
     def relax(self, pos: np.ndarray, dt: float, joints: dict, bones: dict, 
               stationary_bone: str | None, fixed_bone: str) -> dict:
         angle = dt if stationary_bone is not None else dt * 2
-        if self.cumul_flex - angle > self.relaxed_angle:
-            self.cumul_flex -= angle
+        if self.new_cumul_flex - angle > self.relaxed_angle:
+            self.new_cumul_flex -= angle
             return self.rotate_bones(pos, -dt, joints, bones, stationary_bone, fixed_bone)
         return {
             'movement': np.zeros((3,))
@@ -101,17 +112,13 @@ class Muscle:
         joints_to_rotate = [bones[self.bone1].joint1, bones[self.bone1].joint2]
         rotation_axis = np.cross(bone1_vec, bone2_vec)
         rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
-        bone1_rotation_drag = np.zeros((3,))
         if self.bone1 != stationary_bone and self.bone1 != fixed_bone:
             while joints_to_rotate:
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
                     # rotate the joint
-                    rotation_drag = joints[joint_to_rotate].rotate(pos, joints[pivot_joint].rel_pos, angle,
+                    joints[joint_to_rotate].rotate(pos, joints[pivot_joint].rel_pos, angle,
                                                                    rotation_axis)
-                    # keep track of the drag of this joint
-                    if np.linalg.norm(bone1_rotation_drag) == 0:
-                        bone1_rotation_drag = rotation_drag
                     # keep track of all rotated joints
                     rotated_joints.add(joint_to_rotate)
                     # update the list of joints to rotate to include children of this 
@@ -124,17 +131,13 @@ class Muscle:
         # rotate bone2
         rotated_joints = set([pivot_joint])
         joints_to_rotate = [bones[self.bone2].joint1, bones[self.bone2].joint2]
-        bone2_rotation_drag = np.zeros((3,))
         if self.bone2 != stationary_bone and self.bone2 != fixed_bone:
             while joints_to_rotate:
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
                     # rotate the joint
-                    rotation_drag = joints[joint_to_rotate].rotate(pos, joints[pivot_joint].rel_pos, -angle,
+                    joints[joint_to_rotate].rotate(pos, joints[pivot_joint].rel_pos, -angle,
                                                                    rotation_axis)
-                    # keep track of the drag of this joint
-                    if np.linalg.norm(bone2_rotation_drag) == 0:
-                        bone2_rotation_drag = rotation_drag
                     # keep track of all rotated joints
                     rotated_joints.add(joint_to_rotate)
                     # update the list of joints to rotate to include children of this 
@@ -144,32 +147,12 @@ class Muscle:
                     joints_to_rotate = joints_to_rotate + [bone.joint2 for bone in bones.values() if bone.joint1 == joint_to_rotate and bone.joint2 not in rotated_joints]
                 # just rotated this joint or this joint should not have been rotated
                 joints_to_rotate = joints_to_rotate[1:]
-        
-        drag = bone1_rotation_drag + bone2_rotation_drag
-        if not should_rotate:
-            return {
-                'movement': drag
-            }
-        elif np.linalg.norm(bone1_rotation_drag) != 0 and np.linalg.norm(bone2_rotation_drag) != 0:
-            return {
-                'movement': drag
-            }
-        elif np.linalg.norm(bone1_rotation_drag) != 0:
-            return {
-                'movement': np.zeros((3,)),
-                'pivot': joints[pivot_joint].rel_pos,
-                'angle': rotation_axis[2] * angle
-            }
-        elif np.linalg.norm(bone2_rotation_drag) != 0:
-            return {
-                'movement': np.zeros((3,)),
-                'pivot': joints[pivot_joint].rel_pos,
-                'angle': -rotation_axis[2] * angle
-            }
-        else:
-            return {
-                'movement': drag
-            }
+
+    def update_flex(self):
+        self.cumul_flex = self.new_cumul_flex
+
+    def rollback_flex(self):
+        self.new_cumul_flex = self.cumul_flex
 
     def has_bone(self, bid: str):
         return bid in [self.bone1, self.bone2]
@@ -314,8 +297,7 @@ class Skeleton:
 
     # functionality
     def fire_muscles(self, pos: np.ndarray, muscle_activations: dict, dt: float) -> tuple[np.ndarray, float]:
-        net_movement = np.zeros((3,))
-        net_angle = 0
+
         for muscle_id, activation in muscle_activations.items():
             # a muscle flexes one bone out of the two it is connected with
             # it flexes the bone that is furthest away from the body
@@ -326,21 +308,73 @@ class Skeleton:
             elif self.bones[muscle.bone2].depth < self.bones[muscle.bone1].depth:
                 bone_closer_to_body = muscle.bone2
             if activation > 0:
-                movement = self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
+                self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
             else:
-                movement = self.muscles[muscle_id].relax(pos, dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
-            
-            net_movement = net_movement + movement['movement']
-            if 'pivot' in movement:
-                pivot = movement['pivot'] # pivot relative to body
-                angle = movement['angle']
-                net_angle += angle
-                r_matrix = np.array([[math.cos(angle), -math.sin(angle), 0],
-                                     [math.sin(angle),  math.cos(angle), 0],
-                                     [0,                0,               1]])
-                net_movement = net_movement + r_matrix.dot(-pivot) + pivot
+                self.muscles[muscle_id].relax(pos, dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
 
-        return -net_movement, -net_angle
+        movement, turn_angle = np.zeros((3,)), 0
+        dragging_joints = [joint for joint in self.joints.values() if joint.is_pivot(pos)]
+        if len(dragging_joints) == 1:
+            # get the movement
+            movement = dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos
+            
+            # move all of the joints pos and muscle flex
+            [joint.update_movement() for joint in self.joints.values()]
+            [muscle.update_flex() for muscle in self.muscles.values()]
+        elif len(dragging_joints) > 1:
+            through_joint_vec = dragging_joints[0].rel_pos - dragging_joints[1].rel_pos
+            new_through_joint_vec = dragging_joints[0].new_rel_pos - dragging_joints[1].new_rel_pos
+            other_dragging_joints = dragging_joints[2:]
+
+            angle_between_through_vecs = angle_between(through_joint_vec, new_through_joint_vec)
+            if angle_between_through_vecs < PARALLEL_TOLERANCE:
+                # movement
+                can_offset = True
+                offset = dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos
+                for dragged_joint in other_dragging_joints:
+                    if np.linalg.norm(dragged_joint.new_rel_pos - offset - dragged_joint.rel_pos) > DRAG_TOLERANCE:
+                        can_offset = False
+                        break
+                
+                if can_offset:
+                    movement = offset
+                    [joint.update_movement() for joint in self.joints.values()]
+                    [muscle.update_flex() for muscle in self.muscles.values()]
+                else:
+                    [joint.rollback_movement() for joint in self.joints.values()]
+                    [muscle.rollback_flex() for muscle in self.muscles.values()]
+            else:
+                # rotate
+                rotation_pivot = find_poi(through_joint_vec, new_through_joint_vec, 
+                                          dragging_joints[1].rel_pos, dragging_joints[1].new_rel_pos)
+                rotation_axis = through_joint_vec.cross(new_through_joint_vec)
+                rotation_angle = angle_between_through_vecs * rotation_axis[2] / abs(rotation_axis[2])
+                r_matrix = np.array([
+                    [math.cos(rotation_angle), -math.sin(rotation_angle), 0],
+                    [math.sin(rotation_angle),  math.cos(rotation_angle), 0],
+                    [0,                         0,                        1]
+                ])
+                can_offset = True
+                offset = r_matrix.dot(-rotation_pivot) + rotation_pivot
+                for dragged_joint in other_dragging_joints:
+                    if np.linalg.norm(dragged_joint.new_rel_pos + offset - dragged_joint.rel_pos) > DRAG_TOLERANCE:
+                        can_offset = False
+                        break
+                
+                if can_offset:
+                    movement = -offset
+                    turn_angle = rotation_angle
+                    [joint.update_movement() for joint in self.joints.values()]
+                    [muscle.update_flex() for muscle in self.muscles.values()]
+                else:
+                    [joint.rollback_movement() for joint in self.joints.values()]
+                    [muscle.rollback_flex() for muscle in self.muscles.values()]
+        else:
+            # no movement should occur
+            [joint.rollback_movement() for joint in self.joints.values()]
+            [muscle.rollback_flex() for muscle in self.muscles.values()]
+
+        return -movement, turn_angle
 
     def get_joint_touching(self, pos: np.ndarray):
         return {jid: int(np.linalg.norm(pos + joint.rel_pos) <= PIVOT_TOLERANCE)

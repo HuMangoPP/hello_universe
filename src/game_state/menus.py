@@ -305,7 +305,7 @@ class DevMenu:
         self.new_particle_time = 0.1
         self.entity = Entity({
             'id': '0-0',
-            'pos': np.array([0,0,0], dtype=np.float32),
+            'pos': np.array([0,0,25], dtype=np.float32),
             'scale': 1,
             'stats': {
                 'itl': 1,
@@ -317,8 +317,8 @@ class DevMenu:
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
-                'axons': [['i_r0', 'o_m3', 1],
-                          ['i_r2', 'o_m1', 1]]
+                'axons': [['i_r0', 'o_m1', 1],
+                          ['i_r2', 'o_m3', 1]]
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 0, 0, 0, 0]),
@@ -333,8 +333,8 @@ class DevMenu:
             'skeleton': {
                 'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0], dtype=np.float32)},
                            {'jid': 'j1', 'rel_pos': np.array([0,0,25], dtype=np.float32)},
-                           {'jid': 'j2', 'rel_pos': np.array([0,25,0], dtype=np.float32)},
-                           {'jid': 'j3', 'rel_pos': np.array([25,50,0], dtype=np.float32)},
+                           {'jid': 'j2', 'rel_pos': np.array([0,0,-25], dtype=np.float32)},
+                           {'jid': 'j3', 'rel_pos': np.array([25,0,-25], dtype=np.float32)},
                            {'jid': 'j4', 'rel_pos': np.array([0,-25,0], dtype=np.float32)},
                            {'jid': 'j5', 'rel_pos': np.array([25,-50,0], dtype=np.float32)}],
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
