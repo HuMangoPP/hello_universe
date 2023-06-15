@@ -375,7 +375,7 @@ class Entity:
         self.id : str = entity_data['id']
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
-        self.z_angle = 0
+        self.z_angle = math.pi/2
         self.scale = entity_data['scale']
 
         self.stats = {
@@ -390,16 +390,23 @@ class Entity:
         self.stomach = Stomach(entity_data['stomach'])
         self.skeleton = Skeleton(entity_data['skeleton'])
 
+    # evo
+    def mutate(self):
+        self.brain.mutate(self.stats['itl'])
+
     # update
     def update(self, env, dt: float):
         # movement
+        self.pos = self.pos + np.array([0, 0, -1], dtype=np.float32)
         muscle_activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.get_joint_touching(self.pos), 
                                               self.skeleton.get_muscle_flex_amt())
         movement, angle = self.skeleton.fire_muscles(self.pos, muscle_activations, dt)
         self.z_angle += angle
-        self.pos = self.pos + movement
-        
+        r_matrix = np.array([[math.cos(self.z_angle), -math.sin(self.z_angle), 0],
+                             [math.sin(self.z_angle),  math.cos(self.z_angle), 0],
+                             [0,                       0,                      1]])
+        self.pos = self.pos + r_matrix.dot(movement)
 
         
         # energy deplete
@@ -453,9 +460,9 @@ class Entity:
     def render(self, display: pg.Surface, camera):
         drawpos = camera.transform_to_screen(self.pos)
         draw_arrowhead(display, drawpos, self.z_angle, 10, (255, 0, 0))
-        self.render_health_and_energy(display, drawpos)
-        self.render_stats(display, drawpos)
-        self.receptors.render(self.pos, self.z_angle, 100, display, camera)
+        # self.render_health_and_energy(display, drawpos)
+        # self.render_stats(display, drawpos)
+        # self.receptors.render(self.pos, self.z_angle, 100, display, camera)
         self.skeleton.render(display, self.pos, self.z_angle, camera)
     
     # data

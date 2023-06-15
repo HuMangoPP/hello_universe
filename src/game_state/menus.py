@@ -317,11 +317,10 @@ class DevMenu:
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
-                'axons': [['i_r0', 'o_m1', 1],
-                          ['i_r2', 'o_m3', 1]]
+                'axons': []
             }, 
             'receptors': {
-                'num_of_type': np.array([3, 0, 0, 0, 0]),
+                'num_of_type': np.array([3, 3, 3, 3, 3]),
                 'spread': np.full((5,), np.pi/6), 
                 'fov': np.full((5,), np.pi/6),
                 'opt_dens': np.full((5,), 0.5),
@@ -331,21 +330,24 @@ class DevMenu:
                 'opt_dens': np.arange(0.1, 0.6, 0.1)
             },
             'skeleton': {
-                'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0], dtype=np.float32)},
-                           {'jid': 'j1', 'rel_pos': np.array([0,0,25], dtype=np.float32)},
-                           {'jid': 'j2', 'rel_pos': np.array([0,0,-25], dtype=np.float32)},
-                           {'jid': 'j3', 'rel_pos': np.array([25,0,-25], dtype=np.float32)},
-                           {'jid': 'j4', 'rel_pos': np.array([0,-25,0], dtype=np.float32)},
-                           {'jid': 'j5', 'rel_pos': np.array([25,-50,0], dtype=np.float32)}],
-                'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0},
+                'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0], dtype=np.float32)}, 
+                           {'jid': 'j1', 'rel_pos': np.array([-50,0,0], dtype=np.float32)},
+                           {'jid': 'j2', 'rel_pos': np.array([0,50,0], dtype=np.float32)},
+                           {'jid': 'j3', 'rel_pos': np.array([0,-50,0], dtype=np.float32)},
+                           {'jid': 'j4', 'rel_pos': np.array([0,-50,-25], dtype=np.float32)},
+                           {'jid': 'j5', 'rel_pos': np.array([0,50,-25], dtype=np.float32)}
+                           ],
+                'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0}, 
                           {'bid': 'b1', 'joint1': 'j0', 'joint2': 'j2', 'depth': 0},
-                          {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 1},
-                          {'bid': 'b3', 'joint1': 'j0', 'joint2': 'j4', 'depth': 0},
-                          {'bid': 'b4', 'joint1': 'j4', 'joint2': 'j5', 'depth': 1}],
+                          {'bid': 'b2', 'joint1': 'j0', 'joint2': 'j3', 'depth': 0},
+                          {'bid': 'b3', 'joint1': 'j2', 'joint2': 'j5', 'depth': 1},
+                          {'bid': 'b4', 'joint1': 'j3', 'joint2': 'j4', 'depth': 1},
+                          ],
                 'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
-                            {'mid': 'm1', 'bone1': 'b1', 'bone2': 'b2'},
-                            {'mid': 'm2', 'bone1': 'b0', 'bone2': 'b3'},
-                            {'mid': 'm3', 'bone1': 'b3', 'bone2': 'b4'}],
+                            {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b2'},
+                            {'mid': 'm2', 'bone1': 'b1', 'bone2': 'b3'},
+                            {'mid': 'm3', 'bone1': 'b2', 'bone2': 'b4'},
+                            ],
             }
         })
         self.environment = Environment()
@@ -377,6 +379,7 @@ class DevMenu:
                 write_entity_data_as_csv(self.generation, brain, 'brain')
                 write_entity_data_as_json(self.generation, skeleton, 'skeleton')
                 self.generation += 1
+                self.entity.mutate()
 
         if pg.mouse.get_pressed()[0]:
             self.new_particle_time -= dt
@@ -384,9 +387,9 @@ class DevMenu:
                 mpos = pg.mouse.get_pos()
                 pos = self.camera.screen_to_world(mpos[0], mpos[1])
                 self.environment.add_new_particles(
-                    1, pos.reshape((1,3)),
-                    np.zeros((1,), dtype=np.int32),
-                    np.full((1,), 0.5, dtype=np.float32)
+                    5, np.repeat(pos.reshape((1,3)), repeats=5, axis=0),
+                    np.arange(5),
+                    np.full((5,), 0.5, dtype=np.float32)
                 )
                 self.new_particle_time = 0.1
         
@@ -465,11 +468,10 @@ class DevMenu:
             **hidden_layer
         }
         for axon in self.entity.brain.axons.values():
-            if axon.in_neuron not in all_neurons or axon.out_neuron not in all_neurons:
+            if axon.in_neuron not in all_neurons or axon.out_neuron not in all_neurons or not axon.enabled:
                 continue
             pg.draw.line(self.displays[DEFAULT_DISPLAY], (255, 0, 0),
                          all_neurons[axon.in_neuron], all_neurons[axon.out_neuron])
-
 
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))

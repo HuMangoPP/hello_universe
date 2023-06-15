@@ -16,14 +16,14 @@ def proj(u: np.ndarray, v: np.ndarray) -> float:
     return u.dot(v) / np.linalg.norm(v)
 
 def angle_between(u: np.ndarray, v: np.ndarray) -> float:
-    return np.arccos(u.dot(v) / np.linalg.norm(u) / np.linalg.norm(v))
+    return np.arccos(np.clip(u.dot(v) / np.linalg.norm(u) / np.linalg.norm(v), a_min=-1, a_max=1))
 
 def find_poi(u: np.ndarray, v: np.ndarray, u_origin: np.ndarray, v_origin: np.ndarray) -> np.ndarray:
     a1, b1 = u[:2][::-1]
-    c1 = u.dot(u_origin[:2])
+    c1 = u[:2].dot(u_origin[:2])
 
     a2, b2 = v[:2][::-1]
-    c2 = v.dot(v_origin[:2])
+    c2 = v[:2].dot(v_origin[:2])
 
     return np.array([
         (c1*b2 - b1*c2) / (a1*b2 - b1*a2),
