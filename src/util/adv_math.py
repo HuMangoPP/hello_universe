@@ -30,3 +30,6 @@ def find_poi(u: np.ndarray, v: np.ndarray, u_origin: np.ndarray, v_origin: np.nd
         (a1*c2 - c1*a2) / (a1*b2 - b1*a2),
         0
     ])
+
+def triangle_wave(p: float, t: float):
+    return 2 * abs(2 * (t/p - np.floor(t/p + 1/2))) - 1

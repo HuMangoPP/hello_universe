@@ -314,6 +314,7 @@ class DevMenu:
                 'mbl': 1,
                 'stl': 1,
             },
+            'clock_period': 1,
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],

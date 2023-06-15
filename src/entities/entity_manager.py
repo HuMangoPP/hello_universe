@@ -10,7 +10,7 @@ from ..models.skeleton import Skeleton
 from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
-from ..util.adv_math import lerp
+from ..util.adv_math import lerp, triangle_wave
 
 from .evo_util import calculate_fitness
 
@@ -377,6 +377,8 @@ class Entity:
         self.vel = np.zeros(shape=(3,))
         self.z_angle = math.pi/2
         self.scale = entity_data['scale']
+        self.clock_time = 0
+        self.clock_period = entity_data['clock_period']
 
         self.stats = {
             stat_type: stat_value
@@ -396,11 +398,15 @@ class Entity:
 
     # update
     def update(self, env, dt: float):
+        # clock
+        self.clock_time = (self.clock_time + dt) % self.clock_period
+
         # movement
         self.pos = self.pos + np.array([0, 0, -1], dtype=np.float32)
         muscle_activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.get_joint_touching(self.pos), 
-                                              self.skeleton.get_muscle_flex_amt())
+                                              self.skeleton.get_muscle_flex_amt(),
+                                              triangle_wave(self.clock_period, self.clock_time))
         movement, angle = self.skeleton.fire_muscles(self.pos, muscle_activations, dt)
         self.z_angle += angle
         r_matrix = np.array([[math.cos(self.z_angle), -math.sin(self.z_angle), 0],
@@ -476,6 +482,7 @@ class Entity:
             'health': self.health,
             'energy': self.energy,
             'scale': self.scale,
+            'clock_period': self.clock_period,
             **self.stats
         }
         receptor = {

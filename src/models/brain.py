@@ -132,7 +132,7 @@ class Brain:
     
     # functionality
     def think(self, receptor_activations: np.ndarray, joint_activation: dict,
-              muscle_activation: dict) -> dict:
+              muscle_activation: dict, clock: float) -> dict:
         # when we think, we build the input layer
         receptor_input = {
             f'i_r{index}': activation
