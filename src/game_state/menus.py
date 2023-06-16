@@ -305,7 +305,7 @@ class DevMenu:
         self.new_particle_time = 0.1
         self.entity = Entity({
             'id': '0-0',
-            'pos': np.array([0,0,100], dtype=np.float32),
+            'pos': np.array([0,0,120], dtype=np.float32),
             'scale': 1,
             'stats': {
                 'itl': 1,
@@ -314,13 +314,30 @@ class DevMenu:
                 'mbl': 1,
                 'stl': 1,
             },
-            'clock_period': 1,
+            'clock_period': 5,
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
                 'axons': [['i_r0', 'o_m0', 1],
-                          ['i_m0', 'o_m1', -0.5],
-                          ['i_m1', 'o_m0', 1],
+                        #   ['i_r0', 'o_m1', -0.8],
+                          ['i_m0', 'o_m1', -0.8],
+                        #   ['i_m1', 'o_m0', -0.7],
+                          ['i_m0', 'o_m0', -0.75],
+                          ['i_m1', 'o_m1', -0.75],
+                          ['i_m0', 'o_m2', -0.75],
+                          ['i_m1', 'o_m3', -0.75],
+                        #   ['i_m2', 'o_m3', 1],
+                        #   ['i_m3', 'o_m2', 1],
+
+                          ['i_j8', 'o_m0', -0.25],
+                          ['i_j9', 'o_m0', 0.25],
+                          ['i_j8', 'o_m1', 0.25],
+                          ['i_j9', 'o_m1', -0.25],
+
+                        #   ['i_j8', 'o_m2', -0.25],
+                        #   ['i_j9', 'o_m2', 0.25],
+                        #   ['i_j8', 'o_m3', 0.25],
+                        #   ['i_j9', 'o_m3', -0.25],
                           ]
             }, 
             'receptors': {
@@ -339,25 +356,31 @@ class DevMenu:
 
                            {'jid': 'j2', 'rel_pos': np.array([0,10,-50], dtype=np.float32)},
                            {'jid': 'j3', 'rel_pos': np.array([-5,10,-50], dtype=np.float32)},
-                           {'jid': 'j4', 'rel_pos': np.array([-5,10,-100], dtype=np.float32)},
+                           {'jid': 'j4', 'rel_pos': np.array([0,10,-80], dtype=np.float32)},
+                           {'jid': 'j8', 'rel_pos': np.array([-10,10,-120], dtype=np.float32)},
 
                            {'jid': 'j5', 'rel_pos': np.array([0,-10,-50], dtype=np.float32)},
                            {'jid': 'j6', 'rel_pos': np.array([-5,-10,-50], dtype=np.float32)},
-                           {'jid': 'j7', 'rel_pos': np.array([-5,-10,-100], dtype=np.float32)},
+                           {'jid': 'j7', 'rel_pos': np.array([0,-10,-80], dtype=np.float32)},
+                           {'jid': 'j9', 'rel_pos': np.array([-10,-10,-120], dtype=np.float32)},
                            ],
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0}, 
                           
                           {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1},
                           {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 2},
                           {'bid': 'b3', 'joint1': 'j3', 'joint2': 'j4', 'depth': 3},
+                          {'bid': 'b7', 'joint1': 'j4', 'joint2': 'j8', 'depth': 4},
 
                           {'bid': 'b4', 'joint1': 'j1', 'joint2': 'j5', 'depth': 1},
                           {'bid': 'b5', 'joint1': 'j5', 'joint2': 'j6', 'depth': 2},
                           {'bid': 'b6', 'joint1': 'j6', 'joint2': 'j7', 'depth': 3},
+                          {'bid': 'b8', 'joint1': 'j7', 'joint2': 'j9', 'depth': 4},
                           ],
                 'muscles': [{'mid': 'm0', 'bone1': 'b2', 'bone2': 'b3'},
+                            {'mid': 'm2', 'bone1': 'b3', 'bone2': 'b7'},
                             
                             {'mid': 'm1', 'bone1': 'b5', 'bone2': 'b6'},
+                            {'mid': 'm3', 'bone1': 'b6', 'bone2': 'b8'},
                             ],
             }
         })
@@ -489,9 +512,9 @@ class DevMenu:
         self.entity.render(self.displays[DEFAULT_DISPLAY], self.camera)
         self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
 
-        self.render_sensory_activation()
-        self.render_stomach()
-        self.render_brain_structure()
+        # self.render_sensory_activation()
+        # self.render_stomach()
+        # self.render_brain_structure()
 
         match self.transition_phase:
             case 1: 

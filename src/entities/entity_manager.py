@@ -403,10 +403,9 @@ class Entity:
 
         # movement
         # self.pos = self.pos + np.array([0, 0, -1], dtype=np.float32)
-        muscle_activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
+        muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.get_joint_touching(self.pos), 
-                                              self.skeleton.get_muscle_flex_amt(),
-                                              triangle_wave(self.clock_period, self.clock_time))
+                                              self.skeleton.get_muscle_flex_amt())
         movement, angle = self.skeleton.fire_muscles(self.pos, muscle_activations, dt)
         self.z_angle += angle
         r_matrix = np.array([[math.cos(self.z_angle), -math.sin(self.z_angle), 0],

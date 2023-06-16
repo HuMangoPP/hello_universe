@@ -31,6 +31,9 @@ class Brain:
                 self.brain_history.innov_number += 1
             self.add_axon(axon_data[0], axon_data[1], axon_data[2], self.brain_history.axon_pool[axon_label])
 
+        
+        self.prev_activation = {}
+
     def add_neuron(self, neuron_id: str):
         self.neurons.add(neuron_id)
         self.neuron_ids.add(neuron_id)
@@ -132,25 +135,25 @@ class Brain:
     
     # functionality
     def think(self, receptor_activations: np.ndarray, joint_activation: dict,
-              muscle_activation: dict, clock_activation: float) -> dict:
+              muscle_activation: dict) -> dict:
         # when we think, we build the input layer
         receptor_input = {
             f'i_r{index}': activation
             for index, activation in enumerate(receptor_activations)
         }
-        # joint_input = {
-        #     f'i_{joint_id}': activation
-        #     for joint_id, activation in joint_activation.items()
-        # }
+        joint_input = {
+            f'i_{joint_id}': activation
+            for joint_id, activation in joint_activation.items()
+        }
         muscle_input = {
             f'i_{muscle_id}': activation
             for muscle_id, activation in muscle_activation.items()
         }
         input_layer = {
             **receptor_input,
-            # **joint_input,
+            **joint_input,
             **muscle_input,
-            'i_t': clock_activation
+            # **self.prev_activation,
         }
         # create the output layer
         output_layer = {
@@ -182,11 +185,16 @@ class Brain:
                     new_neurons[axon.out_neuron] = rotated_log(activated_neurons[axon.in_neuron] * axon.weight)
             activated_neurons = new_neurons
             axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
-
-        return {
-            muscle_id.split('_')[1]: sigmoid(activation, 1, 5)
-            for muscle_id, activation in output_layer.items()
+        
+        activation = {
+            muscle_id.split('_')[1]: sigmoid(m_activation, 1, 5)
+            for muscle_id, m_activation in output_layer.items()
         }
+        self.prev_activation = {
+            f'i_a{mid}': m_activation
+            for mid, m_activation in activation.items()
+        }
+        return activation
 
     def get_energy_cost(self) -> float:
         return 0.5 * len([axon for axon in self.axons.values() if axon.enabled])
