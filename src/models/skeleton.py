@@ -315,10 +315,6 @@ class Skeleton:
         if len(dragging_joints) == 1:
             # get the movement
             movement = dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos
-            # mag_mov = np.linalg.norm(movement)
-            # if mag_mov != 0:
-            #     unit_vec = movement / mag_mov
-            #     movement = movement + 2 * unit_vec
             
             # move all of the joints pos and muscle flex
             [joint.update_movement() for joint in self.joints.values()]

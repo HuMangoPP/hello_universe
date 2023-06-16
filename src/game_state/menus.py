@@ -314,30 +314,21 @@ class DevMenu:
                 'mbl': 1,
                 'stl': 1,
             },
-            'clock_period': 5,
+            'clock_period': 4,
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
-                'axons': [['i_r0', 'o_m0', 1],
-                        #   ['i_r0', 'o_m1', -0.8],
-                          ['i_m0', 'o_m1', -0.8],
-                        #   ['i_m1', 'o_m0', -0.7],
-                          ['i_m0', 'o_m0', -0.75],
+                'axons': [['i_r0', 'o_m0', 1], # receptor activation
+                          
+                          ['i_m0', 'o_m1', -0.8], # other leg
+
+                          ['i_m0', 'o_m0', -0.75], # leg dampening
                           ['i_m1', 'o_m1', -0.75],
-                          ['i_m0', 'o_m2', -0.75],
-                          ['i_m1', 'o_m3', -0.75],
-                        #   ['i_m2', 'o_m3', 1],
-                        #   ['i_m3', 'o_m2', 1],
 
-                          ['i_j8', 'o_m0', -0.25],
-                          ['i_j9', 'o_m0', 0.25],
-                          ['i_j8', 'o_m1', 0.25],
-                          ['i_j9', 'o_m1', -0.25],
-
-                        #   ['i_j8', 'o_m2', -0.25],
-                        #   ['i_j9', 'o_m2', 0.25],
-                        #   ['i_j8', 'o_m3', 0.25],
-                        #   ['i_j9', 'o_m3', -0.25],
+                          ['i_m0', 'o_m2', 0.5], # knees
+                          ['i_m1', 'o_m2', 0.5],
+                          ['i_m0', 'o_m3', 0.5],
+                          ['i_m1', 'o_m3', 0.5]
                           ]
             }, 
             'receptors': {
@@ -420,10 +411,11 @@ class DevMenu:
             if self.new_particle_time < 0:
                 mpos = pg.mouse.get_pos()
                 pos = self.camera.screen_to_world(mpos[0], mpos[1])
+                new_particles = 1
                 self.environment.add_new_particles(
-                    5, np.repeat(pos.reshape((1,3)), repeats=5, axis=0),
-                    np.arange(5),
-                    np.full((5,), 0.5, dtype=np.float32)
+                    new_particles, np.repeat(pos.reshape((1,3)), repeats=new_particles, axis=0),
+                    np.arange(new_particles),
+                    np.full((new_particles,), 0.5, dtype=np.float32)
                 )
                 self.new_particle_time = 0.1
         
