@@ -375,7 +375,7 @@ class Entity:
         self.id : str = entity_data['id']
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
-        self.z_angle = math.pi/2
+        self.z_angle = math.pi/4
         self.scale = entity_data['scale']
         self.clock_time = 0
         self.clock_period = entity_data['clock_period']
@@ -402,7 +402,7 @@ class Entity:
         self.clock_time = (self.clock_time + dt) % self.clock_period
 
         # movement
-        self.pos = self.pos + np.array([0, 0, -1], dtype=np.float32)
+        # self.pos = self.pos + np.array([0, 0, -1], dtype=np.float32)
         muscle_activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.get_joint_touching(self.pos), 
                                               self.skeleton.get_muscle_flex_amt(),

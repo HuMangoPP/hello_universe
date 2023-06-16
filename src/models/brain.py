@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-from ..util.adv_math import lerp, relu, softmax
+from ..util.adv_math import lerp, relu, softmax, sigmoid, rotated_log
 
 MUTATION_RATE = 1
 D_WEIGHT = 0.25
@@ -132,7 +132,7 @@ class Brain:
     
     # functionality
     def think(self, receptor_activations: np.ndarray, joint_activation: dict,
-              muscle_activation: dict, clock: float) -> dict:
+              muscle_activation: dict, clock_activation: float) -> dict:
         # when we think, we build the input layer
         receptor_input = {
             f'i_r{index}': activation
@@ -142,14 +142,15 @@ class Brain:
         #     f'i_{joint_id}': activation
         #     for joint_id, activation in joint_activation.items()
         # }
-        # muscle_input = {
-        #     f'i_{muscle_id}': activation
-        #     for muscle_id, activation in muscle_activation.items()
-        # }
+        muscle_input = {
+            f'i_{muscle_id}': activation
+            for muscle_id, activation in muscle_activation.items()
+        }
         input_layer = {
             **receptor_input,
             # **joint_input,
-            # **muscle_input
+            **muscle_input,
+            'i_t': clock_activation
         }
         # create the output layer
         output_layer = {
@@ -176,19 +177,15 @@ class Brain:
             new_neurons = {}
             for axon in axons_to_fire:
                 if axon.out_neuron in output_layer:
-                    output_layer[axon.out_neuron] += relu(activated_neurons[axon.in_neuron] * axon.weight)
+                    output_layer[axon.out_neuron] += rotated_log(activated_neurons[axon.in_neuron] * axon.weight)
                 else:
-                    new_neurons[axon.out_neuron] = relu(activated_neurons[axon.in_neuron] * axon.weight)
+                    new_neurons[axon.out_neuron] = rotated_log(activated_neurons[axon.in_neuron] * axon.weight)
             activated_neurons = new_neurons
             axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
 
-        output_activation = np.array(list(output_layer.values()))
-        output_activation = softmax(output_activation)
-        output_activation = np.clip(output_activation - 1 / output_activation.size, a_min=0, a_max=None)
-        output_activation = output_activation * output_activation.size
         return {
-            muscle_id.split('_')[1]: activation
-            for muscle_id, activation in zip(output_layer.keys(), output_activation)
+            muscle_id.split('_')[1]: sigmoid(activation, 1, 5)
+            for muscle_id, activation in output_layer.items()
         }
 
     def get_energy_cost(self) -> float:

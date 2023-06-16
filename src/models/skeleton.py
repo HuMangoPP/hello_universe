@@ -7,14 +7,15 @@ from ..util.adv_math import angle_between, find_poi
 
 # tolerance epsilon
 FLEX_TOLERANCE = 0.01 # muscle needs to be activated above this threshold to flex
-PIVOT_TOLERANCE = 0.01 # the z position of a joint must be below this threshold to be considered a pivot
+PIVOT_TOLERANCE = 0.05 # the z position of a joint must be below this threshold to be considered a pivot
 PARALLEL_TOLERANCE = 0.1 # the angle between two vectors must be below this threshold to be considered parallel
 DRAG_TOLERANCE = 2 # the distance between the joint and its estimated position must be below for movement to occur
 # rates
 RELAXATION_RATE = 0.1
 MUTATION_RATE = 0.05
 # boundaries
-MAX_FLEXED_ANGLE = math.pi - 0.1
+MAX_FLEXED_ANGLE = math.pi - 0.05
+MIN_FLEXED_ANGLE = 0.05
 
 class Joint:
     def __init__(self, joint_data: dict):
@@ -69,18 +70,19 @@ class Muscle:
             pivot_joint = bone1.joint2
         bone1_vec = bone1.get_bone_vec(pivot_joint, joints)
         bone2_vec = bone2.get_bone_vec(pivot_joint, joints)
-        angle = angle_between(bone1_vec, bone2_vec)
+        angle = math.pi - angle_between(bone1_vec, bone2_vec)
         self.cumul_flex = angle
         self.relaxed_angle = angle
         self.new_cumul_flex = angle
 
     def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, 
              stationary_bone: str | None, fixed_bone: str) -> dict:
-        angle = flex_amt if (stationary_bone is not None or fixed_bone in [self.bone1, self.bone2]) else flex_amt * 2
-        if self.new_cumul_flex < MAX_FLEXED_ANGLE:
-            flex_ratio = min(MAX_FLEXED_ANGLE - self.new_cumul_flex, angle) / angle
-            self.new_cumul_flex += flex_ratio * angle
-            return self.rotate_bones(pos, flex_ratio * flex_amt, joints, bones, stationary_bone, fixed_bone)
+        if MIN_FLEXED_ANGLE < self.new_cumul_flex and self.new_cumul_flex < MAX_FLEXED_ANGLE:
+            flex_amt = np.clip(flex_amt, 
+                            a_min=MIN_FLEXED_ANGLE-self.new_cumul_flex, 
+                            a_max=MAX_FLEXED_ANGLE-self.new_cumul_flex)
+            self.new_cumul_flex += flex_amt
+            return self.rotate_bones(pos, flex_amt, joints, bones, stationary_bone, fixed_bone)
         return {
             'movement': np.zeros((3,))
         }
@@ -112,7 +114,7 @@ class Muscle:
         joints_to_rotate = [bones[self.bone1].joint1, bones[self.bone1].joint2]
         rotation_axis = np.cross(bone1_vec, bone2_vec)
         rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
-        if self.bone1 != stationary_bone and self.bone1 != fixed_bone:
+        if self.bone1 not in [stationary_bone, fixed_bone]:
             while joints_to_rotate:
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
@@ -130,7 +132,7 @@ class Muscle:
         # rotate bone2
         rotated_joints = set([pivot_joint])
         joints_to_rotate = [bones[self.bone2].joint1, bones[self.bone2].joint2]
-        if self.bone2 != stationary_bone and self.bone2 != fixed_bone:
+        if self.bone2 not in [stationary_bone, fixed_bone]:
             while joints_to_rotate:
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
@@ -295,7 +297,6 @@ class Skeleton:
 
     # functionality
     def fire_muscles(self, pos: np.ndarray, muscle_activations: dict, dt: float) -> tuple[np.ndarray, float]:
-
         for muscle_id, activation in muscle_activations.items():
             # a muscle flexes one bone out of the two it is connected with
             # it flexes the bone that is furthest away from the body
@@ -305,10 +306,8 @@ class Skeleton:
                 bone_closer_to_body = muscle.bone1
             elif self.bones[muscle.bone2].depth < self.bones[muscle.bone1].depth:
                 bone_closer_to_body = muscle.bone2
-            if activation > 0:
-                self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
-            else:
-                self.muscles[muscle_id].relax(pos, dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
+            
+            self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
 
         movement, turn_angle = np.zeros((3,)), 0
         dragging_joints = [joint for joint in self.joints.values() if joint.is_pivot(pos)]
@@ -369,13 +368,22 @@ class Skeleton:
                     [muscle.rollback_flex() for muscle in self.muscles.values()]
         else:
             # no movement should occur
-            [joint.rollback_movement() for joint in self.joints.values()]
-            [muscle.rollback_flex() for muscle in self.muscles.values()]
+            # [joint.rollback_movement() for joint in self.joints.values()]
+            # [muscle.rollback_flex() for muscle in self.muscles.values()]
+            [joint.update_movement() for joint in self.joints.values()]
+            [muscle.update_flex() for muscle in self.muscles.values()]
+
+            z_movement = pos[2] + self.joints['j0'].rel_pos[2]
+            for joint in self.joints.values():
+                z_pos = pos[2] + joint.rel_pos[2]
+                if z_pos < z_movement:
+                    z_movement = z_pos
+            movement[2] += (z_movement + PIVOT_TOLERANCE)
 
         z_movement = 0
         for dragged_joint in dragging_joints:
-            z_pos = (pos[2] + dragged_joint.rel_pos[2])
-            if z_pos <= PIVOT_TOLERANCE and z_pos < z_movement:
+            z_pos = pos[2] + dragged_joint.rel_pos[2]
+            if z_pos < z_movement:
                 z_movement = z_pos
         movement[2] += z_movement
 

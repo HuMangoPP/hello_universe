@@ -305,7 +305,7 @@ class DevMenu:
         self.new_particle_time = 0.1
         self.entity = Entity({
             'id': '0-0',
-            'pos': np.array([0,0,25], dtype=np.float32),
+            'pos': np.array([0,0,100], dtype=np.float32),
             'scale': 1,
             'stats': {
                 'itl': 1,
@@ -318,7 +318,10 @@ class DevMenu:
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
-                'axons': []
+                'axons': [['i_r0', 'o_m0', 1],
+                          ['i_m0', 'o_m1', -0.5],
+                          ['i_m1', 'o_m0', 1],
+                          ]
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 3, 3, 3, 3]),
@@ -332,22 +335,29 @@ class DevMenu:
             },
             'skeleton': {
                 'joints': [{'jid': 'j0', 'rel_pos': np.array([0,0,0], dtype=np.float32)}, 
-                           {'jid': 'j1', 'rel_pos': np.array([-50,0,0], dtype=np.float32)},
-                           {'jid': 'j2', 'rel_pos': np.array([0,50,0], dtype=np.float32)},
-                           {'jid': 'j3', 'rel_pos': np.array([0,-50,0], dtype=np.float32)},
-                           {'jid': 'j4', 'rel_pos': np.array([0,-50,-25], dtype=np.float32)},
-                           {'jid': 'j5', 'rel_pos': np.array([0,50,-25], dtype=np.float32)}
+                           {'jid': 'j1', 'rel_pos': np.array([0,0,-50], dtype=np.float32)}, 
+
+                           {'jid': 'j2', 'rel_pos': np.array([0,10,-50], dtype=np.float32)},
+                           {'jid': 'j3', 'rel_pos': np.array([-5,10,-50], dtype=np.float32)},
+                           {'jid': 'j4', 'rel_pos': np.array([-5,10,-100], dtype=np.float32)},
+
+                           {'jid': 'j5', 'rel_pos': np.array([0,-10,-50], dtype=np.float32)},
+                           {'jid': 'j6', 'rel_pos': np.array([-5,-10,-50], dtype=np.float32)},
+                           {'jid': 'j7', 'rel_pos': np.array([-5,-10,-100], dtype=np.float32)},
                            ],
                 'bones': [{'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0}, 
-                          {'bid': 'b1', 'joint1': 'j0', 'joint2': 'j2', 'depth': 0},
-                          {'bid': 'b2', 'joint1': 'j0', 'joint2': 'j3', 'depth': 0},
-                          {'bid': 'b3', 'joint1': 'j2', 'joint2': 'j5', 'depth': 1},
-                          {'bid': 'b4', 'joint1': 'j3', 'joint2': 'j4', 'depth': 1},
+                          
+                          {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1},
+                          {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 2},
+                          {'bid': 'b3', 'joint1': 'j3', 'joint2': 'j4', 'depth': 3},
+
+                          {'bid': 'b4', 'joint1': 'j1', 'joint2': 'j5', 'depth': 1},
+                          {'bid': 'b5', 'joint1': 'j5', 'joint2': 'j6', 'depth': 2},
+                          {'bid': 'b6', 'joint1': 'j6', 'joint2': 'j7', 'depth': 3},
                           ],
-                'muscles': [{'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
-                            {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b2'},
-                            {'mid': 'm2', 'bone1': 'b1', 'bone2': 'b3'},
-                            {'mid': 'm3', 'bone1': 'b2', 'bone2': 'b4'},
+                'muscles': [{'mid': 'm0', 'bone1': 'b2', 'bone2': 'b3'},
+                            
+                            {'mid': 'm1', 'bone1': 'b5', 'bone2': 'b6'},
                             ],
             }
         })
