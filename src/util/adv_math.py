@@ -44,3 +44,11 @@ def rotated_log(x: float | np.ndarray) -> float | np.ndarray:
         return -np.log(-x + 1)
     else:
         return 0
+
+def rotate_z(u: np.ndarray, angle: float) -> np.ndarray:
+    r_matrix = np.array([
+        [np.cos(angle), -np.sin(angle), 0],
+        [np.sin(angle),  np.cos(angle), 0],
+        [0,              0,             1]
+    ])
+    return r_matrix.dot(u)

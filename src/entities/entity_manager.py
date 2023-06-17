@@ -1,3 +1,4 @@
+from scipy.spatial.transform import Rotation
 import numpy as np
 import pygame as pg
 import math, random
@@ -10,7 +11,7 @@ from ..models.skeleton import Skeleton
 from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
-from ..util.adv_math import lerp, triangle_wave
+from ..util.adv_math import lerp, triangle_wave, rotate_z
 
 from .evo_util import calculate_fitness
 
@@ -370,15 +371,48 @@ class EntityManager:
             **stats
         }
 
+GRAVITY_VEC = np.array([0, 0, -1])
+
+def apply_gravity(pos: np.ndarray, angle: float, up_vec: np.ndarray, 
+                  skeleton: Skeleton, dt: float) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, float]:
+    r_matrix = np.array([[math.cos(angle), -math.sin(angle), 0],
+                             [math.sin(angle),  math.cos(angle), 0],
+                             [0,                       0,                      0]])
+    balance = skeleton.get_balance(pos, up_vec)
+    if balance is None:
+        return pos + GRAVITY_VEC * skeleton.get_lowest_joint(pos, up_vec), up_vec, None, 0
+    else:
+        new_balance = r_matrix.dot(balance) + balance[2] * up_vec 
+        com = skeleton.get_com()
+        body_vec = r_matrix.dot(com) + com[2] * up_vec - new_balance
+        gravity = np.cross(body_vec / np.linalg.norm(body_vec), GRAVITY_VEC)
+        gravity_mag = np.linalg.norm(gravity)
+        if gravity_mag > 0.99:
+            new_pos = np.array([0,0,100])
+            new_up_vec = np.array([0,0,1])
+            gravity_angle = 0
+        else:
+            if gravity_mag > 0:
+                gravity = gravity / gravity_mag
+            gravity_angle = math.asin(gravity_mag) * dt
+            gravity_matrix = Rotation.from_quat(np.concatenate([gravity * math.sin(gravity_angle),
+                                                                np.array([math.cos(gravity_angle)])])).as_matrix()
+            pivot_point = pos + new_balance
+            new_pos = gravity_matrix.dot(pos - pivot_point) + pivot_point
+            new_up_vec = gravity_matrix.dot(up_vec)
+        return new_pos, new_up_vec, new_balance, gravity_angle
+
 class Entity:
     def __init__(self, entity_data: dict):
         self.id : str = entity_data['id']
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
-        self.z_angle = math.pi/4
+        self.z_angle = 0
+        self.up_vec = np.array([0,0,1])
         self.scale = entity_data['scale']
         self.clock_time = 0
         self.clock_period = entity_data['clock_period']
+        self.balance = entity_data['pos']
 
         self.stats = {
             stat_type: stat_value
@@ -401,38 +435,40 @@ class Entity:
         # clock
         self.clock_time = (self.clock_time + dt) % self.clock_period
 
+        # gravity
+        self.pos, self.up_vec, balance, gravity = apply_gravity(self.pos, self.z_angle, self.up_vec, self.skeleton, dt)
+        if balance is not None:
+            self.balance = balance
+
         # movement
         # self.pos = self.pos + np.array([0, 0, -1], dtype=np.float32)
         muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
-                                              self.skeleton.get_joint_touching(self.pos), 
+                                              self.skeleton.get_joint_touching(self.pos, self.up_vec), 
                                               self.skeleton.get_muscle_flex_amt())
-        movement, angle = self.skeleton.fire_muscles(self.pos, muscle_activations, dt)
+        movement, angle = self.skeleton.fire_muscles(self.pos, self.up_vec, muscle_activations, dt)
         self.z_angle += angle
-        r_matrix = np.array([[math.cos(self.z_angle), -math.sin(self.z_angle), 0],
-                             [math.sin(self.z_angle),  math.cos(self.z_angle), 0],
-                             [0,                       0,                      1]])
-        self.pos = self.pos + r_matrix.dot(movement)
-
+        self.pos = self.pos + rotate_z(movement, self.z_angle)
         
-        # energy deplete
-        energy_spent = np.linalg.norm(self.vel) * self.scale / 50
-        energy_spent += self.receptors.get_energy_cost()
-        energy_spent += self.brain.get_energy_cost()
-        energy_spent *= dt
-        self.energy -= energy_spent
-
-        # energy regen
-        self.energy += self.stomach.eat(self.pos, env)
-
-        # health regen
-        if self.health < 100 and self.energy > 50:
-            regen_amt = (1 + self.stats['def']) * dt
-            self.health += regen_amt
-            self.energy -= regen_amt
         
-        # health deplete
-        if self.energy <= 0:
-            self.health -= dt
+        # # energy deplete
+        # energy_spent = np.linalg.norm(self.vel) * self.scale / 50
+        # energy_spent += self.receptors.get_energy_cost()
+        # energy_spent += self.brain.get_energy_cost()
+        # energy_spent *= dt
+        # self.energy -= energy_spent
+
+        # # energy regen
+        # self.energy += self.stomach.eat(self.pos, env)
+
+        # # health regen
+        # if self.health < 100 and self.energy > 50:
+        #     regen_amt = (1 + self.stats['def']) * dt
+        #     self.health += regen_amt
+        #     self.energy -= regen_amt
+        
+        # # health deplete
+        # if self.energy <= 0:
+        #     self.health -= dt
         
         # death
         if self.health <= 0:
@@ -468,7 +504,10 @@ class Entity:
         # self.render_health_and_energy(display, drawpos)
         # self.render_stats(display, drawpos)
         # self.receptors.render(self.pos, self.z_angle, 100, display, camera)
-        self.skeleton.render(display, self.pos, self.z_angle, camera)
+        self.skeleton.render(display, self.pos, self.z_angle, self.up_vec, camera)
+
+        drawpos = camera.transform_to_screen(self.pos + self.balance)
+        pg.draw.circle(display, (0, 0, 255), drawpos, 2)
     
     # data
     def get_df(self):
