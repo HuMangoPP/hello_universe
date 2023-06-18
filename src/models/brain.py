@@ -3,7 +3,7 @@ import random
 
 from ..util.adv_math import lerp, relu, softmax, sigmoid, rotated_log
 
-MUTATION_RATE = 0.5
+MUTATION_RATE = 0.75
 D_WEIGHT = 0.25
 
 RECEPTOR_NAMES = np.array([
@@ -61,11 +61,11 @@ class Brain:
 
         # determine the number of neurons (not including sensors or effectors)
         # and enabled axons
-        num_neurons = len(self.neuron_ids)
+        num_neurons = len(self.neurons)
         active_axons = [axon for axon in self.axons.values() if axon.enabled]
 
         # adds a new random connection or changes its weight if it exists
-        if random.uniform(0, 1) <= MUTATION_RATE and num_neurons > 0:
+        if random.uniform(0, 1) <= MUTATION_RATE/5 and num_neurons > 0:
             # find an in and out neuron
             in_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] in 'ih'])
             out_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] == 'o'])
@@ -87,7 +87,7 @@ class Brain:
                 self.add_axon(in_neuron, out_neuron, random.uniform(0, 1), self.brain_history.axon_pool[axon_label])
 
         # adds new neuron and connects it on both sides
-        if random.uniform(0, 1) <= MUTATION_RATE and active_axons:
+        if random.uniform(0, 1) <= MUTATION_RATE/10 and active_axons:
             new_neuron_id = f'h_{num_neurons}'
             self.add_neuron(new_neuron_id)
             

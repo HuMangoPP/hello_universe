@@ -433,7 +433,8 @@ class Entity:
             np.linalg.norm(self.pos[:2] - p[:2])
             for p in env.positions
         ]))
-        score = 100 / (angle + 1) + 1000 / (min_dist + 1)
+        dev = angle_between(self.up_matrix.dot(np.array([0,0,1])), np.array([0,0,1]))
+        score = 10 / (angle + 1) + 1000 / (min_dist + 1) + 100 / (dev + 1)
         self.fitness = score
 
     def mutate(self):
@@ -530,10 +531,10 @@ class Entity:
         # self.render_health_and_energy(display, drawpos)
         # self.render_stats(display, drawpos)
         # self.receptors.render(self.pos, self.z_angle, 100, display, camera)
-        self.skeleton.render(display, self.pos, self.z_angle, self.up_matrix, camera)
+        # self.skeleton.render(display, self.pos, self.z_angle, self.up_matrix, camera)
 
-        drawpos = camera.transform_to_screen(self.pos + self.balance)
-        pg.draw.circle(display, (0, 0, 255), drawpos, 2)
+        # drawpos = camera.transform_to_screen(self.pos + self.balance)
+        # pg.draw.circle(display, (0, 0, 255), drawpos, 2)
     
     # data
     def get_df(self):

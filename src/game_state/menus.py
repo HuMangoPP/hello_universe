@@ -338,6 +338,8 @@ SKELETON = {
         ],
 }
 
+NUM_CREATURES = 6
+
 class DevMenu:
     def __init__(self, client):
         # import game
@@ -358,15 +360,15 @@ class DevMenu:
         self.brain_history = BrainHistory()
         brain_df = get_df_from_csv('brain')
         if len(brain_df.index) > 0:
-            self.generation = brain_df['gen']
             data = brain_df.iloc[-1]
+            self.generation = data['gen']
             axons = [[label.split('->')[0], label.split('->')[1], value] for label, value in data[2:].dropna().items()]
             neurons = [axon[1] for axon in axons]
         else:
             axons = []
             neurons = []
         self.entities : list[Entity] = []
-        for i in np.arange(10):
+        for i in np.arange(NUM_CREATURES):
             entity = Entity({
                 'id': f'{self.generation}-{i}',
                 **BASIC,
@@ -430,16 +432,16 @@ class DevMenu:
             [entity.calculate_fitness(self.environment) for entity in self.entities]
             fitness_values = np.array([entity.fitness for entity in self.entities])
             median = np.median(fitness_values)
-            indices = (fitness_values >= median).nonzero()[:5]
+            half = NUM_CREATURES//2
+            indices = (fitness_values >= median).nonzero()[:half]
 
             # save
             best = np.argmax(fitness_values)
             basic, receptor, stomach, brain, skeleton = self.entities[best].get_df()
-            print(brain)
             write_entity_data_as_csv(self.generation, brain, 'brain')
 
             # new entities
-            breeding_pairs = np.random.randint(0, 5, (5,))
+            breeding_pairs = np.random.randint(0, half, (half,))
             self.entities : list[Entity] = [self.entities[index] for index in indices[0]]
             [entity.reset_pos(np.array([0,0,100])) for entity in self.entities]
             for i, (entity, pair) in enumerate(zip(self.entities, breeding_pairs)):
@@ -552,8 +554,11 @@ class DevMenu:
 
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
-        [entity.render(self.displays[DEFAULT_DISPLAY], self.camera) for entity in self.entities]
-        self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
+        # [entity.render(self.displays[DEFAULT_DISPLAY], self.camera) for entity in self.entities]
+        # self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
+
+        self.font.render(self.displays[DEFAULT_DISPLAY], str(self.generation), 50, 50, (255, 255, 255),
+                         size=25, style='center')
 
         # self.render_sensory_activation()
         # self.render_stomach()
