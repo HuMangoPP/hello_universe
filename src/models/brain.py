@@ -29,7 +29,12 @@ class Axon:
 class Brain:
     def __init__(self, brain_data: dict, brain_history: BrainHistory):
         self.brain_history = brain_history
-        self.neuron_ids = set()
+        self.neuron_ids = set(
+            [f'i_{mid}' for mid in brain_data['muscles']] +
+            [f'i_{jid}' for jid in brain_data['joints']] + 
+            [f'o_{mid}' for mid in brain_data['muscles']] +
+            ['i_dev', 'i_g', 'i_c', 'i_ca'] +
+            brain_data['neurons'])
         self.neurons = set(brain_data['neurons'])
         self.axons : dict[int, Axon] = {}
         for axon_data in brain_data['axons']:
@@ -39,7 +44,6 @@ class Brain:
                 self.brain_history.innov_number += 1
             self.add_axon(axon_data[0], axon_data[1], axon_data[2], self.brain_history.axon_pool[axon_label])
 
-        
         self.prev_activation = {}
 
     def add_neuron(self, neuron_id: str):
@@ -57,11 +61,11 @@ class Brain:
 
         # determine the number of neurons (not including sensors or effectors)
         # and enabled axons
-        num_neurons = len(self.neurons)
+        num_neurons = len(self.neuron_ids)
         active_axons = [axon for axon in self.axons.values() if axon.enabled]
 
         # adds a new random connection or changes its weight if it exists
-        if random.uniform(0, 1) <= MUTATION_RATE:
+        if random.uniform(0, 1) <= MUTATION_RATE and num_neurons > 0:
             # find an in and out neuron
             in_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] in 'ih'])
             out_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] == 'o'])
@@ -83,33 +87,31 @@ class Brain:
                 self.add_axon(in_neuron, out_neuron, random.uniform(0, 1), self.brain_history.axon_pool[axon_label])
 
         # adds new neuron and connects it on both sides
-        if random.uniform(0, 1) <= MUTATION_RATE:
+        if random.uniform(0, 1) <= MUTATION_RATE and active_axons:
             new_neuron_id = f'h_{num_neurons}'
             self.add_neuron(new_neuron_id)
             
             # choose a random connection to insert a node into
-            if active_axons:
-                axon_to_replace = random.choice(active_axons)
-                axon_to_replace.enabled = False
-                
-                # determine innov numbers
-                axon_label = f'{axon_to_replace.in_neuron}->{new_neuron_id}'
-                if axon_label not in self.brain_history.axon_pool:
-                    self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
-                    self.brain_history.innov_number += 1
-                self.add_axon(axon_to_replace.in_neuron, new_neuron_id, axon_to_replace.weight, self.brain_history.axon_pool[axon_label])
+            axon_to_replace = random.choice(active_axons)
+            axon_to_replace.enabled = False
+            
+            # determine innov numbers
+            axon_label = f'{axon_to_replace.in_neuron}->{new_neuron_id}'
+            if axon_label not in self.brain_history.axon_pool:
+                self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
+                self.brain_history.innov_number += 1
+            self.add_axon(axon_to_replace.in_neuron, new_neuron_id, axon_to_replace.weight, self.brain_history.axon_pool[axon_label])
 
-                axon_label = f'{new_neuron_id}->{axon_to_replace.out_neuron}'
-                if axon_label not in self.brain_history.axon_pool:
-                    self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
-                    self.brain_history.innov_number += 1
-                self.add_axon(new_neuron_id, axon_to_replace.out_neuron, 1, self.brain_history.axon_pool[axon_label])
+            axon_label = f'{new_neuron_id}->{axon_to_replace.out_neuron}'
+            if axon_label not in self.brain_history.axon_pool:
+                self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
+                self.brain_history.innov_number += 1
+            self.add_axon(new_neuron_id, axon_to_replace.out_neuron, 1, self.brain_history.axon_pool[axon_label])
         
         # change a random weight
-        if random.uniform(0, 1) <= MUTATION_RATE:
-            if active_axons:
-                axon_to_change = random.choice(active_axons)
-                axon_to_change.weight += random.uniform(-D_WEIGHT, D_WEIGHT)
+        if random.uniform(0, 1) <= MUTATION_RATE and active_axons:
+            axon_to_change = random.choice(active_axons)
+            axon_to_change.weight += random.uniform(-D_WEIGHT, D_WEIGHT)
 
     def cross_breed(self, other_brain) -> dict:
         t = random.uniform(0.5, 0.75)
@@ -147,7 +149,7 @@ class Brain:
         # when we think, we build the input layer
         receptor_input = {
             f'i_{label}': activation
-            for label, activation in zip(RECEPTOR_NAMES, receptor_activations)
+            for label, activation in zip(RECEPTOR_NAMES[:2], receptor_activations[:2])
         }
         joint_input = {
             f'i_{joint_id}': activation

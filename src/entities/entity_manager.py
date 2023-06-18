@@ -11,7 +11,7 @@ from ..models.skeleton import Skeleton
 from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
-from ..util.adv_math import lerp, triangle_wave, rotate_z, angle_between
+from ..util.adv_math import lerp, triangle_wave, rotate_z, angle_between, get_matrix_from_quat
 
 from .evo_util import calculate_fitness
 
@@ -373,25 +373,21 @@ class EntityManager:
 
 GRAVITY_VEC = np.array([0, 0, -1])
 
-def apply_gravity(pos: np.ndarray, angle: float, up_vec: np.ndarray, 
-                  skeleton: Skeleton, dt: float) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, float]:
+def apply_gravity(pos: np.ndarray, angle: float, up_matrix: np.ndarray, 
+                  skeleton: Skeleton, dt: float) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None, float]:
     r_matrix = np.array([[math.cos(angle), -math.sin(angle), 0],
-                             [math.sin(angle),  math.cos(angle), 0],
-                             [0,                       0,                      0]])
-    balance = skeleton.get_balance(pos, up_vec)
+                        [math.sin(angle),  math.cos(angle), 0],
+                        [0,                       0,                      1]])
+    balance = skeleton.get_balance(pos, angle, up_matrix)
     if balance is None:
-        return pos + GRAVITY_VEC * skeleton.get_lowest_joint(pos, up_vec), up_vec, None, 0
+        return pos + GRAVITY_VEC * skeleton.get_lowest_joint(pos, angle, up_matrix), up_matrix, None, 0
     else:
-        new_balance = r_matrix.dot(balance) + balance[2] * up_vec 
+        new_balance = up_matrix.dot(r_matrix.dot(balance))
         com = skeleton.get_com()
-        body_vec = r_matrix.dot(com) + com[2] * up_vec - new_balance
+        body_vec = up_matrix.dot(r_matrix.dot(com)) - new_balance
         gravity = np.cross(body_vec / np.linalg.norm(body_vec), GRAVITY_VEC)
         gravity_mag = np.linalg.norm(gravity)
-        if gravity_mag > 0.99:
-            new_pos = np.array([0,0,100])
-            new_up_vec = np.array([0,0,1])
-            gravity_angle = 0
-        else:
+        if gravity_mag < 0.99:
             if gravity_mag > 0:
                 gravity = gravity / gravity_mag
             gravity_angle = math.asin(gravity_mag) * dt
@@ -399,8 +395,10 @@ def apply_gravity(pos: np.ndarray, angle: float, up_vec: np.ndarray,
                                                                 np.array([math.cos(gravity_angle)])])).as_matrix()
             pivot_point = pos + new_balance
             new_pos = gravity_matrix.dot(pos - pivot_point) + pivot_point
-            new_up_vec = gravity_matrix.dot(up_vec)
-        return new_pos, new_up_vec, new_balance, gravity_angle
+            new_up_mat = gravity_matrix.dot(up_matrix)
+        else:
+            return pos, up_matrix, new_balance, 0
+        return new_pos, new_up_mat, new_balance, gravity_angle
 
 class Entity:
     def __init__(self, entity_data: dict):
@@ -408,7 +406,7 @@ class Entity:
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
         self.z_angle = 0
-        self.up_vec = np.array([0,0,1])
+        self.up_matrix = Rotation.identity().as_matrix()
         self.scale = entity_data['scale']
         self.clock_time = 0
         self.clock_period = entity_data['clock_period']
@@ -444,6 +442,12 @@ class Entity:
 
     def cross_breed(self, other_entity):
         new_brain_data = self.brain.cross_breed(other_entity.brain)
+        new_brain_data = {
+            **new_brain_data,
+            'joints': [jid for jid in self.skeleton.joints],
+            'muscles': [mid for mid in self.skeleton.muscles],
+        }
+        return new_brain_data
 
     # update
     def update(self, env, dt: float):
@@ -451,17 +455,17 @@ class Entity:
         self.clock_time = (self.clock_time + dt) % self.clock_period
 
         # gravity
-        self.pos, self.up_vec, balance, gravity = apply_gravity(self.pos, self.z_angle, self.up_vec, self.skeleton, dt)
+        self.pos, self.up_matrix, balance, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, dt)
         if balance is not None:
             self.balance = balance
 
         # movement
-        upright_deviation = angle_between(self.up_vec, np.array([0,0,1]))
+        upright_deviation = angle_between(self.up_matrix.dot(np.array([0,0,1])), np.array([0,0,1]))
         muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
-                                              self.skeleton.get_joint_touching(self.pos, self.up_vec), 
+                                              self.skeleton.get_joint_touching(self.pos, self.z_angle, self.up_matrix), 
                                               self.skeleton.get_muscle_flex_amt(),
                                               upright_deviation, gravity)
-        movement, angle = self.skeleton.fire_muscles(self.pos, self.up_vec, muscle_activations, dt)
+        movement, angle = self.skeleton.fire_muscles(self.pos, self.z_angle, self.up_matrix, muscle_activations, dt)
         self.z_angle += angle
         self.pos = self.pos + rotate_z(movement, self.z_angle)
         
@@ -520,7 +524,7 @@ class Entity:
         # self.render_health_and_energy(display, drawpos)
         # self.render_stats(display, drawpos)
         # self.receptors.render(self.pos, self.z_angle, 100, display, camera)
-        self.skeleton.render(display, self.pos, self.z_angle, self.up_vec, camera)
+        self.skeleton.render(display, self.pos, self.z_angle, self.up_matrix, camera)
 
         drawpos = camera.transform_to_screen(self.pos + self.balance)
         pg.draw.circle(display, (0, 0, 255), drawpos, 2)

@@ -58,6 +58,13 @@ class Environment:
         self.qtree = QuadTree(np.array([0,0]), 500, 4)
         [self.qtree.insert(pos, data=[i, shape, density]) for i, (pos, shape, density) in enumerate(zip(self.positions, self.shapes, self.densities))]
 
+    def clear_particles(self):
+        self.num_particles = 0
+        self.positions = np.array([]) # shape=(n,3)
+        self.lifetimes = np.array([]) #shape=(n,)
+        self.shapes = np.array([]) # shape=(n,)
+        self.densities = np.array([]) # shape=(n,)
+
     def add_new_particles(self, num_new_particles: int, 
                           positions: np.ndarray, shapes: np.ndarray, densities: np.ndarray):
         self.num_particles += num_new_particles

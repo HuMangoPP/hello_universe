@@ -4,7 +4,7 @@ import math
 
 
 from ..util.transitions import transition_in, transition_out, TRANSITION_TIME
-from ..util.save_data import write_entity_data_as_csv, write_entity_data_as_json
+from ..util.save_data import write_entity_data_as_csv, write_entity_data_as_json, get_df_from_csv
 from ..util.asset_loader import load_assets
 from ..util.adv_math import gaussian_dist
 
@@ -288,6 +288,56 @@ RECEPTOR_SHAPES = [
     'circle', 'triangle', 'square', 'pentagon', 'hexagon'
 ]
 
+BASIC = {
+    'pos': np.array([0,0,100], dtype=np.float32),
+    'scale': 1,
+    'stats': {
+        'itl': 1, 'pwr': 1, 'def': 1, 'mbl': 1, 'stl': 1,
+    },
+    'clock_period': 4,
+}
+RECEPTORS = {
+    'num_of_type': np.array([3, 3, 3, 3, 3]),
+    'spread': np.full((5,), np.pi/6), 
+    'fov': np.full((5,), np.pi/6),
+    'opt_dens': np.full((5,), 0.5),
+}
+STOMACH = {
+    'opt_dens': np.arange(0.1, 0.6, 0.1)
+}
+SKELETON = {
+    'joints': [
+            {'jid': 'j0', 'rel_pos': np.array([0,0,0], dtype=np.float32)}, 
+            {'jid': 'j1', 'rel_pos': np.array([0,0,-50], dtype=np.float32)}, 
+
+            {'jid': 'j2', 'rel_pos': np.array([0,10,-50], dtype=np.float32)},
+            {'jid': 'j3', 'rel_pos': np.array([-5,10,-50], dtype=np.float32)},
+            {'jid': 'j4', 'rel_pos': np.array([5,10,-100], dtype=np.float32)},
+
+            {'jid': 'j5', 'rel_pos': np.array([0,-10,-50], dtype=np.float32)},
+            {'jid': 'j6', 'rel_pos': np.array([-5,-10,-50], dtype=np.float32)},
+            {'jid': 'j7', 'rel_pos': np.array([5,-10,-100], dtype=np.float32)},
+        ],
+    'bones': [
+            {'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0}, 
+                
+            {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1},
+            {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 2},
+            {'bid': 'b3', 'joint1': 'j3', 'joint2': 'j4', 'depth': 3},
+
+            {'bid': 'b4', 'joint1': 'j1', 'joint2': 'j5', 'depth': 1},
+            {'bid': 'b5', 'joint1': 'j5', 'joint2': 'j6', 'depth': 2},
+            {'bid': 'b6', 'joint1': 'j6', 'joint2': 'j7', 'depth': 3},
+        ],
+    'muscles': [
+            {'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
+            {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b4'},
+
+            {'mid': 'm2', 'bone1': 'b2', 'bone2': 'b3'},
+            {'mid': 'm3', 'bone1': 'b5', 'bone2': 'b6'},
+        ],
+}
+
 class DevMenu:
     def __init__(self, client):
         # import game
@@ -303,68 +353,45 @@ class DevMenu:
         # objects
         self.generation = 0
         self.new_particle_time = 0.1
-        self.entities = [
-            Entity({
-            'id': '0-0',
-            'pos': np.array([0,0,100], dtype=np.float32),
-            'scale': 1,
-            'stats': {
-                'itl': 1,
-                'pwr': 1,
-                'def': 1,
-                'mbl': 1,
-                'stl': 1,
-            },
-            'clock_period': 4,
-            'brain_history': BrainHistory(),
-            'brain': { # TODO change to default later
-                'neurons': [],
-                'axons': []
-            }, 
-            'receptors': {
-                'num_of_type': np.array([3, 3, 3, 3, 3]),
-                'spread': np.full((5,), np.pi/6), 
-                'fov': np.full((5,), np.pi/6),
-                'opt_dens': np.full((5,), 0.5),
-            },
-            'stomach': {
-                'opt_dens': np.arange(0.1, 0.6, 0.1)
-            },
-            'skeleton': {
-                'joints': [
-                        {'jid': 'j0', 'rel_pos': np.array([0,0,0], dtype=np.float32)}, 
-                        {'jid': 'j1', 'rel_pos': np.array([0,0,-50], dtype=np.float32)}, 
 
-                        {'jid': 'j2', 'rel_pos': np.array([0,10,-50], dtype=np.float32)},
-                        {'jid': 'j3', 'rel_pos': np.array([-5,10,-50], dtype=np.float32)},
-                        {'jid': 'j4', 'rel_pos': np.array([5,10,-100], dtype=np.float32)},
+        # entities
+        self.brain_history = BrainHistory()
+        brain_df = get_df_from_csv('brain')
+        if len(brain_df.index) > 0:
+            self.generation = brain_df['gen']
+            # print(data[2:].dropna())
+            axons = [[label.split('->')[0], label.split('->')[1], value] for label, value in brain_df.iloc[2:].dropna().items()]
+            neurons = [axon[1] for axon in axons]
+        else:
+            axons = []
+            neurons = []
+        self.entities = []
+        for i in np.arange(10):
+            entity = Entity({
+                'id': f'{self.generation}-{i}',
+                **BASIC,
+                'brain_history': self.brain_history,
+                'brain': { # TODO change to default later
+                    'neurons': neurons,
+                    'axons': axons,
+                    'muscles': [muscle_data['mid'] for muscle_data in SKELETON['muscles']],
+                    'joints': [joint_data['jid'] for joint_data in SKELETON['joints']]
+                }, 
+                'receptors': RECEPTORS,
+                'stomach': STOMACH,
+                'skeleton': SKELETON,
+            })
+            entity.mutate()
+            self.entities.append(entity)
 
-                        {'jid': 'j5', 'rel_pos': np.array([0,-10,-50], dtype=np.float32)},
-                        {'jid': 'j6', 'rel_pos': np.array([-5,-10,-50], dtype=np.float32)},
-                        {'jid': 'j7', 'rel_pos': np.array([5,-10,-100], dtype=np.float32)},
-                    ],
-                'bones': [
-                        {'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0}, 
-                          
-                        {'bid': 'b1', 'joint1': 'j1', 'joint2': 'j2', 'depth': 1},
-                        {'bid': 'b2', 'joint1': 'j2', 'joint2': 'j3', 'depth': 2},
-                        {'bid': 'b3', 'joint1': 'j3', 'joint2': 'j4', 'depth': 3},
-
-                        {'bid': 'b4', 'joint1': 'j1', 'joint2': 'j5', 'depth': 1},
-                        {'bid': 'b5', 'joint1': 'j5', 'joint2': 'j6', 'depth': 2},
-                        {'bid': 'b6', 'joint1': 'j6', 'joint2': 'j7', 'depth': 3},
-                    ],
-                'muscles': [
-                        {'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
-                        {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b4'},
-
-                        {'mid': 'm2', 'bone1': 'b2', 'bone2': 'b3'},
-                        {'mid': 'm3', 'bone1': 'b5', 'bone2': 'b6'},
-                    ],
-            }
-        })
-        ]
+        # environment
         self.environment = Environment()
+        new_particles = 1
+        self.environment.add_new_particles(
+            new_particles, np.repeat(np.array([[50, 0, 100]]), repeats=new_particles, axis=0),
+            np.arange(new_particles),
+            np.full((new_particles,), 0.5, dtype=np.float32)
+        )
         self.camera = Camera(self.entities[0].pos)
 
         self.sensory_activation = {}
@@ -380,21 +407,41 @@ class DevMenu:
         self.transition_phase = 2
         self.transition_time = 0
 
+    def add_new_entity(self, basic: dict, brain: dict, receptors: dict, stomach: dict, skeleton: dict):
+        eid = f'{self.generation}-0'
+        entity_data = {
+            'id': eid,
+            **basic,
+            'brain_history': self.brain_history,
+            'brain': brain, 
+            'receptors': receptors,
+            'stomach': stomach,
+            'skeleton': skeleton,
+        }
+        self.entities.append(Entity(entity_data))
+
     def update(self, events: list[pg.Event]):
         dt = self.clock.get_time() / 1000
 
         for event in events:
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 # save data
-                # basic, receptor, stomach, brain, skeleton = self.entities[0].get_df()
+                basic, receptor, stomach, brain, skeleton = self.entities[0].get_df()
                 # write_entity_data_as_csv(self.generation, basic, 'basic')
                 # write_entity_data_as_csv(self.generation, receptor, 'receptor')
                 # write_entity_data_as_csv(self.generation, stomach, 'stomach')
-                # write_entity_data_as_csv(self.generation, brain, 'brain')
+                write_entity_data_as_csv(self.generation, brain, 'brain')
                 # write_entity_data_as_json(self.generation, skeleton, 'skeleton')
                 self.generation += 1
+                self.environment.clear_particles()
+                new_particles = 1
+                self.environment.add_new_particles(
+                    new_particles, np.repeat(np.array([[50, 0, 100]]), repeats=new_particles, axis=0),
+                    np.arange(new_particles),
+                    np.full((new_particles,), 0.5, dtype=np.float32)
+                )
                 # self.entities[0].calculate_fitness(self.environment)
-                self.entities[0].cross_breed(self.entities[0])
+                self.add_new_entity(BASIC, self.entities[0].cross_breed(self.entities[0]), RECEPTORS, STOMACH, SKELETON)
                 [entity.mutate() for entity in self.entities]
 
         if pg.mouse.get_pressed()[0]:
@@ -495,7 +542,7 @@ class DevMenu:
 
         # self.render_sensory_activation()
         # self.render_stomach()
-        self.render_brain_structure()
+        # self.render_brain_structure()
 
         match self.transition_phase:
             case 1: 

@@ -1,3 +1,4 @@
+from scipy.spatial.transform import Rotation
 import numpy as np
 
 def lerp(u: np.ndarray | float, v: np.ndarray | float, t: np.ndarray | float) -> np.ndarray | float:
@@ -52,3 +53,10 @@ def rotate_z(u: np.ndarray, angle: float) -> np.ndarray:
         [0,              0,             1]
     ])
     return r_matrix.dot(u)
+
+def get_matrix_from_quat(u: np.ndarray, v: np.ndarray) -> np.ndarray:
+    rotation_axis = np.cross(u,v) / np.linalg.norm(u) / np.linalg.norm(v)
+    rotation_angle = np.arcsin(np.linalg.norm(rotation_axis))
+    if np.linalg.norm(rotation_axis) > 0:
+        rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
+    return Rotation.from_quat(np.concatenate([rotation_axis * np.sin(rotation_angle/2), np.array([np.cos(rotation_angle/2)])])).as_matrix()

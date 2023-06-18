@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 import os, json
 
+def get_df_from_csv(csv_file: str) -> pd.DataFrame:
+    fpath = f'./assets/data/{csv_file}.csv'
+    if os.path.isfile(fpath) and os.path.getsize(fpath) > 0:
+        return pd.read_csv(fpath)
+
 def write_entity_data_as_csv(generation: int, data: dict, csv_file: str) -> pd.DataFrame:
     fpath = f'./assets/data/{csv_file}.csv'
     if os.path.isfile(fpath) and os.path.getsize(fpath) > 0:

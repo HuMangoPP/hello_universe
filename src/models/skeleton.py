@@ -28,10 +28,15 @@ class Joint:
         r_matrix = Rotation.from_quat(np.concatenate([math.sin(angle/2) * rotation_axis, np.array([math.cos(angle/2)])])).as_matrix()
         self.new_rel_pos = r_matrix.dot(self.new_rel_pos - pivot_point) + pivot_point
 
-    def is_pivot(self, pos: np.ndarray, up_vec: np.ndarray) -> bool:
+    def is_pivot(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> bool:
+        r_matrix = np.array([
+            [math.cos(angle), -math.sin(angle), 0],
+            [math.sin(angle),  math.cos(angle), 0],
+            [0,                0,               1]
+        ])
         return (
-            (pos + self.rel_pos[2] * up_vec)[2] <= PIVOT_TOLERANCE and
-            (pos + self.new_rel_pos[2] * up_vec)[2]
+            (up_matrix.dot(r_matrix.dot(self.rel_pos)) + pos)[2] <= PIVOT_TOLERANCE and
+            (up_matrix.dot(r_matrix.dot(self.new_rel_pos)) + pos)[2] <= PIVOT_TOLERANCE
         )
 
     def update_movement(self):
@@ -40,16 +45,16 @@ class Joint:
     def rollback_movement(self):
         self.new_rel_pos = self.rel_pos
 
-    def get_abs_pos(self, pos: np.ndarray, angle: float, up_vec: np.ndarray):
+    def get_abs_pos(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
         r_matrix = np.array([
             [math.cos(angle), -math.sin(angle), 0],
             [math.sin(angle),  math.cos(angle), 0],
-            [0,                0,               0]
+            [0,                0,               1]
         ])
-        return r_matrix.dot(self.rel_pos) + pos + self.rel_pos[2] * up_vec
+        return up_matrix.dot(r_matrix.dot(self.rel_pos)) + pos
 
-    def get_abs_z(self, pos: np.ndarray, up_vec: np.ndarray) -> float:
-        return (pos + self.rel_pos[2] * up_vec)[2]
+    def get_abs_z(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> float:
+        return self.get_abs_pos(pos, angle, up_matrix)[2]
 
 class Bone:
     def __init__(self, bone_data: dict):
@@ -303,7 +308,7 @@ class Skeleton:
                     self.add_new_muscle(bid1, bid2)
 
     # functionality
-    def fire_muscles(self, pos: np.ndarray, up_vec: np.ndarray, 
+    def fire_muscles(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray, 
                      muscle_activations: dict, dt: float) -> tuple[np.ndarray, float]:
         for muscle_id, activation in muscle_activations.items():
             # a muscle flexes one bone out of the two it is connected with
@@ -318,7 +323,7 @@ class Skeleton:
             self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
 
         movement, turn_angle = np.zeros((3,)), 0
-        dragging_joints = [joint for joint in self.joints.values() if joint.is_pivot(pos, up_vec)]
+        dragging_joints = [joint for joint in self.joints.values() if joint.is_pivot(pos, angle, up_matrix)]
         if len(dragging_joints) == 1:
             # get the movement
             movement = dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos
@@ -383,43 +388,43 @@ class Skeleton:
 
         z_movement = 0
         for dragged_joint in dragging_joints:
-            z_pos = dragged_joint.get_abs_z(pos, up_vec)
+            z_pos = dragged_joint.get_abs_z(pos, angle, up_matrix)
             if z_pos < z_movement:
                 z_movement = z_pos
         movement[2] += z_movement
 
         return -movement, turn_angle
 
-    def get_joint_touching(self, pos: np.ndarray, up_vec: np.ndarray):
-        return {jid: int(up_vec[2] * (pos[2] + joint.rel_pos[2]) <= PIVOT_TOLERANCE)
+    def get_joint_touching(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
+        return {jid: int(joint.get_abs_z(pos, angle, up_matrix) <= PIVOT_TOLERANCE)
                 for jid, joint in self.joints.items()}
 
     def get_muscle_flex_amt(self):
         return {mid: muscle.cumul_flex - muscle.relaxed_angle
                 for mid, muscle in self.muscles.items()}
 
-    def get_lowest_joint(self, pos: np.ndarray, up_vec: np.ndarray) -> float:
-        return np.min(np.array([joint.get_abs_z(pos, up_vec) for joint in self.joints.values()]))
+    def get_lowest_joint(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> float:
+        return np.min(np.array([joint.get_abs_z(pos, angle, up_matrix) for joint in self.joints.values()]))
 
     def get_com(self) -> np.ndarray | None:
         return np.average(np.array([
             joint.rel_pos for joint in self.joints.values()
         ]), axis=0)
 
-    def get_balance(self, pos: np.ndarray, up_vec: np.ndarray) -> np.ndarray | None:
-        joints = np.array([joint.rel_pos for joint in self.joints.values() if joint.get_abs_z(pos, up_vec) <= PIVOT_TOLERANCE])
+    def get_balance(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> np.ndarray | None:
+        joints = np.array([joint.rel_pos for joint in self.joints.values() if joint.get_abs_z(pos, angle, up_matrix) <= PIVOT_TOLERANCE])
         if joints.size > 0:
             return np.average(joints, axis=0)
         return None
 
     # render
-    def render(self, display: pg.Surface, pos: np.ndarray, angle: float, up_vec: np.ndarray, camera):
+    def render(self, display: pg.Surface, pos: np.ndarray, angle: float, up_matrix: np.ndarray, camera):
         joint_drawpos = {
-            jid: camera.transform_to_screen(joint.get_abs_pos(pos, angle, up_vec))
+            jid: camera.transform_to_screen(joint.get_abs_pos(pos, angle, up_matrix))
             for jid, joint in self.joints.items()
         }
         joint_color = {
-            jid: (255, 0, 0) if joint.get_abs_z(pos, up_vec) <= PIVOT_TOLERANCE else (0, 255, 0)
+            jid: (255, 0, 0) if joint.get_abs_z(pos, angle, up_matrix) <= PIVOT_TOLERANCE else (0, 255, 0)
             for jid, joint in self.joints.items()
         }
         [pg.draw.circle(display, joint_color[jid], joint_drawpos[jid], 2) 
