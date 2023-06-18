@@ -294,7 +294,7 @@ BASIC = {
     'stats': {
         'itl': 1, 'pwr': 1, 'def': 1, 'mbl': 1, 'stl': 1,
     },
-    'clock_period': 4,
+    'clock_period': 3,
 }
 RECEPTORS = {
     'num_of_type': np.array([3, 3, 3, 3, 3]),
@@ -359,13 +359,13 @@ class DevMenu:
         brain_df = get_df_from_csv('brain')
         if len(brain_df.index) > 0:
             self.generation = brain_df['gen']
-            # print(data[2:].dropna())
-            axons = [[label.split('->')[0], label.split('->')[1], value] for label, value in brain_df.iloc[2:].dropna().items()]
+            data = brain_df.iloc[-1]
+            axons = [[label.split('->')[0], label.split('->')[1], value] for label, value in data[2:].dropna().items()]
             neurons = [axon[1] for axon in axons]
         else:
             axons = []
             neurons = []
-        self.entities = []
+        self.entities : list[Entity] = []
         for i in np.arange(10):
             entity = Entity({
                 'id': f'{self.generation}-{i}',
@@ -383,7 +383,7 @@ class DevMenu:
             })
             entity.mutate()
             self.entities.append(entity)
-
+        self.gen_timer = 6
         # environment
         self.environment = Environment()
         new_particles = 1
@@ -407,8 +407,7 @@ class DevMenu:
         self.transition_phase = 2
         self.transition_time = 0
 
-    def add_new_entity(self, basic: dict, brain: dict, receptors: dict, stomach: dict, skeleton: dict):
-        eid = f'{self.generation}-0'
+    def add_new_entity(self, eid: str, basic: dict, brain: dict, receptors: dict, stomach: dict, skeleton: dict):
         entity_data = {
             'id': eid,
             **basic,
@@ -423,26 +422,42 @@ class DevMenu:
     def update(self, events: list[pg.Event]):
         dt = self.clock.get_time() / 1000
 
-        for event in events:
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                # save data
-                basic, receptor, stomach, brain, skeleton = self.entities[0].get_df()
-                # write_entity_data_as_csv(self.generation, basic, 'basic')
-                # write_entity_data_as_csv(self.generation, receptor, 'receptor')
-                # write_entity_data_as_csv(self.generation, stomach, 'stomach')
-                write_entity_data_as_csv(self.generation, brain, 'brain')
-                # write_entity_data_as_json(self.generation, skeleton, 'skeleton')
-                self.generation += 1
-                self.environment.clear_particles()
-                new_particles = 1
-                self.environment.add_new_particles(
-                    new_particles, np.repeat(np.array([[50, 0, 100]]), repeats=new_particles, axis=0),
-                    np.arange(new_particles),
-                    np.full((new_particles,), 0.5, dtype=np.float32)
-                )
-                # self.entities[0].calculate_fitness(self.environment)
-                self.add_new_entity(BASIC, self.entities[0].cross_breed(self.entities[0]), RECEPTORS, STOMACH, SKELETON)
-                [entity.mutate() for entity in self.entities]
+        self.gen_timer -= dt
+        if self.gen_timer <= 0:
+            self.generation += 1
+            
+            # fitness
+            [entity.calculate_fitness(self.environment) for entity in self.entities]
+            fitness_values = np.array([entity.fitness for entity in self.entities])
+            median = np.median(fitness_values)
+            indices = (fitness_values >= median).nonzero()[:5]
+
+            # save
+            best = np.argmax(fitness_values)
+            basic, receptor, stomach, brain, skeleton = self.entities[best].get_df()
+            print(brain)
+            write_entity_data_as_csv(self.generation, brain, 'brain')
+
+            # new entities
+            breeding_pairs = np.random.randint(0, 5, (5,))
+            self.entities : list[Entity] = [self.entities[index] for index in indices[0]]
+            [entity.reset_pos(np.array([0,0,100])) for entity in self.entities]
+            for i, (entity, pair) in enumerate(zip(self.entities, breeding_pairs)):
+                self.add_new_entity(f'{self.generation}-{i}', BASIC, 
+                                    entity.cross_breed(self.entities[pair]), 
+                                    RECEPTORS, STOMACH, SKELETON)
+            [entity.mutate() for entity in self.entities]
+
+            # new goal
+            self.environment.clear_particles()
+            new_particles = 1
+            self.environment.add_new_particles(
+                new_particles, np.repeat(np.array([[50, 0, 100]]), repeats=new_particles, axis=0),
+                np.arange(new_particles),
+                np.full((new_particles,), 0.5, dtype=np.float32)
+            )
+
+            self.gen_timer = 6
 
         if pg.mouse.get_pressed()[0]:
             self.new_particle_time -= dt
