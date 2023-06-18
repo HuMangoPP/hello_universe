@@ -11,7 +11,7 @@ from ..models.skeleton import Skeleton
 from ..models.traits import Traits
 
 from ..util.collisions import QuadTree
-from ..util.adv_math import lerp, triangle_wave, rotate_z
+from ..util.adv_math import lerp, triangle_wave, rotate_z, angle_between
 
 from .evo_util import calculate_fitness
 
@@ -426,9 +426,24 @@ class Entity:
         self.stomach = Stomach(entity_data['stomach'])
         self.skeleton = Skeleton(entity_data['skeleton'])
 
+        self.fitness = 0
+
     # evo
+    def calculate_fitness(self, env):
+        angle = self.receptors.poll_receptors(self.pos, self.z_angle, 100, env)[0,1]
+        min_dist = np.min(np.array([
+            np.linalg.norm(self.pos[:2] - p[:2])
+            for p in env.positions
+        ]))
+        score = 100 / (angle + 1) + 1000 / (min_dist + 1)
+        self.fitness = score
+
     def mutate(self):
+        fitness = 0
         self.brain.mutate(self.stats['itl'])
+
+    def cross_breed(self, other_entity):
+        new_brain_data = self.brain.cross_breed(other_entity.brain)
 
     # update
     def update(self, env, dt: float):
@@ -441,10 +456,11 @@ class Entity:
             self.balance = balance
 
         # movement
-        # self.pos = self.pos + np.array([0, 0, -1], dtype=np.float32)
+        upright_deviation = angle_between(self.up_vec, np.array([0,0,1]))
         muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.get_joint_touching(self.pos, self.up_vec), 
-                                              self.skeleton.get_muscle_flex_amt())
+                                              self.skeleton.get_muscle_flex_amt(),
+                                              upright_deviation, gravity)
         movement, angle = self.skeleton.fire_muscles(self.pos, self.up_vec, muscle_activations, dt)
         self.z_angle += angle
         self.pos = self.pos + rotate_z(movement, self.z_angle)

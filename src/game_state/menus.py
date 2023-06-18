@@ -303,9 +303,10 @@ class DevMenu:
         # objects
         self.generation = 0
         self.new_particle_time = 0.1
-        self.entity = Entity({
+        self.entities = [
+            Entity({
             'id': '0-0',
-            'pos': np.array([0,0,200], dtype=np.float32),
+            'pos': np.array([0,0,100], dtype=np.float32),
             'scale': 1,
             'stats': {
                 'itl': 1,
@@ -318,14 +319,7 @@ class DevMenu:
             'brain_history': BrainHistory(),
             'brain': { # TODO change to default later
                 'neurons': [],
-                'axons': [
-                        # ['i_r0', 'o_m0', 1], # receptor activation
-                          
-                        # ['i_m0', 'o_m1', -0.8], # other leg
-
-                        # ['i_m0', 'o_m0', -0.75], # leg dampening
-                        # ['i_m1', 'o_m1', -0.75],
-                    ]
+                'axons': []
             }, 
             'receptors': {
                 'num_of_type': np.array([3, 3, 3, 3, 3]),
@@ -334,7 +328,6 @@ class DevMenu:
                 'opt_dens': np.full((5,), 0.5),
             },
             'stomach': {
-                # 'opt_dens': np.full((5,), 0.5)
                 'opt_dens': np.arange(0.1, 0.6, 0.1)
             },
             'skeleton': {
@@ -362,13 +355,17 @@ class DevMenu:
                         {'bid': 'b6', 'joint1': 'j6', 'joint2': 'j7', 'depth': 3},
                     ],
                 'muscles': [
-                        # {'mid': 'm0', 'bone1': 'b2', 'bone2': 'b3'},
-                        # {'mid': 'm1', 'bone1': 'b5', 'bone2': 'b6'},
+                        {'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
+                        {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b4'},
+
+                        {'mid': 'm2', 'bone1': 'b2', 'bone2': 'b3'},
+                        {'mid': 'm3', 'bone1': 'b5', 'bone2': 'b6'},
                     ],
             }
         })
+        ]
         self.environment = Environment()
-        self.camera = Camera(self.entity.pos)
+        self.camera = Camera(self.entities[0].pos)
 
         self.sensory_activation = {}
     
@@ -389,14 +386,16 @@ class DevMenu:
         for event in events:
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 # save data
-                basic, receptor, stomach, brain, skeleton = self.entity.get_df()
-                write_entity_data_as_csv(self.generation, basic, 'basic')
-                write_entity_data_as_csv(self.generation, receptor, 'receptor')
-                write_entity_data_as_csv(self.generation, stomach, 'stomach')
-                write_entity_data_as_csv(self.generation, brain, 'brain')
-                write_entity_data_as_json(self.generation, skeleton, 'skeleton')
+                # basic, receptor, stomach, brain, skeleton = self.entities[0].get_df()
+                # write_entity_data_as_csv(self.generation, basic, 'basic')
+                # write_entity_data_as_csv(self.generation, receptor, 'receptor')
+                # write_entity_data_as_csv(self.generation, stomach, 'stomach')
+                # write_entity_data_as_csv(self.generation, brain, 'brain')
+                # write_entity_data_as_json(self.generation, skeleton, 'skeleton')
                 self.generation += 1
-                self.entity.mutate()
+                # self.entities[0].calculate_fitness(self.environment)
+                self.entities[0].cross_breed(self.entities[0])
+                [entity.mutate() for entity in self.entities]
 
         if pg.mouse.get_pressed()[0]:
             self.new_particle_time -= dt
@@ -411,13 +410,7 @@ class DevMenu:
                 )
                 self.new_particle_time = 0.1
         
-        # keys = pg.key.get_pressed()
-        # if keys[pg.K_SPACE]:
-        #     muscle_activations = {'m0': 1}
-        # else:
-        #     muscle_activations = {'m0': 0}
-        # self.entity.pos = self.entity.pos + self.entity.skeleton.fire_muscles(self.entity.pos, muscle_activations, dt)
-        self.entity.update(self.environment, dt)
+        [entity.update(self.environment, dt) for entity in self.entities]
 
         # handle transitions
         if self.transition_phase > 0:
@@ -430,13 +423,6 @@ class DevMenu:
             if self.transition_time > TRANSITION_TIME:
                 self.transition_time = 0
                 self.transition_phase = (self.transition_phase + 1) % 4
-        
-        self.sensory_activation = self.entity.receptors.poll_receptors(self.entity.pos, self.entity.z_angle, 
-                                                                       100, self.environment)
-        self.sensory_activation = {
-            receptor_type: activation_data
-            for receptor_type, activation_data in zip(RECEPTOR_SHAPES, self.sensory_activation)
-        }
 
         self.environment.update(dt)
     
@@ -456,23 +442,34 @@ class DevMenu:
         drawbox.left = 50
         drawbox.bottom = self.height-50
         [draw_dist(drawbox, self.displays[DEFAULT_DISPLAY], opt_dens, 0.2, 300, 200, 20)
-         for opt_dens in self.entity.stomach.opt_dens]
+         for opt_dens in self.entities[0].stomach.opt_dens]
 
     def render_brain_structure(self):
-        input_layer = [nid for nid in self.entity.brain.neuron_ids if nid.split('_')[0] == 'i']
+        input_layer = [nid for nid in self.entities[0].brain.neuron_ids if nid.split('_')[0] == 'i']
         input_layer = {nid: (self.width - 300, 50 + 15 * i) for i, nid in enumerate(input_layer)}
         
-        output_layer = [nid for nid in self.entity.brain.neuron_ids if nid.split('_')[0] == 'o']
+        output_layer = [nid for nid in self.entities[0].brain.neuron_ids if nid.split('_')[0] == 'o']
         output_layer = {nid: (self.width - 50, 50 + 15 * i) for i, nid in enumerate(output_layer)}
 
-        hidden_nodes = self.entity.brain.get_hidden_layers()
+        hidden_nodes = self.entities[0].brain.get_hidden_layers()
         num_hidden_layers = len(hidden_nodes)
         x_offset = 250 / (num_hidden_layers + 1)
 
+        # output layer
         [pg.draw.circle(self.displays[DEFAULT_DISPLAY], (255, 0, 0), pos, 5)
          for pos in output_layer.values()]
+        [self.font.render(self.displays[DEFAULT_DISPLAY], nid, pos[0] + 25, pos[1],  
+                          (255, 255, 255), size=10, style='center') for 
+         nid, pos in output_layer.items()]
+        
+        # input layer
         [pg.draw.circle(self.displays[DEFAULT_DISPLAY], (255, 0, 0), pos, 5)
          for pos in input_layer.values()]
+        [self.font.render(self.displays[DEFAULT_DISPLAY], nid, pos[0] - 50, pos[1],  
+                          (255, 255, 255), size=10, style='center') for 
+         nid, pos in input_layer.items()]
+        
+        # hidden layer
         hidden_layer = {}
         for i, layer in enumerate(hidden_nodes):
             x = self.width - 300 + (i + 1) * x_offset
@@ -485,7 +482,7 @@ class DevMenu:
             **output_layer,
             **hidden_layer
         }
-        for axon in self.entity.brain.axons.values():
+        for axon in self.entities[0].brain.axons.values():
             if axon.in_neuron not in all_neurons or axon.out_neuron not in all_neurons or not axon.enabled:
                 continue
             pg.draw.line(self.displays[DEFAULT_DISPLAY], (255, 0, 0),
@@ -493,7 +490,7 @@ class DevMenu:
 
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
-        self.entity.render(self.displays[DEFAULT_DISPLAY], self.camera)
+        [entity.render(self.displays[DEFAULT_DISPLAY], self.camera) for entity in self.entities]
         self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
 
         # self.render_sensory_activation()
@@ -507,11 +504,6 @@ class DevMenu:
                 self.displays[OVERLAY_DISPLAY].fill((10, 10, 10))
             case 3:
                 transition_in(self.displays[OVERLAY_DISPLAY], self.transition_time)
-        
-        # self.ui.render(self.displays[DEFAULT_DISPLAY], self.entity_manager.get_ui_data(0), self.current_generation)
-
-        # self.font.render(self.displays[DEFAULT_DISPLAY], str(self.current_generation), 
-        #                  25, 25, (255,255,255), size=25, style='left')
 
         displays_to_render = [DEFAULT_DISPLAY]
         if self.transition_phase > 0:

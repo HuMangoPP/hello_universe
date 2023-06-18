@@ -3,8 +3,16 @@ import random
 
 from ..util.adv_math import lerp, relu, softmax, sigmoid, rotated_log
 
-MUTATION_RATE = 1
+MUTATION_RATE = 0.5
 D_WEIGHT = 0.25
+
+RECEPTOR_NAMES = np.array([
+    'c', 'ca',
+    't', 'ta',
+    's', 'sa',
+    'p', 'pa',
+    'h', 'ha'
+])
 
 class BrainHistory:
     def __init__(self):
@@ -104,14 +112,14 @@ class Brain:
                 axon_to_change.weight += random.uniform(-D_WEIGHT, D_WEIGHT)
 
     def cross_breed(self, other_brain) -> dict:
-        t = random.uniform(0.25, 0.75)
+        t = random.uniform(0.5, 0.75)
         axon_data = []
         for innov, axon in self.axons.items():
             if innov in other_brain.axons:
                 axon_data.append([
                     axon.in_neuron,
                     axon.out_neuron,
-                    lerp(axon.weight, other_brain.get_axon_weight(axon.innov), t)
+                    lerp(axon.weight, other_brain.axons[innov].weight, t)
                 ])
             else:
                 axon_data.append([
@@ -128,18 +136,18 @@ class Brain:
                 ])
 
         brain_data = {
-            'neurons': self.neurons,
+            'neurons': list(self.neurons.union(other_brain.neurons)),
             'axons': axon_data       
         }
         return brain_data
     
     # functionality
     def think(self, receptor_activations: np.ndarray, joint_activation: dict,
-              muscle_activation: dict) -> dict:
+              muscle_activation: dict, upright_deviation: float, gravity: float) -> dict:
         # when we think, we build the input layer
         receptor_input = {
-            f'i_r{index}': activation
-            for index, activation in enumerate(receptor_activations)
+            f'i_{label}': activation
+            for label, activation in zip(RECEPTOR_NAMES, receptor_activations)
         }
         joint_input = {
             f'i_{joint_id}': activation
@@ -153,14 +161,15 @@ class Brain:
             **receptor_input,
             **joint_input,
             **muscle_input,
-            # **self.prev_activation,
+            'i_dev': upright_deviation,
+            'i_g': gravity,
         }
         # create the output layer
         output_layer = {
             f'o_{muscle_id}': 0
             for muscle_id in muscle_activation
         }
-        # update the list of all neuronds with their ids
+        # update the list of all neurons with their ids
         self.neuron_ids = set(input_layer.keys()).union(set(output_layer.keys())).union(self.neurons)
 
         # disable axons that are no longer used, an axon is no longer used if it
