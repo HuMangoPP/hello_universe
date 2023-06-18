@@ -495,6 +495,12 @@ class Entity:
             return False
         return True
     
+    def reset_pos(self, pos: np.ndarray):
+        self.pos : np.ndarray = pos
+        self.vel = np.zeros(shape=(3,))
+        self.z_angle = 0
+        self.up_matrix = Rotation.identity().as_matrix()
+
     # rendering
     def render_health_and_energy(self, display: pg.Surface, drawpos: tuple):
         health_rect = pg.Rect(drawpos[0]-25, drawpos[1]-40,50,10)
