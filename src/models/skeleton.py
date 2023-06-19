@@ -24,8 +24,7 @@ class Joint:
         self.new_rel_pos : np.ndarray = joint_data['rel_pos']
     
     def rotate(self, entity_pos: np.ndarray, pivot_point: np.ndarray, 
-               angle: float, rotation_axis: np.ndarray):
-        r_matrix = Rotation.from_quat(np.concatenate([math.sin(angle/2) * rotation_axis, np.array([math.cos(angle/2)])])).as_matrix()
+               r_matrix: np.ndarray): 
         self.new_rel_pos = r_matrix.dot(self.new_rel_pos - pivot_point) + pivot_point
 
     def is_pivot(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> bool:
@@ -126,13 +125,13 @@ class Muscle:
         joints_to_rotate = [bones[self.bone1].joint1, bones[self.bone1].joint2]
         rotation_axis = np.cross(bone1_vec, bone2_vec)
         rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
+        r_matrix = Rotation.from_quat(np.concatenate([math.sin(angle/2) * rotation_axis, np.array([math.cos(angle/2)])])).as_matrix()
         if self.bone1 not in [stationary_bone, fixed_bone]:
-            while joints_to_rotate:
+            while joints_to_rotate: # TODO: reduce amount need to rotate by making each new joint relative to its parent joint
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
                     # rotate the joint
-                    joints[joint_to_rotate].rotate(pos, joints[pivot_joint].new_rel_pos, angle,
-                                                    rotation_axis)
+                    joints[joint_to_rotate].rotate(pos, joints[pivot_joint].new_rel_pos, r_matrix)
                     # keep track of all rotated joints
                     rotated_joints.add(joint_to_rotate)
                     # update the list of joints to rotate to include children of this 
@@ -144,13 +143,13 @@ class Muscle:
         # rotate bone2
         rotated_joints = set([pivot_joint])
         joints_to_rotate = [bones[self.bone2].joint1, bones[self.bone2].joint2]
+        r_matrix = Rotation.from_quat(np.concatenate([math.sin(-angle/2) * rotation_axis, np.array([math.cos(-angle/2)])])).as_matrix()
         if self.bone2 not in [stationary_bone, fixed_bone]:
             while joints_to_rotate:
                 joint_to_rotate = joints_to_rotate[0]
                 if joint_to_rotate not in rotated_joints:
                     # rotate the joint
-                    joints[joint_to_rotate].rotate(pos, joints[pivot_joint].new_rel_pos, -angle,
-                                                                   rotation_axis)
+                    joints[joint_to_rotate].rotate(pos, joints[pivot_joint].new_rel_pos, r_matrix)
                     # keep track of all rotated joints
                     rotated_joints.add(joint_to_rotate)
                     # update the list of joints to rotate to include children of this 
@@ -395,8 +394,8 @@ class Skeleton:
 
         return -movement, turn_angle
 
-    def get_joint_touching(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
-        return {jid: int(joint.get_abs_z(pos, angle, up_matrix) <= PIVOT_TOLERANCE)
+    def inv_dist_from_ground(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
+        return {jid: 1 / abs((joint.get_abs_z(pos, angle, up_matrix) + 1))
                 for jid, joint in self.joints.items()}
 
     def get_muscle_flex_amt(self):

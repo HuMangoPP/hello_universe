@@ -33,7 +33,7 @@ class Brain:
             [f'i_{mid}' for mid in brain_data['muscles']] +
             [f'i_{jid}' for jid in brain_data['joints']] + 
             [f'o_{mid}' for mid in brain_data['muscles']] +
-            ['i_dev', 'i_g', 'i_c', 'i_ca'] +
+            ['i_devx', 'i_devy', 'i_gx', 'i_gy'] +
             brain_data['neurons'])
         self.neurons = set(brain_data['neurons'])
         self.axons : dict[int, Axon] = {}
@@ -65,7 +65,7 @@ class Brain:
         active_axons = [axon for axon in self.axons.values() if axon.enabled]
 
         # adds a new random connection or changes its weight if it exists
-        if random.uniform(0, 1) <= MUTATION_RATE/5 and num_neurons > 0:
+        if random.uniform(0, 1) <= MUTATION_RATE/2:
             # find an in and out neuron
             in_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] in 'ih'])
             out_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] == 'o'])
@@ -87,7 +87,7 @@ class Brain:
                 self.add_axon(in_neuron, out_neuron, random.uniform(0, 1), self.brain_history.axon_pool[axon_label])
 
         # adds new neuron and connects it on both sides
-        if random.uniform(0, 1) <= MUTATION_RATE/10 and active_axons:
+        if random.uniform(0, 1) <= MUTATION_RATE/8 and active_axons:
             new_neuron_id = f'h_{num_neurons}'
             self.add_neuron(new_neuron_id)
             
@@ -145,7 +145,7 @@ class Brain:
     
     # functionality
     def think(self, receptor_activations: np.ndarray, joint_activation: dict,
-              muscle_activation: dict, upright_deviation: float, gravity: float) -> dict:
+              muscle_activation: dict, upright_deviation: np.ndarray, gravity: np.ndarray) -> dict:
         # when we think, we build the input layer
         receptor_input = {
             f'i_{label}': activation
@@ -160,11 +160,13 @@ class Brain:
             for muscle_id, activation in muscle_activation.items()
         }
         input_layer = {
-            **receptor_input,
+            # **receptor_input,
             **joint_input,
             **muscle_input,
-            'i_dev': upright_deviation,
-            'i_g': gravity,
+            'i_devx': upright_deviation[0],
+            'i_devy': upright_deviation[1],
+            'i_gx': gravity[0],
+            'i_gy': gravity[1],
         }
         # create the output layer
         output_layer = {
