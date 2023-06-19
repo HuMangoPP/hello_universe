@@ -374,46 +374,40 @@ class EntityManager:
 GRAVITY_VEC = np.array([0, 0, -1])
 
 def apply_gravity(pos: np.ndarray, angle: float, up_matrix: np.ndarray, 
-                  skeleton: Skeleton, dt: float) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None, np.ndarray]:
-    r_matrix = np.array([[math.cos(angle), -math.sin(angle), 0],
-                        [math.sin(angle),  math.cos(angle), 0],
-                        [0,                       0,                      1]])
-    balance = skeleton.get_balance(pos, angle, up_matrix)
+                  skeleton: Skeleton, balance: np.ndarray, dt: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     if balance is None:
-        return pos + GRAVITY_VEC * skeleton.get_lowest_joint(pos, angle, up_matrix), up_matrix, None, np.zeros((2,), dtype=np.float32)
+        return pos + GRAVITY_VEC * skeleton.get_lowest_joint(pos, angle, up_matrix), up_matrix, np.zeros((2,), dtype=np.float32)
     else:
-        new_balance = up_matrix.dot(r_matrix.dot(balance))
-        newb_mag = np.linalg.norm(new_balance)
-        if newb_mag > 0:
-            body_vec = -new_balance / newb_mag
-        else:
-            body_vec = -new_balance
+        com = up_matrix.dot(rotate_z(skeleton.get_com(), angle))
+        com_mag = np.linalg.norm(com-balance)
+        body_vec = (com-balance) / com_mag if com_mag > 0 else (com-balance)
         gravity = np.cross(body_vec, GRAVITY_VEC)
         gravity_mag = np.linalg.norm(gravity)
-        if gravity_mag < 0.99:
-            if gravity_mag > 0:
-                gravity = gravity / gravity_mag
+        if 0.01 < gravity_mag and gravity_mag < 0.99:
+            gravity = gravity / gravity_mag
             gravity_angle = math.asin(gravity_mag) * dt
-            gravity_matrix = Rotation.from_quat(np.concatenate([gravity * math.sin(gravity_angle),
-                                                                np.array([math.cos(gravity_angle)])])).as_matrix()
-            pivot_point = pos + new_balance
-            new_pos = gravity_matrix.dot(pos - pivot_point) + pivot_point
-            new_up_mat = gravity_matrix.dot(up_matrix)
+            gravity_matrix = Rotation.from_quat(np.concatenate([gravity * math.sin(gravity_angle/2),
+                                                                np.array([math.cos(gravity_angle/2)])])).as_matrix()
+            pivot_point = pos + balance
+            new_pos = gravity_matrix.dot(-balance) + pivot_point
+            new_up_vec = (new_pos - pivot_point) / np.linalg.norm(new_pos - pivot_point)
+            new_up_mat = get_matrix_from_quat(np.array([0,0,1]), new_up_vec).dot(np.diag(np.ones((3,), dtype=np.float32)))
         else:
-            return pos, up_matrix, new_balance, np.zeros((2,), dtype=np.float32)
-        return new_pos, new_up_mat, new_balance, (-up_matrix.dot(balance))[:2]
+            return pos + GRAVITY_VEC * skeleton.get_lowest_joint(pos, angle, up_matrix), up_matrix, np.zeros((2,), dtype=np.float32)
+        
+        return (new_pos + GRAVITY_VEC * skeleton.get_lowest_joint(new_pos, angle, new_up_mat), 
+                new_up_mat, rotate_z(body_vec, -angle)[:2])
 
 class Entity:
     def __init__(self, entity_data: dict):
         self.id : str = entity_data['id']
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
-        self.z_angle = 0
-        self.up_matrix = Rotation.from_euler('YZ', np.array([random.uniform(0.0, 10.0), random.uniform(0.0, 360.0)]), degrees=True).as_matrix()
+        self.z_angle = random.uniform(0, 2*math.pi)
+        self.up_matrix = Rotation.from_euler('YZ', np.array([random.uniform(5.0, 10.0), random.uniform(0.0, 360.0)]), degrees=True).as_matrix()
         self.scale = entity_data['scale']
         self.clock_time = 0
         self.clock_period = entity_data['clock_period']
-        self.balance = entity_data['pos']
 
         self.stats = {
             stat_type: stat_value
@@ -426,6 +420,8 @@ class Entity:
         self.receptors = Receptors(entity_data['receptors'])
         self.stomach = Stomach(entity_data['stomach'])
         self.skeleton = Skeleton(entity_data['skeleton'])
+
+        self.balance = self.skeleton.get_balance(self.pos, self.z_angle, self.up_matrix)
 
         self.fitness = 0
 
@@ -460,19 +456,22 @@ class Entity:
         self.clock_time = (self.clock_time + dt) % self.clock_period
 
         # gravity
-        self.pos, self.up_matrix, balance, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, dt)
-        if balance is not None:
-            self.balance = balance
+        self.pos, self.up_matrix, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, self.balance, dt)
 
         # movement
         muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.inv_dist_from_ground(self.pos, self.z_angle, self.up_matrix), 
                                               self.skeleton.get_muscle_flex_amt(),
-                                              rotate_z(self.up_matrix[:3,2], self.z_angle), gravity)
+                                              rotate_z(self.up_matrix[:,2], -self.z_angle), gravity)
         movement, angle = self.skeleton.fire_muscles(self.pos, self.z_angle, self.up_matrix, muscle_activations, dt)
         self.z_angle += angle
         self.pos = self.pos + rotate_z(movement, self.z_angle)
-        
+
+        balance = self.skeleton.get_balance(self.pos, self.z_angle, self.up_matrix)
+        if balance is not None:
+            self.balance = self.up_matrix.dot(rotate_z(balance, self.z_angle))
+        else:
+            self.balance = None
         
         # # energy deplete
         # energy_spent = np.linalg.norm(self.vel) * self.scale / 50
@@ -502,9 +501,17 @@ class Entity:
     def reset_pos(self, pos: np.ndarray):
         self.pos : np.ndarray = pos
         self.vel = np.zeros(shape=(3,))
-        self.z_angle = 0
-        self.up_matrix = Rotation.identity().as_matrix()
+        # self.z_angle = random.uniform(0, 2*math.pi)
+        # self.up_matrix = Rotation.from_euler('YZ', np.array([random.uniform(0.0, 10.0), random.uniform(0.0, 360.0)]), degrees=True).as_matrix()
+        self.z_angle = math.pi/2
+        self.up_matrix = Rotation.from_euler('XYZ', np.array([0, 10, 0]), degrees=True).as_matrix()
 
+        balance = self.skeleton.get_balance(self.pos, self.z_angle, self.up_matrix)
+        if balance is not None:
+            self.balance = self.up_matrix.dot(rotate_z(balance, self.z_angle))
+        else:
+            self.balance = None
+    
     # rendering
     def render_health_and_energy(self, display: pg.Surface, drawpos: tuple):
         health_rect = pg.Rect(drawpos[0]-25, drawpos[1]-40,50,10)
@@ -536,8 +543,9 @@ class Entity:
         # self.receptors.render(self.pos, self.z_angle, 100, display, camera)
         self.skeleton.render(display, self.pos, self.z_angle, self.up_matrix, camera)
 
-        # drawpos = camera.transform_to_screen(self.pos + self.balance)
-        # pg.draw.circle(display, (0, 0, 255), drawpos, 2)
+        if self.balance is not None:
+            drawpos = camera.transform_to_screen(self.pos + self.balance)
+            pg.draw.circle(display, (0, 0, 255), drawpos, 2)
     
     # data
     def get_df(self):

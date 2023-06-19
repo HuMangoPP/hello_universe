@@ -184,20 +184,20 @@ class Brain:
             elif axon.out_neuron.split('_')[0] == 'o' and axon.out_neuron not in output_layer:
                 axon.enabled = False
         
-        activated_neurons = {
-            neuron_id: activation
-            for neuron_id, activation in input_layer.items()
-        }
-        axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
-        while axons_to_fire:
-            new_neurons = {}
-            for axon in axons_to_fire:
-                if axon.out_neuron in output_layer:
-                    output_layer[axon.out_neuron] += rotated_log(activated_neurons[axon.in_neuron] * axon.weight)
-                else:
-                    new_neurons[axon.out_neuron] = rotated_log(activated_neurons[axon.in_neuron] * axon.weight)
-            activated_neurons = new_neurons
-            axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
+        # activated_neurons = {
+        #     neuron_id: activation
+        #     for neuron_id, activation in input_layer.items()
+        # }
+        # axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
+        # while axons_to_fire:
+        #     new_neurons = {}
+        #     for axon in axons_to_fire:
+        #         if axon.out_neuron in output_layer:
+        #             output_layer[axon.out_neuron] += rotated_log(activated_neurons[axon.in_neuron] * axon.weight)
+        #         else:
+        #             new_neurons[axon.out_neuron] = rotated_log(activated_neurons[axon.in_neuron] * axon.weight)
+        #     activated_neurons = new_neurons
+        #     axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
         
         activation = {
             muscle_id.split('_')[1]: sigmoid(m_activation, 1, 5)

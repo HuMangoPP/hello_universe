@@ -7,7 +7,7 @@ from ..util.adv_math import angle_between, find_poi
 
 # tolerance epsilon
 FLEX_TOLERANCE = 0.01 # muscle needs to be activated above this threshold to flex
-PIVOT_TOLERANCE = 0.05 # the z position of a joint must be below this threshold to be considered a pivot
+PIVOT_TOLERANCE = 0.1 # the z position of a joint must be below this threshold to be considered a pivot
 PARALLEL_TOLERANCE = 0.1 # the angle between two vectors must be below this threshold to be considered parallel
 DRAG_TOLERANCE = 0.5 # the distance between the joint and its estimated position must be below for movement to occur
 # rates
@@ -357,7 +357,7 @@ class Skeleton:
                 rotation_pivot = find_poi(through_joint_vec, new_through_joint_vec, 
                                           dragging_joints[1].rel_pos, dragging_joints[1].new_rel_pos)
                 rotation_axis = np.cross(through_joint_vec, new_through_joint_vec)
-                rotation_angle = angle_between_through_vecs * rotation_axis[2] / abs(rotation_axis[2])
+                rotation_angle = angle_between_through_vecs
                 r_matrix = np.array([
                     [math.cos(rotation_angle), -math.sin(rotation_angle), 0],
                     [math.sin(rotation_angle),  math.cos(rotation_angle), 0],
@@ -405,16 +405,14 @@ class Skeleton:
     def get_lowest_joint(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> float:
         return np.min(np.array([joint.get_abs_z(pos, angle, up_matrix) for joint in self.joints.values()]))
 
-    def get_com(self) -> np.ndarray | None:
-        return np.average(np.array([
-            joint.rel_pos for joint in self.joints.values()
-        ]), axis=0)
-
     def get_balance(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> np.ndarray | None:
         joints = np.array([joint.rel_pos for joint in self.joints.values() if joint.get_abs_z(pos, angle, up_matrix) <= PIVOT_TOLERANCE])
         if joints.size > 0:
             return np.average(joints, axis=0)
         return None
+
+    def get_com(self) -> np.ndarray:
+        return np.average(np.array([joint.rel_pos for joint in self.joints.values()]), axis=0)
 
     # render
     def render(self, display: pg.Surface, pos: np.ndarray, angle: float, up_matrix: np.ndarray, camera):
