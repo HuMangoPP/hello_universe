@@ -434,7 +434,7 @@ class Entity:
         # angle = self.receptors.poll_receptors(self.pos, self.z_angle, 100, env)[0,1]
         dev = angle_between(self.up_vec, np.array([0,0,1]))
         score = 10 / (dev + 1) + self.pos[2] + 10 * self.pos[0]
-        print(1000 / (dev + 1), self.pos[2], self.pos[0])
+        print(10 / (dev + 1), self.pos[2], 10 * self.pos[0])
         self.fitness = score
 
     def mutate(self):
@@ -456,26 +456,34 @@ class Entity:
         self.clock_time = (self.clock_time + dt) % self.clock_period
 
         # gravity
-        self.pos, self.up_vec, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, self.balance, dt)
+        # self.pos, self.up_vec, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, self.balance, dt)
         # self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
-        # self.pos = self.pos + GRAVITY_VEC * self.skeleton.get_lowest_joint(self.pos, self.z_angle, self.up_matrix)
+        self.pos = self.pos + GRAVITY_VEC * self.skeleton.get_lowest_joint(self.pos, self.z_angle, self.up_matrix)
 
         # movement
         muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                               self.skeleton.inv_dist_from_ground(self.pos, self.z_angle, self.up_matrix), 
                                               self.skeleton.get_muscle_flex_amt(),
                                               rotate_z(self.up_vec, -self.z_angle))
-        movement, angle, up_rotation = self.skeleton.fire_muscles(self.pos, self.z_angle, self.up_matrix, muscle_activations, dt)
+        movement, angle = self.skeleton.fire_muscles(self.pos, self.z_angle, self.up_matrix, muscle_activations, dt)
         # self.z_angle += angle
-        self.pos = self.pos + rotate_z(movement, self.z_angle)
-        self.up_vec = up_rotation.dot(self.up_vec)
-        self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
+        self.vel = self.vel + rotate_z(movement, self.z_angle)
 
         balance = self.skeleton.get_balance(self.pos, self.z_angle, self.up_matrix)
         if balance is not None:
             self.balance = self.up_matrix.dot(rotate_z(balance, self.z_angle))
         else:
             self.balance = None
+
+        if np.linalg.norm(self.vel) > 1 and self.balance is not None:
+            old = -self.balance
+            new = self.vel - self.balance
+            up_rotation = get_matrix_from_quat(old, new)
+            self.up_vec = up_rotation.dot(self.up_vec)
+            self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
+
+            self.pos = self.pos + 2 * self.vel
+            self.vel = np.zeros((3,))
         
         # # energy deplete
         # energy_spent = np.linalg.norm(self.vel) * self.scale / 50

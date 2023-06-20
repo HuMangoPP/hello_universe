@@ -9,7 +9,7 @@ from ..util.adv_math import angle_between, find_poi, get_matrix_from_quat, rotat
 FLEX_TOLERANCE = 0.01 # muscle needs to be activated above this threshold to flex
 PIVOT_TOLERANCE = 0.05 # the z position of a joint must be below this threshold to be considered a pivot
 PARALLEL_TOLERANCE = 0.1 # the angle between two vectors must be below this threshold to be considered parallel
-DRAG_TOLERANCE = 0.1 # the distance between the joint and its estimated position must be below for movement to occur
+DRAG_TOLERANCE = 0.5 # the distance between the joint and its estimated position must be below for movement to occur
 # rates
 RELAXATION_RATE = 0.1
 MUTATION_RATE = 0.05
@@ -313,7 +313,7 @@ class Skeleton:
 
     # functionality
     def fire_muscles(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray, 
-                     muscle_activations: dict, dt: float) -> tuple[np.ndarray, float, np.ndarray]:
+                     muscle_activations: dict, dt: float) -> tuple[np.ndarray, float]:
         for muscle_id, activation in muscle_activations.items():
             # a muscle flexes one bone out of the two it is connected with
             # it flexes the bone that is furthest away from the body
@@ -328,16 +328,9 @@ class Skeleton:
 
         movement, turn_angle = np.zeros((3,)), 0
         dragging_joints = [joint for joint in self.joints.values() if joint.is_pivot(pos, angle, up_matrix)]
-        up_rotation = np.diag(np.ones((3,), dtype=np.float32))
         if len(dragging_joints) == 1:
             # get the movement
-            movement = 2 * (dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos)
-            rel_pos = rotate_z(dragging_joints[0].rel_pos, angle)
-            rel_pos[2] = 0
-            new_rel_pos = rotate_z(dragging_joints[0].new_rel_pos, angle)
-            new_rel_pos[2] = 0
-            up_rotation = get_matrix_from_quat(up_matrix.dot(rel_pos), 
-                                               up_matrix.dot(new_rel_pos))
+            movement = (dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos)
             
             # move all of the joints pos and muscle flex
             [joint.update_movement() for joint in self.joints.values()]
@@ -352,11 +345,9 @@ class Skeleton:
                 # movement
                 can_offset = True
                 average_rel_pos = np.average(np.array([dragged_joint.rel_pos for dragged_joint in dragging_joints]), axis=0)
-                average_rel_pos[2] = 0
                 average_new_rel_pos = np.average(np.array([dragged_joint.new_rel_pos for dragged_joint in dragging_joints]), axis=0)
-                average_new_rel_pos[2] = 0
-                offset = (average_new_rel_pos - average_rel_pos)
-                movement = 2 * offset
+                offset = average_new_rel_pos - average_rel_pos
+                movement = offset
                 for dragged_joint in other_dragging_joints:
                     if np.linalg.norm(dragged_joint.new_rel_pos - offset - dragged_joint.rel_pos) > DRAG_TOLERANCE:
                         can_offset = False
@@ -401,7 +392,7 @@ class Skeleton:
             [muscle.update_flex() for muscle in self.muscles.values()]
 
         movement[2] = 0
-        return -movement, turn_angle, up_rotation.dot(up_rotation)
+        return -movement, turn_angle
 
     def inv_dist_from_ground(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
         return {jid: 1 / abs((joint.get_abs_z(pos, angle, up_matrix) + 1))
