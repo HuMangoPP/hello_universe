@@ -33,7 +33,7 @@ def find_poi(u: np.ndarray, v: np.ndarray, u_origin: np.ndarray, v_origin: np.nd
     ])
 
 def triangle_wave(p: float, t: float):
-    return 2 * abs(2 * (t/p - np.floor(t/p + 1/2))) - 1
+    return 2 * abs(2 * ((t+p/4)/p - np.floor((t+p/4)/p + 1/2))) - 1
 
 def sigmoid(x: float | np.ndarray, amp: float | np.ndarray, squeeze: float | np.ndarray) -> float | np.ndarray:
     return amp * (2 / (1 + np.exp(-squeeze * x)) - 1)

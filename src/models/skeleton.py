@@ -7,9 +7,9 @@ from ..util.adv_math import angle_between, find_poi, get_matrix_from_quat, rotat
 
 # tolerance epsilon
 FLEX_TOLERANCE = 0.01 # muscle needs to be activated above this threshold to flex
-PIVOT_TOLERANCE = 0.25 # the z position of a joint must be below this threshold to be considered a pivot
+PIVOT_TOLERANCE = 0.05 # the z position of a joint must be below this threshold to be considered a pivot
 PARALLEL_TOLERANCE = 0.1 # the angle between two vectors must be below this threshold to be considered parallel
-DRAG_TOLERANCE = 0.25 # the distance between the joint and its estimated position must be below for movement to occur
+DRAG_TOLERANCE = 0.1 # the distance between the joint and its estimated position must be below for movement to occur
 # rates
 RELAXATION_RATE = 0.1
 MUTATION_RATE = 0.05
@@ -79,8 +79,11 @@ class Muscle:
         self.cumul_flex = angle
         self.relaxed_angle = angle
         self.new_cumul_flex = angle
-        self.flex_amt = 0
-
+    
+    def reset_angles(self):
+        self.cumul_flex = self.relaxed_angle
+        self.new_cumul_flex = self.relaxed_angle
+        
     def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, 
              stationary_bone: str | None, fixed_bone: str) -> dict:
         if MIN_FLEXED_ANGLE <= self.new_cumul_flex and self.new_cumul_flex <= MAX_FLEXED_ANGLE:
@@ -191,6 +194,13 @@ class Skeleton:
         else:
             self.root_joint = None
     
+    def reset_skeleton(self, skeleton_data: dict):
+        for muscle in self.muscles.values():
+            muscle.reset_angles()
+        for joint_data in skeleton_data['joints']:
+            self.joints[joint_data['jid']].rel_pos = joint_data['rel_pos']
+            self.joints[joint_data['jid']].new_rel_pos = joint_data['rel_pos']
+
     # evo
     def add_extension(self, new_joint_pos: np.ndarray, existing_jid: str, existing_bid: str):
         '''
@@ -314,7 +324,7 @@ class Skeleton:
             elif self.bones[muscle.bone2].depth < self.bones[muscle.bone1].depth:
                 bone_closer_to_body = muscle.bone2
             
-            self.muscles[muscle_id].flex(pos, activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
+            self.muscles[muscle_id].flex(pos, 1 * activation * dt, self.joints, self.bones, bone_closer_to_body, self.fixed_bone)
 
         movement, turn_angle = np.zeros((3,)), 0
         dragging_joints = [joint for joint in self.joints.values() if joint.is_pivot(pos, angle, up_matrix)]
@@ -322,8 +332,12 @@ class Skeleton:
         if len(dragging_joints) == 1:
             # get the movement
             movement = 2 * (dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos)
-            up_rotation = get_matrix_from_quat(up_matrix.dot(rotate_z(dragging_joints[0].rel_pos, angle)), 
-                                               up_matrix.dot(rotate_z(dragging_joints[0].new_rel_pos, angle)))
+            rel_pos = rotate_z(dragging_joints[0].rel_pos, angle)
+            rel_pos[2] = 0
+            new_rel_pos = rotate_z(dragging_joints[0].new_rel_pos, angle)
+            new_rel_pos[2] = 0
+            up_rotation = get_matrix_from_quat(up_matrix.dot(rel_pos), 
+                                               up_matrix.dot(new_rel_pos))
             
             # move all of the joints pos and muscle flex
             [joint.update_movement() for joint in self.joints.values()]
@@ -337,16 +351,18 @@ class Skeleton:
             if angle_between_through_vecs < PARALLEL_TOLERANCE:
                 # movement
                 can_offset = True
-                offset = dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos
+                average_rel_pos = np.average(np.array([dragged_joint.rel_pos for dragged_joint in dragging_joints]), axis=0)
+                average_rel_pos[2] = 0
+                average_new_rel_pos = np.average(np.array([dragged_joint.new_rel_pos for dragged_joint in dragging_joints]), axis=0)
+                average_new_rel_pos[2] = 0
+                offset = (average_new_rel_pos - average_rel_pos)
+                movement = 2 * offset
                 for dragged_joint in other_dragging_joints:
                     if np.linalg.norm(dragged_joint.new_rel_pos - offset - dragged_joint.rel_pos) > DRAG_TOLERANCE:
                         can_offset = False
                         break
                 
                 if can_offset:
-                    movement = 2 * offset
-                    average_rel_pos = np.average(np.array([dragged_joint.rel_pos for dragged_joint in dragging_joints]), axis=0)
-                    average_new_rel_pos = np.average(np.array([dragged_joint.new_rel_pos for dragged_joint in dragging_joints]), axis=0)
                     up_rotation = get_matrix_from_quat(up_matrix.dot(rotate_z(average_rel_pos, angle)), 
                                                        up_matrix.dot(rotate_z(average_new_rel_pos, angle)))
                     [joint.update_movement() for joint in self.joints.values()]
@@ -375,11 +391,8 @@ class Skeleton:
                 if can_offset:
                     movement = -offset
                     turn_angle = rotation_angle
-                    [joint.update_movement() for joint in self.joints.values()]
-                    [muscle.update_flex() for muscle in self.muscles.values()]
-                else:
-                    [joint.rollback_movement() for joint in self.joints.values()]
-                    [muscle.rollback_flex() for muscle in self.muscles.values()]
+                [joint.update_movement() for joint in self.joints.values()]
+                [muscle.update_flex() for muscle in self.muscles.values()]
         else:
             # no movement should occur
             # [joint.rollback_movement() for joint in self.joints.values()]
@@ -387,7 +400,8 @@ class Skeleton:
             [joint.update_movement() for joint in self.joints.values()]
             [muscle.update_flex() for muscle in self.muscles.values()]
 
-        return -movement, turn_angle, up_rotation
+        movement[2] = 0
+        return -movement, turn_angle, up_rotation.dot(up_rotation)
 
     def inv_dist_from_ground(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
         return {jid: 1 / abs((joint.get_abs_z(pos, angle, up_matrix) + 1))

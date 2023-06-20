@@ -387,8 +387,8 @@ def apply_gravity(pos: np.ndarray, angle: float, up_matrix: np.ndarray,
         if 0.01 < gravity_mag and gravity_mag < 0.99:
             gravity = gravity / gravity_mag
             gravity_angle = math.asin(gravity_mag) * dt
-            gravity_matrix = Rotation.from_quat(np.concatenate([gravity * math.sin(gravity_angle),
-                                                                np.array([math.cos(gravity_angle)])])).as_matrix()
+            gravity_matrix = Rotation.from_quat(np.concatenate([gravity * math.sin(gravity_angle/2),
+                                                                np.array([math.cos(gravity_angle/2)])])).as_matrix()
             pivot_point = pos + balance
             new_pos = gravity_matrix.dot(-balance) + pivot_point
             new_up_mat = gravity_matrix.dot(up_matrix)
@@ -405,7 +405,7 @@ class Entity:
         self.pos : np.ndarray = entity_data['pos']
         self.vel = np.zeros(shape=(3,))
         self.z_angle = 0
-        self.up_vec = np.array([random.uniform(-0.2, 0.2), 0, 1.0])
+        self.up_vec = np.array([0.2,0,1])
         self.up_vec = self.up_vec / np.linalg.norm(self.up_vec)
         self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
 
@@ -434,7 +434,7 @@ class Entity:
         # angle = self.receptors.poll_receptors(self.pos, self.z_angle, 100, env)[0,1]
         dev = angle_between(self.up_vec, np.array([0,0,1]))
         score = 10 / (dev + 1) + self.pos[2] + 10 * self.pos[0]
-        print(10 / (dev + 1), self.pos[2], 10 * self.pos[0])
+        print(1000 / (dev + 1), self.pos[2], self.pos[0])
         self.fitness = score
 
     def mutate(self):
@@ -456,9 +456,9 @@ class Entity:
         self.clock_time = (self.clock_time + dt) % self.clock_period
 
         # gravity
-        # self.pos, self.up_vec, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, self.balance, dt)
+        self.pos, self.up_vec, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, self.balance, dt)
         # self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
-        self.pos = self.pos + GRAVITY_VEC * self.skeleton.get_lowest_joint(self.pos, self.z_angle, self.up_matrix)
+        # self.pos = self.pos + GRAVITY_VEC * self.skeleton.get_lowest_joint(self.pos, self.z_angle, self.up_matrix)
 
         # movement
         muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
@@ -466,7 +466,7 @@ class Entity:
                                               self.skeleton.get_muscle_flex_amt(),
                                               rotate_z(self.up_vec, -self.z_angle))
         movement, angle, up_rotation = self.skeleton.fire_muscles(self.pos, self.z_angle, self.up_matrix, muscle_activations, dt)
-        self.z_angle += angle
+        # self.z_angle += angle
         self.pos = self.pos + rotate_z(movement, self.z_angle)
         self.up_vec = up_rotation.dot(self.up_vec)
         self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
@@ -502,10 +502,11 @@ class Entity:
             return False
         return True
     
-    def reset_pos(self, pos: np.ndarray):
+    def reset_pos(self, pos: np.ndarray, skeleton_data: dict):
+        self.clock_time = 0
         self.pos : np.ndarray = pos
         self.z_angle = 0
-        self.up_vec = np.array([random.uniform(-0.2, 0.2), 0, 1.0])
+        self.up_vec = np.array([0.2,0,1])
         self.up_vec = self.up_vec / np.linalg.norm(self.up_vec)
         self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
         # self.z_angle = math.pi/2
@@ -516,6 +517,8 @@ class Entity:
             self.balance = self.up_matrix.dot(rotate_z(balance, self.z_angle))
         else:
             self.balance = None
+
+        self.skeleton.reset_skeleton(skeleton_data)
     
     # rendering
     def render_health_and_energy(self, display: pg.Surface, drawpos: tuple):
