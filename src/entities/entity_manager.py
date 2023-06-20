@@ -432,13 +432,9 @@ class Entity:
     # evo
     def calculate_fitness(self, env):
         # angle = self.receptors.poll_receptors(self.pos, self.z_angle, 100, env)[0,1]
-        min_dist = np.min(np.array([
-            np.linalg.norm(self.pos - p)
-            for p in env.positions
-        ]))
         dev = angle_between(self.up_vec, np.array([0,0,1]))
-        score = 10 / (dev + 1) + self.pos[2] + 100 / (min_dist + 1)
-        print(10 / (dev + 1), self.pos[2], 100 / (min_dist + 1))
+        score = 10 / (dev + 1) + self.pos[2] + 10 * self.pos[0]
+        print(10 / (dev + 1), self.pos[2], 10 * self.pos[0])
         self.fitness = score
 
     def mutate(self):

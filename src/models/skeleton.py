@@ -7,15 +7,15 @@ from ..util.adv_math import angle_between, find_poi, get_matrix_from_quat, rotat
 
 # tolerance epsilon
 FLEX_TOLERANCE = 0.01 # muscle needs to be activated above this threshold to flex
-PIVOT_TOLERANCE = 0.1 # the z position of a joint must be below this threshold to be considered a pivot
+PIVOT_TOLERANCE = 0.25 # the z position of a joint must be below this threshold to be considered a pivot
 PARALLEL_TOLERANCE = 0.1 # the angle between two vectors must be below this threshold to be considered parallel
-DRAG_TOLERANCE = 0.5 # the distance between the joint and its estimated position must be below for movement to occur
+DRAG_TOLERANCE = 0.25 # the distance between the joint and its estimated position must be below for movement to occur
 # rates
 RELAXATION_RATE = 0.1
 MUTATION_RATE = 0.05
 # boundaries
-MAX_FLEXED_ANGLE = math.pi - 0.05
-MIN_FLEXED_ANGLE = 0.05
+MAX_FLEXED_ANGLE = math.pi - 0.1
+MIN_FLEXED_ANGLE = 0.1
 
 class Joint:
     def __init__(self, joint_data: dict):
@@ -83,7 +83,7 @@ class Muscle:
 
     def flex(self, pos: np.ndarray, flex_amt: float, joints: dict, bones: dict, 
              stationary_bone: str | None, fixed_bone: str) -> dict:
-        if MIN_FLEXED_ANGLE < self.new_cumul_flex and self.new_cumul_flex < MAX_FLEXED_ANGLE:
+        if MIN_FLEXED_ANGLE <= self.new_cumul_flex and self.new_cumul_flex <= MAX_FLEXED_ANGLE:
             flex_amt = np.clip(flex_amt, 
                             a_min=MIN_FLEXED_ANGLE-self.new_cumul_flex, 
                             a_max=MAX_FLEXED_ANGLE-self.new_cumul_flex)
