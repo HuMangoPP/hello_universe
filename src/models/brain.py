@@ -33,7 +33,7 @@ class Brain:
             [f'i_{mid}' for mid in brain_data['muscles']] +
             [f'i_{jid}' for jid in brain_data['joints']] + 
             [f'o_{mid}' for mid in brain_data['muscles']] +
-            ['i_devx', 'i_devy', 'i_gx', 'i_gy'] +
+            ['i_devx', 'i_devy', 'i_c', 'i_ca'] +
             brain_data['neurons'])
         self.neurons = set(brain_data['neurons'])
         self.axons : dict[int, Axon] = {}
@@ -145,7 +145,7 @@ class Brain:
     
     # functionality
     def think(self, receptor_activations: np.ndarray, joint_activation: dict,
-              muscle_activation: dict, upright_deviation: np.ndarray, gravity: np.ndarray) -> dict:
+              muscle_activation: dict, upright_deviation: np.ndarray) -> dict:
         # when we think, we build the input layer
         receptor_input = {
             f'i_{label}': activation
@@ -160,13 +160,11 @@ class Brain:
             for muscle_id, activation in muscle_activation.items()
         }
         input_layer = {
-            # **receptor_input,
+            **receptor_input,
             **joint_input,
             **muscle_input,
             'i_devx': upright_deviation[0],
             'i_devy': upright_deviation[1],
-            'i_gx': gravity[0],
-            'i_gy': gravity[1],
         }
         # create the output layer
         output_layer = {

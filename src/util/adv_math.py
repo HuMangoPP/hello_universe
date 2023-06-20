@@ -55,8 +55,12 @@ def rotate_z(u: np.ndarray, angle: float) -> np.ndarray:
     return r_matrix.dot(u)
 
 def get_matrix_from_quat(u: np.ndarray, v: np.ndarray) -> np.ndarray:
-    rotation_axis = np.cross(u,v) / np.linalg.norm(u) / np.linalg.norm(v)
-    rotation_angle = np.arcsin(np.linalg.norm(rotation_axis))
-    if np.linalg.norm(rotation_axis) > 0:
-        rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
-    return Rotation.from_quat(np.concatenate([rotation_axis * np.sin(rotation_angle/2), np.array([np.cos(rotation_angle/2)])])).as_matrix()
+    um = np.linalg.norm(u)
+    vm = np.linalg.norm(v)
+    if um > 0 and vm > 0:
+        rotation_axis = np.cross(u,v) / np.linalg.norm(u) / np.linalg.norm(v)
+        rotation_angle = np.arcsin(np.linalg.norm(rotation_axis))
+        if np.linalg.norm(rotation_axis) > 0:
+            rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
+        return Rotation.from_quat(np.concatenate([rotation_axis * np.sin(rotation_angle/2), np.array([np.cos(rotation_angle/2)])])).as_matrix()
+    return np.diag(np.ones((3,), np.float32))

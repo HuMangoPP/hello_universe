@@ -45,12 +45,7 @@ class Joint:
         self.new_rel_pos = self.rel_pos
 
     def get_abs_pos(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
-        r_matrix = np.array([
-            [math.cos(angle), -math.sin(angle), 0],
-            [math.sin(angle),  math.cos(angle), 0],
-            [0,                0,               1]
-        ])
-        return up_matrix.dot(r_matrix.dot(self.rel_pos)) + pos
+        return up_matrix.dot(rotate_z(self.rel_pos, angle)) + pos
 
     def get_abs_z(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> float:
         return self.get_abs_pos(pos, angle, up_matrix)[2]
@@ -326,7 +321,7 @@ class Skeleton:
         up_rotation = np.diag(np.ones((3,), dtype=np.float32))
         if len(dragging_joints) == 1:
             # get the movement
-            movement = dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos
+            movement = 2 * (dragging_joints[0].new_rel_pos - dragging_joints[0].rel_pos)
             up_rotation = get_matrix_from_quat(up_matrix.dot(rotate_z(dragging_joints[0].rel_pos, angle)), 
                                                up_matrix.dot(rotate_z(dragging_joints[0].new_rel_pos, angle)))
             
@@ -349,9 +344,11 @@ class Skeleton:
                         break
                 
                 if can_offset:
-                    movement = offset
-                    up_rotation = get_matrix_from_quat(up_matrix.dot(rotate_z(dragging_joints[0].rel_pos, angle)), 
-                                                       up_matrix.dot(rotate_z(dragging_joints[0].new_rel_pos, angle)))
+                    movement = 2 * offset
+                    average_rel_pos = np.average(np.array([dragged_joint.rel_pos for dragged_joint in dragging_joints]), axis=0)
+                    average_new_rel_pos = np.average(np.array([dragged_joint.new_rel_pos for dragged_joint in dragging_joints]), axis=0)
+                    up_rotation = get_matrix_from_quat(up_matrix.dot(rotate_z(average_rel_pos, angle)), 
+                                                       up_matrix.dot(rotate_z(average_new_rel_pos, angle)))
                     [joint.update_movement() for joint in self.joints.values()]
                     [muscle.update_flex() for muscle in self.muscles.values()]
                 else:
