@@ -78,7 +78,7 @@ class Brain:
                 # change the weight of this axon
                     self.axons[innov].weight += random.uniform(-D_WEIGHT, D_WEIGHT)
                 else:
-                    self.add_axon(in_neuron, out_neuron, random.uniform(0, 1), innov)
+                    self.add_axon(in_neuron, out_neuron, random.uniform(-1, 1), innov)
             else:
                 # otherwise, add the axon
                 # determine the innov number

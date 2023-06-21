@@ -374,30 +374,19 @@ class EntityManager:
 GRAVITY_VEC = np.array([0, 0, -1])
 
 def apply_gravity(pos: np.ndarray, angle: float, up_matrix: np.ndarray, 
-                  skeleton: Skeleton, balance: np.ndarray, dt: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    if balance is None:
-        return (pos + GRAVITY_VEC * skeleton.get_lowest_joint(pos, angle, up_matrix), 
-                up_matrix[:,2], np.zeros((2,), dtype=np.float32))
-    else:
-        com = up_matrix.dot(rotate_z(skeleton.get_com(), angle))
-        com_mag = np.linalg.norm(com-balance)
-        body_vec = (com-balance) / com_mag if com_mag > 0 else (com-balance)
-        gravity = np.cross(body_vec, GRAVITY_VEC)
-        gravity_mag = np.linalg.norm(gravity)
-        if 0.01 < gravity_mag and gravity_mag < 0.99:
-            gravity = gravity / gravity_mag
-            gravity_angle = math.asin(gravity_mag) * dt
-            gravity_matrix = Rotation.from_quat(np.concatenate([gravity * math.sin(gravity_angle/2),
-                                                                np.array([math.cos(gravity_angle/2)])])).as_matrix()
-            pivot_point = pos + balance
-            new_pos = gravity_matrix.dot(-balance) + pivot_point
-            new_up_mat = gravity_matrix.dot(up_matrix)
-        else:
-            return (pos, 
-                    up_matrix[:,2], np.zeros((2,), dtype=np.float32))
+                  skeleton: Skeleton, dt: float) -> tuple[np.ndarray, np.ndarray]:
+    gravity = np.cross(up_matrix[:,2], GRAVITY_VEC)
+    gravity_mag = np.linalg.norm(gravity)
+    if 0.15 < gravity_mag and gravity_mag < 0.99:
+        gravity_angle = math.asin(gravity_mag) * dt
+        gravity_matrix = Rotation.from_quat(np.array([*(gravity * math.sin(gravity_angle)), math.cos(gravity_angle)])).as_matrix()
+        balance = up_matrix.dot(rotate_z(skeleton.get_balance(pos, angle, up_matrix), angle))
+        new_pos = pos + balance + gravity_matrix.dot(-balance)
+        new_up_vec = gravity_matrix.dot(up_matrix[:,2])
+        return new_pos, new_up_vec
+    return pos, up_matrix[:,2]
         
-        return (new_pos, 
-                new_up_mat[:,2], rotate_z(body_vec, -angle)[:2])
+    
 
 class Entity:
     def __init__(self, entity_data: dict):
@@ -456,9 +445,9 @@ class Entity:
         self.clock_time = (self.clock_time + dt) % self.clock_period
 
         # gravity
-        # self.pos, self.up_vec, gravity = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, self.balance, dt)
-        # self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
         self.pos = self.pos + GRAVITY_VEC * self.skeleton.get_lowest_joint(self.pos, self.z_angle, self.up_matrix)
+        self.pos, self.up_vec = apply_gravity(self.pos, self.z_angle, self.up_matrix, self.skeleton, dt)
+        self.up_matrix = get_matrix_from_quat(np.array([0,0,1]),self.up_vec)
 
         # movement
         muscle_activations = self.brain.think(triangle_wave(self.clock_period, self.clock_time) * self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
