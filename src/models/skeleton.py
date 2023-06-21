@@ -9,7 +9,7 @@ from ..util.adv_math import angle_between, find_poi, get_matrix_from_quat, rotat
 FLEX_TOLERANCE = 0.01 # muscle needs to be activated above this threshold to flex
 PIVOT_TOLERANCE = 0.05 # the z position of a joint must be below this threshold to be considered a pivot
 PARALLEL_TOLERANCE = 0.1 # the angle between two vectors must be below this threshold to be considered parallel
-DRAG_TOLERANCE = 0.5 # the distance between the joint and its estimated position must be below for movement to occur
+DRAG_TOLERANCE = 1 # the distance between the joint and its estimated position must be below for movement to occur
 # rates
 RELAXATION_RATE = 0.1
 MUTATION_RATE = 0.05
@@ -34,7 +34,7 @@ class Joint:
             [0,                0,               1]
         ])
         return (
-            (up_matrix.dot(r_matrix.dot(self.rel_pos)) + pos)[2] <= PIVOT_TOLERANCE and
+            (up_matrix.dot(r_matrix.dot(self.rel_pos)) + pos)[2] <= PIVOT_TOLERANCE or
             (up_matrix.dot(r_matrix.dot(self.new_rel_pos)) + pos)[2] <= PIVOT_TOLERANCE
         )
 
@@ -92,18 +92,6 @@ class Muscle:
                             a_max=MAX_FLEXED_ANGLE-self.new_cumul_flex)
             self.new_cumul_flex += flex_amt
             return self.rotate_bones(pos, flex_amt, joints, bones, stationary_bone, fixed_bone)
-        return {
-            'movement': np.zeros((3,))
-        }
-
-    def relax(self, pos: np.ndarray, dt: float, joints: dict, bones: dict, 
-              stationary_bone: str | None, fixed_bone: str) -> dict:
-        angle = dt if (stationary_bone is not None or fixed_bone in [self.bone1, self.bone2]) else dt * 2
-        if self.new_cumul_flex > self.relaxed_angle:
-            flex_ratio = min(self.new_cumul_flex - self.relaxed_angle, angle) / angle
-            self.new_cumul_flex -= flex_ratio * angle
-            return self.rotate_bones(pos, -flex_ratio * dt, joints, bones, stationary_bone, fixed_bone)
-            
         return {
             'movement': np.zeros((3,))
         }
@@ -354,8 +342,6 @@ class Skeleton:
                         break
                 
                 if can_offset:
-                    up_rotation = get_matrix_from_quat(up_matrix.dot(rotate_z(average_rel_pos, angle)), 
-                                                       up_matrix.dot(rotate_z(average_new_rel_pos, angle)))
                     [joint.update_movement() for joint in self.joints.values()]
                     [muscle.update_flex() for muscle in self.muscles.values()]
                 else:
@@ -386,11 +372,8 @@ class Skeleton:
                 [muscle.update_flex() for muscle in self.muscles.values()]
         else:
             # no movement should occur
-            # [joint.rollback_movement() for joint in self.joints.values()]
-            # [muscle.rollback_flex() for muscle in self.muscles.values()]
             [joint.update_movement() for joint in self.joints.values()]
             [muscle.update_flex() for muscle in self.muscles.values()]
-
         movement[2] = 0
         return -movement, turn_angle
 
