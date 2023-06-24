@@ -180,6 +180,7 @@ class Brain:
 
     # data
     def get_df(self):
+        '''JSON format'''
         return {
             axon_label: axon.weight
             for axon_label, axon in self.axons.items()
