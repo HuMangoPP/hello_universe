@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import math
 
-from ..util.collisions import QuadTree
+from ...util import QuadTree
 
 SHAPE_MAP = {
     'circle': 0,

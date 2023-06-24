@@ -25,9 +25,9 @@ create a gravity module and test it
 determine ways of increasing the resolution of physics updates
 '''
 
-from brain import Brain
-from stomach import Stomach
-from receptors import Receptors
+from .brain import Brain
+from .stomach import Stomach
+from .receptors import Receptors
 
 from ...util.adv_math import rotate_z, triangle_wave
 

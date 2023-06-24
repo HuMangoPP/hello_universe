@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-from ..util.adv_math import lerp, sigmoid
+from ...util import lerp, sigmoid
 
 MUTATION_RATE = 0.75
 D_WEIGHT = 0.25

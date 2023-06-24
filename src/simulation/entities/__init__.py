@@ -1,2 +1,2 @@
-from brain import BrainHistory
-from entity import Entity
+from .brain import BrainHistory
+from .entity import Entity

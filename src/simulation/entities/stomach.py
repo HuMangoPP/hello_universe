@@ -1,7 +1,7 @@
 import numpy as np
 import random, math
 
-from ..util.adv_math import lerp, gaussian_dist
+from ...util import lerp, gaussian_dist
 
 MUTATION_RATE = 0.2
 DMUT = 0.1

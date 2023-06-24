@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import math, random
 
-from ..util.adv_math import lerp, gaussian_dist, proj
+from ...util import lerp, gaussian_dist, proj
 
 SHAPE_MAP = {
     'circle': 0,
