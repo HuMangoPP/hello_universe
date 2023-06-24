@@ -1,10 +1,35 @@
 import numpy as np
 
+'''
+HU
+
+refactor entity code
+refactor brain to reflect amoeba movement rather than skeletal -> also switch to tanh and keep all activations normalized between -1 to +1
+create pheromones to send out for creatures (independent placing into environment and not the user)
+
+refactor menus to decouple simulation - make a simulation class that runs all of the simulations rather than in the menu so it runs independent of the menu (rendering)
+
+create a separate renderer class -> send data to renderer to render onto the screen
+have different renderers in different modes based on what type of gui the user wants 
+- actual real-time simulation
+- monitoring stats only
+
+EXTRA if have time
+segregate functions into single cells and have entities form via multicellular clumps
+cells specialized through mutations -> based on their genome, they may be enabled or disabled (nonfunctional due to an incompatible genome)
+have an idea of a genome, which encodes information
+
+EXTRA EXTRA if have time
+redo the skeleton code, but with variable friction forces
+create a gravity module and test it
+determine ways of increasing the resolution of physics updates
+'''
+
 from brain import Brain
 from stomach import Stomach
 from receptors import Receptors
 
-from ..util.adv_math import rotate_z, triangle_wave
+from ...util.adv_math import rotate_z, triangle_wave
 
 MOVEMENT_OPTIONS = ['o_mvf', 'o_mvr', 'o_mvb', 'o_mvl']
     
