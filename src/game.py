@@ -31,7 +31,7 @@ class Client:
         }
         self.clock = pg.time.Clock()
 
-        self.menus = [StartMenu(self), DevMenu(self)]
+        self.menus = [ DevMenu(self)]
         self.current_menu = 0
 
     def update(self):

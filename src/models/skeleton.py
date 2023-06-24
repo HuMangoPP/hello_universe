@@ -329,7 +329,7 @@ class Skeleton:
             other_dragging_joints = dragging_joints[2:]
 
             angle_between_through_vecs = angle_between(through_joint_vec, new_through_joint_vec)
-            if angle_between_through_vecs < PARALLEL_TOLERANCE:
+            if angle_between_through_vecs < PARALLEL_TOLERANCE or math.pi - PARALLEL_TOLERANCE < angle_between_through_vecs :
                 # movement
                 can_offset = True
                 average_rel_pos = np.average(np.array([dragged_joint.rel_pos for dragged_joint in dragging_joints]), axis=0)
@@ -351,7 +351,6 @@ class Skeleton:
                 # rotate
                 rotation_pivot = find_poi(through_joint_vec, new_through_joint_vec, 
                                           dragging_joints[1].rel_pos, dragging_joints[1].new_rel_pos)
-                rotation_axis = np.cross(through_joint_vec, new_through_joint_vec)
                 rotation_angle = angle_between_through_vecs
                 r_matrix = np.array([
                     [math.cos(rotation_angle), -math.sin(rotation_angle), 0],
@@ -374,11 +373,11 @@ class Skeleton:
             # no movement should occur
             [joint.update_movement() for joint in self.joints.values()]
             [muscle.update_flex() for muscle in self.muscles.values()]
-        movement[2] = 0
+
         return -movement, turn_angle
 
     def inv_dist_from_ground(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray):
-        return {jid: 1 / abs((joint.get_abs_z(pos, angle, up_matrix) + 1))
+        return {jid: 1 / (abs(joint.get_abs_z(pos, angle, up_matrix)) + 1)
                 for jid, joint in self.joints.items()}
 
     def get_muscle_flex_amt(self):
@@ -386,7 +385,7 @@ class Skeleton:
                 for mid, muscle in self.muscles.items()}
 
     def get_lowest_joint(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> float:
-        return np.min(np.array([joint.get_abs_z(pos, angle, up_matrix) for joint in self.joints.values()]))
+        return np.min(np.array([joint.get_abs_z(pos, angle, up_matrix) for joint in self.joints.values()])) + 0.5
 
     def get_balance(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> np.ndarray | None:
         joints = np.array([joint.rel_pos for joint in self.joints.values() if joint.get_abs_z(pos, angle, up_matrix) <= PIVOT_TOLERANCE])
@@ -396,6 +395,10 @@ class Skeleton:
 
     def get_com(self) -> np.ndarray:
         return np.average(np.array([joint.rel_pos for joint in self.joints.values()]), axis=0)
+
+    def num_touching_ground(self, pos: np.ndarray, angle: float, up_matrix: np.ndarray) -> int:
+        joints = np.array([joint.rel_pos for joint in self.joints.values() if joint.get_abs_z(pos, angle, up_matrix) <= PIVOT_TOLERANCE])
+        return joints.shape[0]
 
     # render
     def render(self, display: pg.Surface, pos: np.ndarray, angle: float, up_matrix: np.ndarray, camera):

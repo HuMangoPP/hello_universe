@@ -294,7 +294,7 @@ BASIC = {
     'stats': {
         'itl': 1, 'pwr': 1, 'def': 1, 'mbl': 1, 'stl': 1,
     },
-    'clock_period': 3,
+    'clock_period': 6,
 }
 RECEPTORS = {
     'num_of_type': np.array([3, 3, 3, 3, 3]),
@@ -312,11 +312,11 @@ SKELETON = {
 
             {'jid': 'j2', 'rel_pos': np.array([0,10,-50], dtype=np.float32)},
             {'jid': 'j3', 'rel_pos': np.array([-5,10,-50], dtype=np.float32)},
-            {'jid': 'j4', 'rel_pos': np.array([5,10,-100], dtype=np.float32)},
+            {'jid': 'j4', 'rel_pos': np.array([0,10,-100], dtype=np.float32)},
 
             {'jid': 'j5', 'rel_pos': np.array([0,-10,-50], dtype=np.float32)},
             {'jid': 'j6', 'rel_pos': np.array([-5,-10,-50], dtype=np.float32)},
-            {'jid': 'j7', 'rel_pos': np.array([5,-10,-100], dtype=np.float32)},
+            {'jid': 'j7', 'rel_pos': np.array([0,-10,-100], dtype=np.float32)},
         ],
     'bones': [
             {'bid': 'b0', 'joint1': 'j0', 'joint2': 'j1', 'depth': 0}, 
@@ -330,15 +330,30 @@ SKELETON = {
             {'bid': 'b6', 'joint1': 'j6', 'joint2': 'j7', 'depth': 3},
         ],
     'muscles': [
-            {'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
-            {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b4'},
+            # {'mid': 'm0', 'bone1': 'b0', 'bone2': 'b1'},
+            # {'mid': 'm1', 'bone1': 'b0', 'bone2': 'b4'},
 
             {'mid': 'm2', 'bone1': 'b2', 'bone2': 'b3'},
             {'mid': 'm3', 'bone1': 'b5', 'bone2': 'b6'},
         ],
 }
 
-NUM_CREATURES = 6
+POWER_SQUAT = [
+    ['i_c', 'o_m2', 1],
+    ['i_m2', 'o_m3', 1],
+
+    ['i_m2', 'o_m2', -0.75],
+    # ['i_m3', 'o_m3', -0.5],
+
+    ['i_j4', 'o_m2', 0.5],
+    ['i_j7', 'o_m2', -0.5],
+
+    # ['i_j4', 'o_m3', 0.5],
+    # ['i_j7', 'o_m3', -0.5]
+]
+
+NUM_CREATURES = 1
+TIME_PER_GEN = 6
 
 class DevMenu:
     def __init__(self, client):
@@ -365,7 +380,8 @@ class DevMenu:
             axons = [[label.split('->')[0], label.split('->')[1], value] for label, value in data[2:].dropna().items()]
             neurons = [axon[1] for axon in axons]
         else:
-            axons = []
+            axons = [
+            ]
             neurons = []
         self.entities : list[Entity] = []
         for i in np.arange(NUM_CREATURES):
@@ -383,18 +399,25 @@ class DevMenu:
                 'stomach': STOMACH,
                 'skeleton': SKELETON,
             })
-            entity.mutate()
+            # for _ in range(20):
+            #     entity.mutate()
             self.entities.append(entity)
-        self.gen_timer = 6
+        self.gen_timer = TIME_PER_GEN
+        self.best_entity = self.entities[0]
+        
         # environment
         self.environment = Environment()
-        new_particles = 1
+        new_particles = 5
+        positions = np.array([(np.arange(new_particles) + 1) * 50, 
+                                np.zeros((new_particles,)), 
+                                np.full((new_particles,), 100)]).T
         self.environment.add_new_particles(
-            new_particles, np.repeat(np.array([[50, 0, 100]]), repeats=new_particles, axis=0),
-            np.arange(new_particles),
+            new_particles, positions,
+            np.full((new_particles,), 0, dtype=np.int32),
             np.full((new_particles,), 0.5, dtype=np.float32)
         )
-        self.camera = Camera(self.entities[0].pos)
+        
+        self.camera = Camera(self.best_entity.pos)
 
         self.sensory_activation = {}
     
@@ -421,45 +444,70 @@ class DevMenu:
         }
         self.entities.append(Entity(entity_data))
 
-    def update(self, events: list[pg.Event]):
-        dt = self.clock.get_time() / 1000
+    def update(self, events):
+        # dt = self.clock.get_time()
+        dt = 0.05
 
-        self.gen_timer -= dt
+        for event in events:
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                self.best_entity.reset_pos(np.array([0,0,100]), SKELETON)
+                new_particles = 5
+                positions = np.array([(np.arange(new_particles) + 1) * 50, 
+                                        np.zeros((new_particles,)), 
+                                        np.full((new_particles,), 100)]).T
+                self.environment.add_new_particles(
+                    new_particles, positions,
+                    np.full((new_particles,), 0, dtype=np.int32),
+                    np.full((new_particles,), 0.5, dtype=np.float32)
+                )
+
+        # self.gen_timer -= dt
         if self.gen_timer <= 0:
             self.generation += 1
             
             # fitness
             [entity.calculate_fitness(self.environment) for entity in self.entities]
             fitness_values = np.array([entity.fitness for entity in self.entities])
-            median = np.median(fitness_values)
-            half = NUM_CREATURES//2
-            indices = (fitness_values >= median).nonzero()[:half]
+            pct = np.percentile(fitness_values, 75)
+            qtr = NUM_CREATURES//4
+            indices = (fitness_values >= pct).nonzero()[0][:qtr]
+            print(fitness_values[indices])
 
             # save
             best = np.argmax(fitness_values)
+            self.best_entity = self.entities[best]
+            print(f'best fitness: {fitness_values[best]}')
             basic, receptor, stomach, brain, skeleton = self.entities[best].get_df()
             write_entity_data_as_csv(self.generation, brain, 'brain')
 
             # new entities
-            breeding_pairs = np.random.randint(0, half, (half,))
-            self.entities : list[Entity] = [self.entities[index] for index in indices[0]]
-            [entity.reset_pos(np.array([0,0,100])) for entity in self.entities]
-            for i, (entity, pair) in enumerate(zip(self.entities, breeding_pairs)):
-                self.add_new_entity(f'{self.generation}-{i}', BASIC, 
-                                    entity.cross_breed(self.entities[pair]), 
-                                    RECEPTORS, STOMACH, SKELETON)
-            [entity.mutate() for entity in self.entities]
+            breeding_pairs = np.random.randint(0, qtr, (qtr, 3))
+            self.entities : list[Entity] = [self.entities[index] for index in indices]
+            [entity.reset_pos(np.array([0,0,100]), SKELETON) for entity in self.entities]
+            for i, (entity, pairs) in enumerate(zip(self.entities, breeding_pairs)):
+                for pair in pairs:
+                    self.add_new_entity(f'{self.generation}-{i}', BASIC, 
+                                        entity.cross_breed(self.entities[pair]), 
+                                        RECEPTORS, STOMACH, SKELETON)
+            
+            for _ in range(5):
+                [entity.mutate() for entity in self.entities]
 
             # new goal
             self.environment.clear_particles()
-            new_particles = 1
+            new_particles = 5
+            positions = np.array([(np.arange(new_particles) + 1) * 50, 
+                                  np.zeros((new_particles,)), 
+                                  np.full((new_particles,), 100)]).T
             self.environment.add_new_particles(
-                new_particles, np.repeat(np.array([[50, 0, 100]]), repeats=new_particles, axis=0),
-                np.arange(new_particles),
+                new_particles, positions,
+                np.full((new_particles,), 0, dtype=np.int32),
                 np.full((new_particles,), 0.5, dtype=np.float32)
             )
 
-            self.gen_timer = 6
+            self.gen_timer = TIME_PER_GEN
+
+            print(f'new gen: {self.generation}')
 
         if pg.mouse.get_pressed()[0]:
             self.new_particle_time -= dt
@@ -555,7 +603,8 @@ class DevMenu:
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
         # [entity.render(self.displays[DEFAULT_DISPLAY], self.camera) for entity in self.entities]
-        # self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
+        self.best_entity.render(self.displays[DEFAULT_DISPLAY], self.camera)
+        self.environment.render(self.displays[DEFAULT_DISPLAY], self.camera)
 
         self.font.render(self.displays[DEFAULT_DISPLAY], str(self.generation), 50, 50, (255, 255, 255),
                          size=25, style='center')

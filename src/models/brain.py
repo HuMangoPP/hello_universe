@@ -14,6 +14,9 @@ RECEPTOR_NAMES = np.array([
     'h', 'ha'
 ])
 
+MAX_NEURONS = 10
+MAX_AXONS = 20
+
 class BrainHistory:
     def __init__(self):
         self.axon_pool = {}
@@ -33,7 +36,7 @@ class Brain:
             [f'i_{mid}' for mid in brain_data['muscles']] +
             [f'i_{jid}' for jid in brain_data['joints']] + 
             [f'o_{mid}' for mid in brain_data['muscles']] +
-            ['i_devx', 'i_devy', 'i_c', 'i_ca'] +
+            ['i_c', 'i_ca'] +
             brain_data['neurons'])
         self.neurons = set(brain_data['neurons'])
         self.axons : dict[int, Axon] = {}
@@ -55,17 +58,13 @@ class Brain:
     
     # evo
     def mutate(self, itl_stat: float):
-        # determine the allowed number of neurons and axons based on the itl stat
-        allowed_neurons = int(itl_stat / 5) 
-        allowed_axons = int(itl_stat / 2) + 5
-
         # determine the number of neurons (not including sensors or effectors)
         # and enabled axons
         num_neurons = len(self.neurons)
         active_axons = [axon for axon in self.axons.values() if axon.enabled]
 
         # adds a new random connection or changes its weight if it exists
-        if random.uniform(0, 1) <= MUTATION_RATE/2:
+        if random.uniform(0, 1) <= MUTATION_RATE:
             # find an in and out neuron
             in_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] in 'ih'])
             out_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids if neuron_id.split('_')[0] == 'o'])
@@ -78,22 +77,37 @@ class Brain:
                 # change the weight of this axon
                     self.axons[innov].weight += random.uniform(-D_WEIGHT, D_WEIGHT)
                 else:
+                    if len(active_axons) >= MAX_AXONS:
+                        index = random.randint(0, len(active_axons)-1)
+                        axon_to_remove = active_axons[index]
+                        other_innov = self.brain_history.axon_pool[f'{axon_to_remove.in_neuron}->{axon_to_remove.out_neuron}']
+                        del self.axons[other_innov]
+                        active_axons.pop(index)
                     self.add_axon(in_neuron, out_neuron, random.uniform(-1, 1), innov)
             else:
                 # otherwise, add the axon
                 # determine the innov number
+                if len(active_axons) >= MAX_AXONS:
+                    index = random.randint(0, len(active_axons)-1)
+                    axon_to_remove = active_axons[index]
+                    innov = self.brain_history.axon_pool[f'{axon_to_remove.in_neuron}->{axon_to_remove.out_neuron}']
+                    del self.axons[innov]
+                    active_axons.pop(index)
                 self.brain_history.axon_pool[axon_label] = self.brain_history.innov_number
                 self.brain_history.innov_number += 1
                 self.add_axon(in_neuron, out_neuron, random.uniform(0, 1), self.brain_history.axon_pool[axon_label])
 
         # adds new neuron and connects it on both sides
-        if random.uniform(0, 1) <= MUTATION_RATE/8 and active_axons:
+        if random.uniform(0, 1) <= MUTATION_RATE and active_axons and num_neurons < MAX_NEURONS:
             new_neuron_id = f'h_{num_neurons}'
             self.add_neuron(new_neuron_id)
             
             # choose a random connection to insert a node into
-            axon_to_replace = random.choice(active_axons)
-            axon_to_replace.enabled = False
+            index = random.randint(0, len(active_axons)-1)
+            axon_to_replace = active_axons[index]
+            innov = self.brain_history.axon_pool[f'{axon_to_replace.in_neuron}->{axon_to_replace.out_neuron}']
+            del self.axons[innov]
+            active_axons.pop(index)
             
             # determine innov numbers
             axon_label = f'{axon_to_replace.in_neuron}->{new_neuron_id}'
@@ -129,23 +143,23 @@ class Brain:
                     axon.out_neuron,
                     axon.weight,
                 ])
-        for innov, axon in other_brain.axons.items():
-            if innov not in self.axons:
-                axon_data.append([
-                    axon.in_neuron,
-                    axon.out_neuron,
-                    axon.weight
-                ])
+        # for innov, axon in other_brain.axons.items():
+        #     if innov not in self.axons:
+        #         axon_data.append([
+        #             axon.in_neuron,
+        #             axon.out_neuron,
+        #             axon.weight
+        #         ])
 
         brain_data = {
-            'neurons': list(self.neurons.union(other_brain.neurons)),
+            'neurons': list(self.neurons),
             'axons': axon_data       
         }
         return brain_data
     
     # functionality
     def think(self, receptor_activations: np.ndarray, joint_activation: dict,
-              muscle_activation: dict, upright_deviation: np.ndarray) -> dict:
+              muscle_activation: dict, upright_deviation: np.ndarray, clock_actv: float) -> dict:
         # when we think, we build the input layer
         receptor_input = {
             f'i_{label}': activation
@@ -163,8 +177,8 @@ class Brain:
             **receptor_input,
             **joint_input,
             **muscle_input,
-            'i_devx': upright_deviation[0],
-            'i_devy': upright_deviation[1],
+            # 'i_devx': upright_deviation[0],
+            # 'i_devy': upright_deviation[1],
         }
         # create the output layer
         output_layer = {
@@ -176,11 +190,16 @@ class Brain:
 
         # disable axons that are no longer used, an axon is no longer used if it
         # does not have an input or output neuron
+        to_remove =[]
         for axon in self.axons.values():
             if axon.in_neuron.split('_')[0] == 'i' and axon.in_neuron not in input_layer:
-                axon.enabled = False
+                innov = self.brain_history.axon_pool[f'{axon.in_neuron}->{axon.out_neuron}']
+                to_remove.append(innov)
             elif axon.out_neuron.split('_')[0] == 'o' and axon.out_neuron not in output_layer:
-                axon.enabled = False
+                innov = self.brain_history.axon_pool[f'{axon.in_neuron}->{axon.out_neuron}']
+                to_remove.append(innov)
+        for innov in to_remove:
+            del self.axons[innov]
         
         activated_neurons = {
             neuron_id: activation
@@ -198,7 +217,7 @@ class Brain:
             axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
         
         activation = {
-            muscle_id.split('_')[1]: sigmoid(m_activation, 1, 5)
+            muscle_id.split('_')[1]: clock_actv * sigmoid(m_activation, 1, 5)
             for muscle_id, m_activation in output_layer.items()
         }
         self.prev_activation = {

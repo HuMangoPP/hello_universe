@@ -12,7 +12,7 @@ SHAPE_MAP = {
     'hexagon': 4,
 }
 
-PARTICLE_LIFETIME = 10
+PARTICLE_LIFETIME = 15
 
 def draw_circle(display: pg.Surface, center: tuple, color: tuple, radius: float):
     pg.draw.circle(display, color, center, radius)
