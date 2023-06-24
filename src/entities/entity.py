@@ -1,0 +1,102 @@
+import numpy as np
+
+from brain import Brain
+from stomach import Stomach
+from receptors import Receptors
+
+from ..util.adv_math import rotate_z, triangle_wave
+
+MOVEMENT_OPTIONS = ['o_mvf', 'o_mvr', 'o_mvb', 'o_mvl']
+    
+class Entity:
+    def __init__(self, entity_data: dict):
+        self.id : str = entity_data['id']
+
+        # physical data
+        self.pos : np.ndarray = entity_data['pos']
+        self.z_angle : float = 0
+        self.scale : int = entity_data['scale']
+
+        # clock
+        self.clock_time : float = 0
+        self.clock_period : float = entity_data['clock_period']
+
+        # stats
+        self.stats : dict = entity_data['stats']
+        self.health = 100
+        self.energy = 100
+
+        # systems
+        self.brain = Brain(entity_data['brain'], entity_data['brain_history'])
+        self.receptors = Receptors(entity_data['receptors'])
+        self.stomach = Stomach(entity_data['stomach'])
+    
+    # sim update
+    def update(self, env, dt: float) -> bool:
+        # clock
+        self.clock_time = (self.clock_time + dt) % self.clock_period
+
+        # movement
+        self.movement(env, dt)
+
+        # energy deplete
+        energy_spent = np.linalg.norm(self.vel) * self.scale / 50
+        energy_spent += self.receptors.get_energy_cost()
+        energy_spent += self.brain.get_energy_cost()
+        energy_spent *= dt
+        self.energy -= energy_spent
+
+        # energy regen
+        self.energy += self.stomach.eat(self.pos, env)
+
+        # health regen
+        if self.health < 100 and self.energy > 50:
+            regen_amt = (1 + self.stats['def']) * dt
+            self.health += regen_amt
+            self.energy -= regen_amt
+    
+        # health deplete
+        if self.energy <= 0:
+            self.health -= dt
+    
+        # death
+        if self.health <= 0:
+            return False
+        return True
+
+    def movement(self, env, dt: float):
+        activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 00, env),
+                                       triangle_wave(self.clock_period, self.clock_time))
+        self.z_angle += activations['o_rot'] * dt
+        vel = self.stats['mbl'] * np.sum(np.array([rotate_z(activations[mv], self.z_angle + i * np.pi/2) 
+                                               for i, mv in enumerate(MOVEMENT_OPTIONS)]), axis=0)
+        self.pos = self.pos + vel * dt
+    
+    # data
+    def get_df(self):
+        basic = {
+            'id': self.id,
+            'x': self.pos[0],
+            'y': self.pos[1],
+            'z': self.pos[2],
+            'z_angle': self.z_angle,
+            'health': self.health,
+            'energy': self.energy,
+            'scale': self.scale,
+            'clock_period': self.clock_period,
+            **self.stats
+        }
+        receptor = {
+            'id': self.id,
+            **self.receptors.get_df()
+        }
+        stomach = {
+            'id': self.id,
+            **self.stomach.get_df()
+        }
+        brain = {
+            'id': self.id,
+            **self.brain.get_df()
+        }
+
+        return basic, receptor, stomach, brain
