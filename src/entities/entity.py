@@ -74,6 +74,10 @@ class Entity:
     
     # data
     def get_df(self):
+        '''
+        CSV: basic, receptor, stomach
+        JSON: brain
+        '''
         basic = {
             'id': self.id,
             'x': self.pos[0],
