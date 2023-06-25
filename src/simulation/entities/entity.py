@@ -1,4 +1,5 @@
 import numpy as np
+import pygame as pg
 
 '''
 HU
@@ -29,9 +30,9 @@ from .brain import Brain
 from .stomach import Stomach
 from .receptors import Receptors
 
-from ...util.adv_math import rotate_z, triangle_wave
+from ...util import rotate_z, triangle_wave
 
-MOVEMENT_OPTIONS = ['o_mvf', 'o_mvr', 'o_mvb', 'o_mvl']
+MOVEMENT_OPTIONS = ['mvf', 'mvr', 'mvb', 'mvl']
     
 class Entity:
     def __init__(self, entity_data: dict):
@@ -39,6 +40,7 @@ class Entity:
 
         # physical data
         self.pos : np.ndarray = entity_data['pos']
+        self.vel = np.zeros((3,), np.float32)
         self.z_angle : float = 0
         self.scale : int = entity_data['scale']
 
@@ -90,13 +92,20 @@ class Entity:
         return True
 
     def movement(self, env, dt: float):
-        activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 00, env),
+        activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env),
                                        triangle_wave(self.clock_period, self.clock_time))
-        self.z_angle += activations['o_rot'] * dt
-        vel = self.stats['mbl'] * np.sum(np.array([rotate_z(activations[mv], self.z_angle + i * np.pi/2) 
+        self.z_angle += activations['rot'] * dt
+        self.vel = self.stats['mbl'] * np.sum(np.array([rotate_z(activations[mv] * np.array([1,0,0]), self.z_angle + i * np.pi/2) 
                                                for i, mv in enumerate(MOVEMENT_OPTIONS)]), axis=0)
-        self.pos = self.pos + vel * dt
+        self.pos = self.pos + self.vel * dt
     
+    # rendering
+    def render_rt(self, display: pg.Surface, camera):
+        drawpos = camera.transform_to_screen(self.pos)
+
+        pg.draw.circle(display, (255, 0, 0), drawpos, 5)
+        pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
+
     # data
     def get_df(self):
         '''

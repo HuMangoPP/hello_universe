@@ -54,6 +54,7 @@ class Environment:
 
         self.build_qtree()
     
+    # func
     def build_qtree(self):
         self.qtree = QuadTree(np.array([0,0]), 500, 4)
         [self.qtree.insert(pos, data=[i, shape, density]) for i, (pos, shape, density) in enumerate(zip(self.positions, self.shapes, self.densities))]
@@ -82,6 +83,7 @@ class Environment:
     def eat(self, index):
         self.lifetimes[index] = 0
 
+    # update
     def update(self, dt: float):
         if self.num_particles > 0:
             self.lifetimes = self.lifetimes - np.full((self.num_particles,), dt)
@@ -94,7 +96,8 @@ class Environment:
         
         self.build_qtree()
     
-    def render(self, display: pg.Surface, camera):
+    # render
+    def render_rt(self, display: pg.Surface, camera):
         for pos, shape, dens in zip(self.positions, self.shapes, self.densities):
             radius = 7
             color = np.ceil(np.array([0,255,0]) * dens)

@@ -14,7 +14,7 @@ MENU_MAP = {
 class Game:
     def __init__(self):
         pg.init()
-        self.res = (960, 630)
+        self.res = (640, 420)
         
         pg.display.set_mode(self.res, pg.OPENGL | pg.DOUBLEBUF)
         self.ctx = mgl.create_context()

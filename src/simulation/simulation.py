@@ -1,4 +1,5 @@
 import numpy as np
+import pygame as pg
 
 from .entities import Entity, BrainHistory
 from .environment import Environment
@@ -11,13 +12,25 @@ class Simulation:
         self.brain_history = BrainHistory()
     
     def spawn_entities(self, entities_data: list):
-        entities = [Entity(entity_data) for entity_data in entities_data]
+        entities = [Entity({
+            **entity_data,
+            'brain_history': self.brain_history,
+        }) for entity_data in entities_data]
         self.entities = self.entities + entities
     
     # update
     def update(self):
         dt = 1 / 100
         self.entities = [entity for entity in self.entities if entity.update(self.environment, dt)]
+
+    # rendering
+    def render_rt(self, display: pg.Surface, camera):
+        [entity.render_rt(display, camera) for entity in self.entities]
+
+        self.environment.render_rt(display, camera)
+    
+    def render_monitor(self, display: pg.Surface, index: int):
+        ...
 
     # data
     def get_df(self):
