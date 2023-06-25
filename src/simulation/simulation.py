@@ -10,6 +10,8 @@ class Simulation:
         self.environment = Environment()
         self.entities : list[Entity] = []
         self.brain_history = BrainHistory()
+
+        self.timer = 0
     
     def spawn_entities(self, entities_data: list):
         entities = [Entity({
@@ -20,9 +22,21 @@ class Simulation:
     
     # update
     def update(self):
+        # sim timer
         dt = 1 / 100
-        self.entities = [entity for entity in self.entities if entity.update(self.environment, dt)]
+        self.timer += dt
+
+        # environment and entity update
+        update_data = [entity.update(self.environment, dt, self.timer) for entity in self.entities]
         self.environment.update(dt)
+
+        # new children
+        self.spawn_entities([{**data, 
+                             'id': f'{self.timer}-{i}'} 
+                             for i, data in enumerate(update_data) if 'child' in data])
+
+        # entity death
+        self.entities = [entity for entity, data in zip(self.entities, update_data) if 'dead' not in data]
 
     # rendering
     def render_rt(self, display: pg.Surface, camera):

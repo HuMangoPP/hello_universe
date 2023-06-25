@@ -77,13 +77,12 @@ class Receptors:
             self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-DMUT, DMUT, size=(5,)), 
                                     a_min=-1, a_max=1)
     
-    def cross_breed(self, other_receptors) -> dict:
-        t = random.uniform(0.25, 0.75)
+    def reproduce(self) -> dict:
         return {
-            'num_of_type': np.round(lerp(self.num_of_type, other_receptors.num_of_type, t)).astype(int),
-            'spread': lerp(self.spread, other_receptors.spread, t),
-            'fov': lerp(self.fov, other_receptors.fov, t),
-            'opt_dens': lerp(self.opt_dens, other_receptors.opt_dens, t)
+            'num_of_type': self.num_of_type.copy(),
+            'spread': self.spread.copy(),
+            'fov': self.spread.copy(),
+            'opt_dens': self.opt_dens.copy()
         }
     
     # functionality

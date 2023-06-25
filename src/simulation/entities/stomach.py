@@ -28,13 +28,10 @@ class Stomach:
         if random.uniform(0, 1) <= MUTATION_RATE:
             self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-DMUT, DMUT, size=(5,)), 
                                     a_min=0, a_max=1)
-    
-    def cross_breed(self, other_stomach) -> dict:
-        t = random.uniform(0.25, 0.75)
-        return {
-            'opt_dens': lerp(self.opt_dens, other_stomach.opt_dens, t)
-        }
 
+    def reproduce(self) -> dict:
+        return self.opt_dens.copy()
+    
     # func
     def eat(self, pos: np.ndarray, env) -> float:
         digest_amt = 0

@@ -118,36 +118,13 @@ class Brain:
             axon_to_change = random.choice(active_axons)
             axon_to_change.weight += random.uniform(-D_WEIGHT, D_WEIGHT)
 
-    def cross_breed(self, other_brain) -> dict:
-        t = random.uniform(0.5, 0.75)
-        axon_data = []
-        for innov, axon in self.axons.items():
-            if innov in other_brain.axons:
-                axon_data.append([
-                    axon.in_neuron,
-                    axon.out_neuron,
-                    lerp(axon.weight, other_brain.axons[innov].weight, t)
-                ])
-            else:
-                axon_data.append([
-                    axon.in_neuron,
-                    axon.out_neuron,
-                    axon.weight,
-                ])
-        # for innov, axon in other_brain.axons.items():
-        #     if innov not in self.axons:
-        #         axon_data.append([
-        #             axon.in_neuron,
-        #             axon.out_neuron,
-        #             axon.weight
-        #         ])
-
-        brain_data = {
-            'neurons': list(self.neurons),
-            'axons': axon_data       
+    def reproduce(self) -> dict:
+        return {
+            'neurons': list(self.hidden_neurons),
+            'axons': [[axon.in_neuron, axon.out_neuron, axon.weight] 
+                      for axon in self.axons.values()]
         }
-        return brain_data
-    
+
     # functionality
     def think(self, receptor_activations: np.ndarray, clock_actv: float) -> dict:
         # create the output layer

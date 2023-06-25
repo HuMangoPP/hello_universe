@@ -33,6 +33,9 @@ from .receptors import Receptors
 from ...util import rotate_z, triangle_wave
 
 MOVEMENT_OPTIONS = ['mvf', 'mvr', 'mvb', 'mvl']
+
+MUTATION_RATE = 0.1
+STAT_MUT = 0.1
     
 class Entity:
     def __init__(self, entity_data: dict):
@@ -52,6 +55,7 @@ class Entity:
         self.stats : dict = entity_data['stats']
         self.health = 100
         self.energy = 100
+        self.reproduction_guage = 0
 
         # systems
         self.brain = Brain(entity_data['brain'], entity_data['brain_history'])
@@ -59,7 +63,8 @@ class Entity:
         self.stomach = Stomach(entity_data['stomach'])
     
     # sim update
-    def update(self, env, dt: float) -> bool:
+    def update(self, env, dt: float) -> dict:
+        ret = {}
         # clock
         self.clock_time += dt
         if self.clock_time > self.clock_period:
@@ -77,7 +82,12 @@ class Entity:
         self.energy -= energy_spent
 
         # energy regen
-        self.energy += self.stomach.eat(self.pos, env)
+        digest = self.stomach.eat(self.pos, env)
+        self.energy += digest
+        self.reproduction_guage += digest
+        if self.reproduction_guage > 1:
+            ret['child'] = self.reproduce()
+            self.reproduction_guage = 0
 
         # health regen
         if self.health < 100 and self.energy > 50:
@@ -91,8 +101,11 @@ class Entity:
     
         # death
         if self.health <= 0:
-            return False
-        return True
+            return {
+                **ret,
+                'dead': True
+            }
+        return ret
 
     def movement(self, env, dt: float):
         activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env),
@@ -105,6 +118,37 @@ class Entity:
     def release_pheromones(self, env):
         offsets = np.random.uniform(-25., 25., (5,3))
         env.add_new_particles(5, self.pos + offsets, np.arange(5), np.random.uniform(0., 1., (5,)))
+
+    def mutate(self):
+        if np.random.uniform(0, 1) < MUTATION_RATE:
+            self.stats = {
+                stat_type: np.clip(stat_value + np.random.uniform(-STAT_MUT, STAT_MUT),
+                                   a_min=1, a_max=100)
+                for stat_type, stat_value in self.stats.items()
+            }
+        self.brain.mutate(self.stats['itl'])
+        self.stomach.mutate()
+        self.receptors.mutate()
+
+    def reproduce(self, total_time: float) -> dict:
+        offset_angle = np.random.uniform(0, 2*np.pi)
+        return {
+            'id': total_time,
+            'pos': self.pos + 50 * np.array([np.cos(offset_angle), np.sin(offset_angle), 0]),
+            'scale': self.scale,
+            'clock_period': self.clock_period,
+
+            'stats': {
+                stat_type: stat_value
+                for stat_type, stat_value in self.stats.items()
+            },
+
+            'brain': self.brain.reproduce(),
+
+            'receptors': self.receptors.reproduce(),
+
+            'stomach': self.stomach.reproduce()
+        }
 
     # rendering
     def render_rt(self, display: pg.Surface, camera):
