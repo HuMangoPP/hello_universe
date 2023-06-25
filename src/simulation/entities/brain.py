@@ -36,6 +36,9 @@ class Axon:
         self.out_neuron = out_neuron
         self.weight = weight
         self.enabled = enabled
+    
+    def get_label(self):
+        return f'{self.in_neuron}->{self.out_neuron}'
 
 # helper
 def sum_actv(axons: dict[int, Axon], in_neurons: list, activations: dict[str, float]) -> float:
@@ -64,6 +67,9 @@ class Brain:
             axon_label = f'{axon_data[0]}->{axon_data[1]}'
             self.add_axon(axon_data[0], axon_data[1], axon_data[2], 
                           self.brain_history.get_innov(axon_label))
+            
+        # activations
+        self.activations = {}
 
     def add_neuron(self, neuron_id: str):
         self.hidden_neurons.add(neuron_id)
@@ -146,6 +152,10 @@ class Brain:
             in_neurons = [axon.in_neuron for axon in self.axons.values() if axon.enabled and axon.out_neuron == action]
             output_layer[action] = sigmoid(sum_actv(self.axons, in_neurons, activations), 1, 5)
 
+        self.activations = {
+            **activations,
+            **output_layer,
+        }
         return {
             action[2:]: actv for action, actv in output_layer.items()
         }
@@ -154,10 +164,13 @@ class Brain:
         return 0.5 * len([axon for axon in self.axons.values() if axon.enabled])
 
     # data
-    def get_df(self):
+    def get_model(self):
         '''JSON format'''
         return {
-            axon_label: axon.weight
-            for axon_label, axon in self.axons.items()
+            axon.get_label(): axon.weight
+            for axon in self.axons.values()
         }
     
+    def get_sim_data(self):
+        '''JSON format'''
+        return self.activations

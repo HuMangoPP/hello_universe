@@ -122,7 +122,7 @@ class Receptors:
                 if avg_actv < ACTIVATION_THRESHOLD:
                     avg_angle = 0
                 else:
-                    avg_angle = np.sum(sense * receptor_angle) / np.sum(sense)
+                    avg_angle = np.sum(sense * receptor_angle) / np.sum(sense) / math.pi
             sensory_data.append(np.array([avg_actv, avg_angle]))
         return np.array(sensory_data)
 
@@ -130,7 +130,7 @@ class Receptors:
         return 0.5 * np.sum([num_of_type for num_of_type in self.num_of_type])
 
     # data
-    def get_df(self) -> dict:
+    def get_model(self) -> dict:
         '''CSV format'''
         # get the num, spread, and fov of each receptor type (uniform)
         num = {

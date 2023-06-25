@@ -6,19 +6,23 @@ from .environment import Environment
 
 from ..util import write_entity_data_as_json, write_entity_data_as_csv
 
-# data collection types
-# 0: data that is static and does not change for the lifetime of the creature
-# (scale, stats, brain structure, receptor structure, stomach structure)
-# mainly for monitor/real-time simulation to save entity data for later
-# collected at birth of a creature
+'''
+Data Collection Types:
 
-# 1: data that changes from update to update 
-# (position and z_angle, brain activations for all neurons, 
-# health and energy, maybe clock time and reproduction guage)
-# mainly for simple simulation to analyze overall behaviours of creatures
-# collected at regular intervals of sim time
+0: data that is static and does not change for the lifetime of the creature
+(scale, stats, brain structure, receptors structure, stomach structure,
+geographical location)
+main uses are for monitor/real-time simulation to save entity data for later use
+collected at birth of creature
 
-# 2: both
+1: data that changes from update to update in the simulation
+(position and z_angle, brain activations for all neurons,
+health and energy, reproduction gauge, environment data)
+main use is for simple simulation to analyze overall behaviours of creatures
+collected at regular intervals of sim time
+
+2: both collection methods
+'''
 
 
 
@@ -41,11 +45,7 @@ class Simulation:
         self.entities = self.entities + entities
 
         if self.collection_type in [0, 2]:
-            basic, receptors, stomach, brain = self.get_model()
-            write_entity_data_as_csv(0, basic, 'basic_models')
-            write_entity_data_as_csv(0, receptors, 'receptors_models')
-            write_entity_data_as_csv(0, stomach, 'stomach_models')
-            write_entity_data_as_json(0, brain, 'brain_models')
+            self.save_models(entities)
     
     # update
     def update(self):
@@ -55,7 +55,7 @@ class Simulation:
         if self.collection_type in [1, 2]:
             self.collection_time += dt
             if self.collection_time > self.collection_freq:
-                ...
+                self.save_sim_data()
                 self.collection_time = 0
 
         # environment and entity update
@@ -80,7 +80,8 @@ class Simulation:
         ...
 
     # data
-    def get_model(self):
+    @staticmethod
+    def save_models(entities: list[Entity]):
         '''
             CSV: basic, receptors, stomach
             JSON: brain
@@ -89,7 +90,7 @@ class Simulation:
         receptors = {}
         stomach = {}
         brain = []
-        for entity in self.entities:
+        for entity in entities:
             e_basic, e_receptor, e_stomach, e_brain = entity.get_model()
             for field, data in e_basic.items():
                 if field in basic:
@@ -112,3 +113,27 @@ class Simulation:
             brain.append(e_brain)
 
         return basic, receptors, stomach, brain
+    
+    def save_sim_data(self):
+        '''
+            CSV: basic, environment
+            JSON: brain
+        '''
+        basic = {}
+        brain = []
+
+        for entity in self.entities:
+            e_basic, e_brain = entity.get_sim_data()
+            for field, data in e_basic.items():
+                if field in basic:
+                    basic[field] = np.array([*basic[field], data]) 
+                else:
+                    basic[field] = np.array([data])
+
+            brain.append(e_brain)
+        
+        environment = self.environment.get_sim_data()
+
+        write_entity_data_as_csv(self.sim_time, basic, 'basic_rt')
+        write_entity_data_as_csv(self.sim_time, environment, 'env_rt')
+        write_entity_data_as_json(self.sim_time, brain, 'brain_rt')

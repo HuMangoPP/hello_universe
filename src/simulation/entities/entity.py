@@ -180,15 +180,38 @@ class Entity:
         }
         receptor = {
             'id': self.id,
-            **self.receptors.get_df()
+            **self.receptors.get_model()
         }
         stomach = {
             'id': self.id,
-            **self.stomach.get_df()
+            **self.stomach.get_model()
         }
         brain = {
             'id': self.id,
-            **self.brain.get_df()
+            **self.brain.get_model()
         }
 
         return basic, receptor, stomach, brain
+    
+    def get_sim_data(self):
+        '''
+            CSV: basic
+            JSON: brain
+        '''
+        basic = {
+            'id': self.id,
+            'x': self.pos[0],
+            'y': self.pos[1],
+            'z': self.pos[2],
+            'z_angle': self.z_angle,
+            'health': self.health,
+            'energy': self.energy,
+            'reproduction_guage': self.reproduction_guage,
+        }
+
+        brain = {
+            'id': self.id,
+            **self.brain.get_sim_data()
+        }
+
+        return basic, brain

@@ -118,3 +118,13 @@ class Environment:
                     draw_hexagon(display, camera.transform_to_screen(pos),
                                 color, radius)
 
+    # data
+    def get_sim_data(self) -> dict[str, np.ndarray]:
+        return {
+            'x': self.positions[:,0],
+            'y': self.positions[:,1],
+            'z': self.positions[:,2],
+            'lifetimes': self.lifetimes,
+            'shapes': self.shapes,
+            'densities': self.densities,
+        }

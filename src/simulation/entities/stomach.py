@@ -47,7 +47,7 @@ class Stomach:
         return digest_amt
 
     # data
-    def get_df(self):
+    def get_model(self):
         '''CSV format'''
         return {
             receptor_type: opt_dens
