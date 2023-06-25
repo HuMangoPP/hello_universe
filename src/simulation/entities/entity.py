@@ -61,6 +61,9 @@ class Entity:
         self.brain = Brain(entity_data['brain'], entity_data['brain_history'])
         self.receptors = Receptors(entity_data['receptors'])
         self.stomach = Stomach(entity_data['stomach'])
+
+        # mutate on birth
+        self.mutate()
     
     # sim update
     def update(self, env, dt: float) -> dict:
@@ -158,7 +161,7 @@ class Entity:
         pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
 
     # data
-    def get_df(self):
+    def get_model(self):
         '''
         CSV: basic, receptor, stomach
         JSON: brain

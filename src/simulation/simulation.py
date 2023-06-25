@@ -4,14 +4,34 @@ import pygame as pg
 from .entities import Entity, BrainHistory
 from .environment import Environment
 
+from ..util import write_entity_data_as_json, write_entity_data_as_csv
+
+# data collection types
+# 0: data that is static and does not change for the lifetime of the creature
+# (scale, stats, brain structure, receptor structure, stomach structure)
+# mainly for monitor/real-time simulation to save entity data for later
+# collected at birth of a creature
+
+# 1: data that changes from update to update 
+# (position and z_angle, brain activations for all neurons, 
+# health and energy, maybe clock time and reproduction guage)
+# mainly for simple simulation to analyze overall behaviours of creatures
+# collected at regular intervals of sim time
+
+# 2: both
+
+
 
 class Simulation:
-    def __init__(self):
+    def __init__(self, collection_type = 0, collection_freq = 1):
         self.environment = Environment()
         self.entities : list[Entity] = []
         self.brain_history = BrainHistory()
 
-        self.timer = 0
+        self.sim_time = 0
+        self.collection_type = collection_type
+        self.collection_freq = collection_freq
+        self.collection_time = 0
     
     def spawn_entities(self, entities_data: list):
         entities = [Entity({
@@ -19,20 +39,32 @@ class Simulation:
             'brain_history': self.brain_history,
         }) for entity_data in entities_data]
         self.entities = self.entities + entities
+
+        if self.collection_type in [0, 2]:
+            basic, receptors, stomach, brain = self.get_model()
+            write_entity_data_as_csv(0, basic, 'basic_models')
+            write_entity_data_as_csv(0, receptors, 'receptors_models')
+            write_entity_data_as_csv(0, stomach, 'stomach_models')
+            write_entity_data_as_json(0, brain, 'brain_models')
     
     # update
     def update(self):
         # sim timer
         dt = 1 / 100
-        self.timer += dt
+        self.sim_time += dt
+        if self.collection_type in [1, 2]:
+            self.collection_time += dt
+            if self.collection_time > self.collection_freq:
+                ...
+                self.collection_time = 0
 
         # environment and entity update
-        update_data = [entity.update(self.environment, dt, self.timer) for entity in self.entities]
+        update_data = [entity.update(self.environment, dt) for entity in self.entities]
         self.environment.update(dt)
 
         # new children
         self.spawn_entities([{**data, 
-                             'id': f'{self.timer}-{i}'} 
+                             'id': f'{self.sim_time}-{i}'} 
                              for i, data in enumerate(update_data) if 'child' in data])
 
         # entity death
@@ -48,7 +80,7 @@ class Simulation:
         ...
 
     # data
-    def get_df(self):
+    def get_model(self):
         '''
             CSV: basic, receptors, stomach
             JSON: brain
@@ -58,7 +90,7 @@ class Simulation:
         stomach = {}
         brain = []
         for entity in self.entities:
-            e_basic, e_receptor, e_stomach, e_brain = entity.get_df()
+            e_basic, e_receptor, e_stomach, e_brain = entity.get_model()
             for field, data in e_basic.items():
                 if field in basic:
                     basic[field] = np.array([*basic[field], data]) 
