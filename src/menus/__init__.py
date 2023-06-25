@@ -1,1 +1,1 @@
-from .menus import StartMenu, SimMenu
+from .menus import StartMenu, SimMenu, MonitorMenu

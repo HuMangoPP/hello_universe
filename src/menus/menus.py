@@ -38,6 +38,15 @@ class StartMenu:
         dt = self.clock.get_time() / 1000
         # handle events
         for event in events:
+            if event.type == pg.KEYDOWN:
+                if event.key in [pg.K_s, pg.K_SPACE]:
+                    self.transition_phase = 1
+                    self.transition_time = 0
+                    self.goto = 'sim'
+                if event.key == pg.K_m:
+                    self.transition_phase = 1
+                    self.transition_time = 0
+                    self.goto = 'monitor'
             if event.type == pg.MOUSEBUTTONDOWN:
                 self.transition_phase = 1
                 self.transition_time = 0
@@ -120,7 +129,8 @@ class SimMenu:
 
         # rendering
         self.camera = Camera(np.zeros((3,), np.float32), game.res)
-    
+
+
     def on_load(self):
         self.on_transition()
     
@@ -172,3 +182,68 @@ class SimMenu:
         if self.transition_phase > 0:
             displays_to_render.append(OVERLAY_DISPLAY)
         return displays_to_render
+
+
+class MonitorMenu:
+    def __init__(self, game):
+        # import game
+        self.width, self.height = game.res
+        self.displays : dict = game.displays
+        self.font = game.font
+        self.clock : pg.time.Clock = game.clock
+
+        # transition handler
+        self.goto = 'start'
+    
+    def on_load(self):
+        self.on_transition()
+
+    def on_transition(self):
+        # 0 -> no transition
+        # 1 -> transition out
+        # 2 -> black screen
+        # 3 -> transition in
+        self.transition_phase = 2
+        self.transition_time = 0
+    
+    def update(self, events: list[pg.Event]):
+        # for transitions
+        dt = self.clock.get_time() / 1000
+        
+        # handle events
+        
+        # handle transitions
+        if self.transition_phase > 0:
+            self.transition_time += dt
+            if self.transition_phase == 1 and self.transition_time > TRANSITION_TIME:
+                return {
+                    'exit': False,
+                    'goto': self.goto
+                }
+            if self.transition_time > TRANSITION_TIME:
+                self.transition_time = 0
+                self.transition_phase = (self.transition_phase + 1) % 4
+        return {}
+
+    def render(self) -> list[str]:
+        self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
+
+        # text
+        self.font.render(self.displays[DEFAULT_DISPLAY], 'Monitor', self.width/2, 100, 
+                         (255, 255, 255), 25, style='center')
+
+        # transitions
+        match self.transition_phase:
+            case 1: 
+                transition_out(self.displays[OVERLAY_DISPLAY], self.transition_time)
+            case 2:
+                self.displays[OVERLAY_DISPLAY].fill((10, 10, 10))
+            case 3:
+                transition_in(self.displays[OVERLAY_DISPLAY], self.transition_time)
+        
+        # displays
+        displays_to_render = [DEFAULT_DISPLAY]
+        if self.transition_phase > 0:
+            displays_to_render.append(OVERLAY_DISPLAY)
+        return displays_to_render
+    
