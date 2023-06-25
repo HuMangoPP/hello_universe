@@ -1,5 +1,3 @@
 *.kra
-**/__pycache__
-planning.png
-py_tasks.json
+__pycache__/
 hello_universe_env/
