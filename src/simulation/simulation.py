@@ -22,6 +22,7 @@ class Simulation:
     def update(self):
         dt = 1 / 100
         self.entities = [entity for entity in self.entities if entity.update(self.environment, dt)]
+        self.environment.update(dt)
 
     # rendering
     def render_rt(self, display: pg.Surface, camera):

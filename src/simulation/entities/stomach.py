@@ -20,7 +20,7 @@ def digest(x: float, opt: float) -> float:
     return digest_amt if digest_amt > DIGEST_THRESHOLD else 0
 
 class Stomach:
-    def __init__(self, stomach_data: dict):
+    def __init__(self, stomach_data: np.ndarray):
         self.opt_dens = stomach_data['opt_dens']
     
     # evo

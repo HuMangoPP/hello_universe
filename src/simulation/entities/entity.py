@@ -61,7 +61,10 @@ class Entity:
     # sim update
     def update(self, env, dt: float) -> bool:
         # clock
-        self.clock_time = (self.clock_time + dt) % self.clock_period
+        self.clock_time += dt
+        if self.clock_time > self.clock_period:
+            self.clock_time = 0
+            self.release_pheromones(env)
 
         # movement
         self.movement(env, dt)
@@ -99,6 +102,10 @@ class Entity:
                                                for i, mv in enumerate(MOVEMENT_OPTIONS)]), axis=0)
         self.pos = self.pos + self.vel * dt
     
+    def release_pheromones(self, env):
+        offsets = np.random.uniform(-25., 25., (5,3))
+        env.add_new_particles(5, self.pos + offsets, np.arange(5), np.random.uniform(0., 1., (5,)))
+
     # rendering
     def render_rt(self, display: pg.Surface, camera):
         drawpos = camera.transform_to_screen(self.pos)

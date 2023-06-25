@@ -108,7 +108,7 @@ class SimMenu:
                 },
 
                 'receptors': {
-                    'num_of_type': np.zeros((3,), np.int32),
+                    'num_of_type': np.zeros((5,), np.int32),
                     'spread': np.full((5,), np.pi/6, np.float32),
                     'fov': np.full((5,), np.pi/6, np.float32),
                     'opt_dens': np.full((5,), 0.5, np.float32)
