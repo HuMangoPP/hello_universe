@@ -3,9 +3,11 @@ import random
 
 from ...util import lerp, sigmoid
 
-MUTATION_RATE = 0.75
-D_WEIGHT = 0.25
+# mut
+MUTATION_RATE = 0.1
+D_WEIGHT = 0.1
 
+# neurons
 RECEPTOR_NAMES = np.array([
     'c', 'ca',
     't', 'ta',
@@ -13,8 +15,9 @@ RECEPTOR_NAMES = np.array([
     'p', 'pa',
     'h', 'ha'
 ])
-
 ACTIONS = ['rot', 'mvf', 'mvr', 'mvb', 'mvl']
+SIGMOID_SQUEEZE = 5
+
 
 class BrainHistory:
     def __init__(self):
@@ -33,17 +36,25 @@ class Axon:
         self.out_neuron = out_neuron
         self.weight = weight
         self.enabled = enabled
-    
+
+# helper
+def sum_actv(axons: dict[int, Axon], in_neurons: list, activations: dict[str, float]) -> float:
+    actv = 0
+    for nid in in_neurons:
+        if nid not in activations:
+            in_neurons_for_nid = [axon.in_neuron for axon in axons.values() if axon.enabled and axon.out_neuron == nid]
+            activations[nid] = None
+            activations[nid] = sigmoid(sum_actv(axons, in_neurons_for_nid, activations), 1, SIGMOID_SQUEEZE)
+        
+        if activations[nid] is not None:
+            actv += activations[nid]
+    return actv
+
+
 class Brain:
     def __init__(self, brain_data: dict, brain_history: BrainHistory):
         self.brain_history = brain_history
 
-        # track all neurons: in, hidden, out
-        self.all_neurons = set(
-            [f'i_{receptor_in}' for receptor_in in RECEPTOR_NAMES] +
-            ['i_tick'] + [f'o_{action}' for action in ACTIONS] + 
-            brain_data['neurons']
-        )
         # set of hidden neurons
         self.hidden_neurons = set(brain_data['neurons'])
 
@@ -56,7 +67,7 @@ class Brain:
 
     def add_neuron(self, neuron_id: str):
         self.hidden_neurons.add(neuron_id)
-        self.neuron_ids.add(neuron_id)
+        self.all_neurons.add(neuron_id)
 
     def add_axon(self, in_neuron: str, out_neuron: str, weight: float, innov: int):
         self.axons[innov] = Axon(in_neuron, out_neuron, weight)
@@ -70,10 +81,10 @@ class Brain:
         # adds a new random connection or changes its weight if it exists
         if random.uniform(0, 1) <= MUTATION_RATE:
             # find an in and out neuron
-            in_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids 
-                                       if neuron_id.split('_')[0] in 'ih'])
-            out_neuron = random.choice([neuron_id for neuron_id in self.neuron_ids 
-                                        if neuron_id.split('_')[0] == 'o'])
+            in_neuron = random.choice([f'i_{sensor}' for sensor in RECEPTOR_NAMES] +
+                                      ['i_tick'] +
+                                      list(self.hidden_neurons))
+            out_neuron = random.choice([f'o_{action}' for action in ACTIONS])
             
             # add axon
             axon_label = f'{in_neuron}->{out_neuron}'
@@ -139,37 +150,24 @@ class Brain:
     
     # functionality
     def think(self, receptor_activations: np.ndarray, clock_actv: float) -> dict:
-        # build the input layer
-        input_layer = {
-            **{
-                f'i_{label}': activation
-                for label, activation in zip(RECEPTOR_NAMES, receptor_activations)
-            },
-            'i_tick': clock_actv,
-        }
         # create the output layer
         output_layer = {
             f'o_{action}': 0
             for action in ACTIONS
         }
-        # update the list of all neurons with their ids
-        self.neuron_ids = set(input_layer.keys()).union(set(output_layer.keys())).union(self.neurons)
 
         # propagate activations
-        activated_neurons = {
-            neuron_id: activation
-            for neuron_id, activation in input_layer.items()
+        activations = {
+            **{
+                f'i_{sensor}': activation
+                for sensor, activation in zip(RECEPTOR_NAMES, receptor_activations)
+            },
+            'i_tick': clock_actv,
         }
-        axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
-        while axons_to_fire:
-            new_neurons = {}
-            for axon in axons_to_fire:
-                if axon.out_neuron in output_layer:
-                    output_layer[axon.out_neuron] += activated_neurons[axon.in_neuron] * axon.weight
-                else:
-                    new_neurons[axon.out_neuron] = sigmoid(activated_neurons[axon.in_neuron] * axon.weight)
-            activated_neurons = new_neurons
-            axons_to_fire = [axon for axon in self.axons.values() if axon.in_neuron in activated_neurons and axon.enabled]
+
+        for action in output_layer:
+            in_neurons = [axon.in_neuron for axon in self.axons.values() if axon.enabled and axon.out_neuron == action]
+            output_layer[action] = sigmoid(sum_actv(self.axons, in_neurons, activations), 1, 5)
 
         return {
             action[2:]: actv for action, actv in output_layer.items()
