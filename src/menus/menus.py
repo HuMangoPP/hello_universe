@@ -130,7 +130,6 @@ class SimMenu:
         # rendering
         self.camera = Camera(np.zeros((3,), np.float32), game.res)
 
-
     def on_load(self):
         self.on_transition()
     
@@ -194,6 +193,36 @@ class MonitorMenu:
 
         # transition handler
         self.goto = 'start'
+
+        # sim
+        self.sim = Simulation()
+        self.sim.spawn_entities(
+            [{
+                'id': 'e0',
+                'pos': np.zeros((3,), np.float32),
+                'scale': 1,
+                'clock_period': 2,
+
+                'stats': {'itl': 1, 'pwr': 1, 'def': 1, 'mbl': 1, 'stl': 1},
+
+                'brain': {
+                    'neurons': [],
+                    'axons': [],
+                },
+
+                'receptors': {
+                    'num_of_type': np.array([3,2,0,0,0]),
+                    'spread': np.full((5,), np.pi/6, np.float32),
+                    'fov': np.full((5,), np.pi/6, np.float32),
+                    'opt_dens': np.full((5,), 0.5, np.float32)
+                },
+                
+                'stomach': {'opt_dens': np.full((5,), 0.5, np.float32)},
+            }]
+        )
+
+        # render
+        self.entity_pointer = 0
     
     def on_load(self):
         self.on_transition()
@@ -228,9 +257,7 @@ class MonitorMenu:
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
 
-        # text
-        self.font.render(self.displays[DEFAULT_DISPLAY], 'Monitor', self.width/2, 100, 
-                         (255, 255, 255), 25, style='center')
+        self.sim.render_monitor(self.displays[DEFAULT_DISPLAY], self.entity_pointer)
 
         # transitions
         match self.transition_phase:

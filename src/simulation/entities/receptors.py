@@ -4,6 +4,7 @@ import math, random
 
 from ...util import lerp, gaussian_dist, proj
 
+# constants
 SHAPE_MAP = {
     'circle': 0,
     'triangle': 1,
@@ -18,22 +19,24 @@ INV_SHAPE_MAP = [
     'pentagon',
     'hexagon',
 ]
-ACTIVATION_THRESHOLD = 0.01
 
-RECEPTOR_COLORS = {
-    'circle': (255, 0, 0),
-    'triangle': (0, 255, 0),
-    'square': (0, 0, 255),
-    'pentagon': (255, 255, 0),
-    'hexagon': (255, 0, 255),
-}
+RECEPTOR_COLORS = [
+    (255, 0, 0),
+    (0, 255, 0),
+    (0, 0, 255),
+    (255, 255, 0),
+    (255, 0, 255),
+]
 
 MUTATION_RATE = 0.1
 DMUT = 0.1
 
 MIN_FOV = 0.1
 MIN_SPREAD = 0.1
+ACTIVATION_THRESHOLD = 0.01
+VARIATION = 0.05
 
+# helper
 def draw_view_cone(pos: np.ndarray, angle: float, fov: float, length: float, display: pg.Surface, color: tuple):
     points = [
         pos, 
@@ -49,21 +52,17 @@ def get_receptor_angles(num_receptors: int, receptor_spread: float):
         receptor_spread
     )
 
-VARIATION = 0.05
-
-RECEPTOR_DATA_MAP = {
-    'num_receptors': 0,
-    'receptor_spread': 1,
-    'receptor_fov': 2,
-    'optimal_dens': 3,
-}
-
 class Receptors:
     def __init__(self, receptor_data: dict):
         self.num_of_type : np.ndarray = receptor_data['num_of_type']
         self.spread : np.ndarray = receptor_data['spread']
         self.fov : np.ndarray = receptor_data['fov']
         self.opt_dens : np.ndarray = receptor_data['opt_dens']
+
+    def adv_init(self):
+        self.receptor_angles = [get_receptor_angles(num_of_type, spread)
+                                for num_of_type, spread in zip(self.num_of_type, self.spread)]
+        self.receptor_threshold = np.array([math.cos(fov/2) for fov in self.fov])
 
     # evo
     def mutate(self):
@@ -89,10 +88,7 @@ class Receptors:
     def poll_receptors(self, pos: np.ndarray, z_angle: float, radius: float, env):
         # list of np arrays with each np array as the size of how many receptors of that type there are
         receptor_sense = [np.zeros((num_of_type,), np.float32) for num_of_type in self.num_of_type]
-        # list of np arrays with each np array as the angle of the receptor relative to the facing angle
-        receptor_angles = [get_receptor_angles(num_of_type, spread) for num_of_type, spread in zip(self.num_of_type, self.spread)]
-        # np array of values used for collision detection
-        receptor_threshold = np.array([math.cos(fov/2) for fov in self.fov])
+
         # pheromone data
         p_pos = env.qtree.query_point(np.array([pos[0], pos[1], radius]))
         p_data = env.qtree.query_data(np.array([pos[0], pos[1], radius]))
@@ -101,19 +97,19 @@ class Receptors:
             if np.linalg.norm(p - pos) <= radius:
                 shape_index = data[1]
                 # for all receptor angles in this receptor type
-                for i, receptor_angle in enumerate(receptor_angles[shape_index]):
+                for i, receptor_angle in enumerate(self.receptor_angles[shape_index]):
                     # get relative measurements
                     rel_pos = p - pos
                     p_rel_angle = math.atan2(rel_pos[1], rel_pos[0]) - z_angle
                     # determine collision
                     r_unit_vec = np.array([math.cos(receptor_angle), math.sin(receptor_angle)])
                     p_unit_vec = np.array([math.cos(p_rel_angle), math.sin(p_rel_angle)])
-                    if proj(p_unit_vec, r_unit_vec) >= receptor_threshold[shape_index]:
+                    if proj(p_unit_vec, r_unit_vec) >= self.receptor_threshold[shape_index]:
                         receptor_sense[shape_index][i] += gaussian_dist(data[2], self.opt_dens[shape_index], VARIATION)
         
         # iterate through sensory activations
         sensory_data = []
-        for sense, receptor_angle in zip(receptor_sense, receptor_angles):
+        for sense, receptor_angle in zip(receptor_sense, self.receptor_angles):
             if sense.size == 0: # no receptors exist, so default to these activations
                 avg_actv = 0
                 avg_angle = 0
@@ -128,6 +124,14 @@ class Receptors:
 
     def get_energy_cost(self) -> float:
         return 0.5 * np.sum([num_of_type for num_of_type in self.num_of_type])
+
+    # render
+    def render_monitor(self, display: pg.Surface, anchor: tuple, z_angle: float):
+        for color, angles, fov in zip(RECEPTOR_COLORS, self.receptor_angles, self.fov):
+            for angle in angles:
+                draw_view_cone(anchor, z_angle + angle, fov, 100,
+                               display, color)
+        
 
     # data
     def get_model(self) -> dict:

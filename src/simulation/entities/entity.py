@@ -64,6 +64,7 @@ class Entity:
 
         # mutate on birth
         self.mutate()
+        self.receptors.adv_init() # calculate some static values
     
     # sim update
     def update(self, env, dt: float) -> dict:
@@ -158,6 +159,13 @@ class Entity:
 
         pg.draw.circle(display, (255, 0, 0), drawpos, 5)
         pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
+
+    def render_monitor(self, display: pg.Surface, anchor: tuple):
+        pg.draw.circle(display, (255, 0, 0), anchor, 5)
+        pg.draw.line(display, (255, 0, 0), anchor, 
+                     anchor + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
+        
+        self.receptors.render_monitor(display, anchor, self.z_angle)
 
     # data
     def get_model(self):
