@@ -65,6 +65,7 @@ class Entity:
         # mutate on birth
         self.mutate()
         self.receptors.adv_init() # calculate some static values
+        self.stomach.adv_init()
     
     # sim update
     def update(self, env, dt: float) -> dict:
@@ -166,6 +167,7 @@ class Entity:
                      anchor + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
         
         self.receptors.render_monitor(display, anchor, self.z_angle)
+        self.stomach.render_monitor(display, (10, 10, 100))
 
     # data
     def get_model(self):

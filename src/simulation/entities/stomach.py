@@ -1,8 +1,10 @@
 import numpy as np
+import pygame as pg
 import random, math
 
 from ...util import lerp, gaussian_dist
 
+# constants
 MUTATION_RATE = 0.2
 DMUT = 0.1
 INV_SHAPE_MAP = [
@@ -14,6 +16,25 @@ INV_SHAPE_MAP = [
 ]
 DIGEST_THRESHOLD = 0.5
 VARIATION = 0.2
+RECEPTOR_COLORS = [
+    (255, 0, 0),
+    (0, 255, 0),
+    (0, 0, 255),
+    (255, 255, 0),
+    (255, 0, 255),
+]
+
+# helper
+def get_dists(opt: np.ndarray, steps = 20) -> pg.Surface:
+    surf = pg.Surface((100, 100))
+    points = np.array([gaussian_dist(t, opt, VARIATION)
+                       for t in np.arange(0, (1 + steps) / steps, 1 / steps)])
+    for i in range(steps):
+        for j, color in enumerate(RECEPTOR_COLORS):
+            pg.draw.line(surf, color, (100 * i / steps, 100 * points[i,j]),
+                         (100 * (i + 1) / steps, 100 * points[i+1,j]))
+    surf.set_colorkey((0,0,0))
+    return surf
 
 def digest(x: float, opt: float) -> float:
     digest_amt = gaussian_dist(x, opt, VARIATION)
@@ -22,6 +43,10 @@ def digest(x: float, opt: float) -> float:
 class Stomach:
     def __init__(self, stomach_data: np.ndarray):
         self.opt_dens = stomach_data['opt_dens']
+
+    def adv_init(self):
+        self.dists = get_dists(self.opt_dens)
+        self.dists = pg.transform.flip(self.dists, False, True)
     
     # evo
     def mutate(self):
@@ -47,6 +72,12 @@ class Stomach:
                 env.eat(edible_item[0])
         
         return digest_amt
+
+    # render
+    def render_monitor(self, display: pg.Surface, box: tuple):
+        display.blit(pg.transform.scale(self.dists, (box[2], box[2])),
+                     box[:2])
+        
 
     # data
     def get_model(self):

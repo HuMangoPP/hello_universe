@@ -45,6 +45,14 @@ def draw_view_cone(pos: np.ndarray, angle: float, fov: float, length: float, dis
     ]
     pg.draw.lines(display, color, True, points)
 
+def draw_view_cones(receptor_angles: list, fovs: list):
+    surf = pg.Surface((200, 200))
+    for color, angles, fov in zip(RECEPTOR_COLORS, receptor_angles, fovs):
+        for angle in angles:
+            draw_view_cone((100,100), angle, fov, 100, surf, color)
+    surf.set_colorkey((0,0,0))
+    return surf
+
 def get_receptor_angles(num_receptors: int, receptor_spread: float):
     return np.arange(
         receptor_spread * (1 - num_receptors)/2,
@@ -63,6 +71,8 @@ class Receptors:
         self.receptor_angles = [get_receptor_angles(num_of_type, spread)
                                 for num_of_type, spread in zip(self.num_of_type, self.spread)]
         self.receptor_threshold = np.array([math.cos(fov/2) for fov in self.fov])
+
+        self.cones = draw_view_cones(self.receptor_angles, self.fov)
 
     # evo
     def mutate(self):
@@ -127,11 +137,10 @@ class Receptors:
 
     # render
     def render_monitor(self, display: pg.Surface, anchor: tuple, z_angle: float):
-        for color, angles, fov in zip(RECEPTOR_COLORS, self.receptor_angles, self.fov):
-            for angle in angles:
-                draw_view_cone(anchor, z_angle + angle, fov, 100,
-                               display, color)
-        
+        rot = pg.transform.rotate(self.cones, z_angle)
+        drawrect = rot.get_rect()
+        drawrect.center = anchor
+        display.blit(rot, drawrect)
 
     # data
     def get_model(self) -> dict:

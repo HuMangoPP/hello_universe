@@ -217,7 +217,7 @@ class MonitorMenu:
                     'opt_dens': np.full((5,), 0.5, np.float32)
                 },
                 
-                'stomach': {'opt_dens': np.full((5,), 0.5, np.float32)},
+                'stomach': {'opt_dens': np.arange(0.3, 0.71, 0.1)},
             }]
         )
 
