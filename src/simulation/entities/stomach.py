@@ -30,7 +30,9 @@ class Stomach:
                                     a_min=0, a_max=1)
 
     def reproduce(self) -> dict:
-        return self.opt_dens.copy()
+        return {
+            'opt_dens': self.opt_dens.copy()
+        }
     
     # func
     def eat(self, pos: np.ndarray, env) -> float:

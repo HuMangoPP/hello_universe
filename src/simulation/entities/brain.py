@@ -81,7 +81,7 @@ class Brain:
     # evo
     def mutate(self, itl_stat: float):
         # determine the number of neurons and enabled axons
-        num_neurons = len(self.neurons)
+        num_neurons = len(self.hidden_neurons)
         active_axons = [axon for axon in self.axons.values() if axon.enabled]
 
         # adds a new random connection or changes its weight if it exists

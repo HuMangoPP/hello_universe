@@ -133,10 +133,9 @@ class Entity:
         self.stomach.mutate()
         self.receptors.mutate()
 
-    def reproduce(self, total_time: float) -> dict:
+    def reproduce(self) -> dict:
         offset_angle = np.random.uniform(0, 2*np.pi)
         return {
-            'id': total_time,
             'pos': self.pos + 50 * np.array([np.cos(offset_angle), np.sin(offset_angle), 0]),
             'scale': self.scale,
             'clock_period': self.clock_period,

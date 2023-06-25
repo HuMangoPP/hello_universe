@@ -62,13 +62,13 @@ class Simulation:
         update_data = [entity.update(self.environment, dt) for entity in self.entities]
         self.environment.update(dt)
 
-        # new children
-        self.spawn_entities([{**data, 
-                             'id': f'{self.sim_time}-{i}'} 
-                             for i, data in enumerate(update_data) if 'child' in data])
-
         # entity death
         self.entities = [entity for entity, data in zip(self.entities, update_data) if 'dead' not in data]
+
+        # new children
+        self.spawn_entities([{**data['child'], 
+                             'id': f'{self.sim_time}-{i}'} 
+                             for i, data in enumerate(update_data) if 'child' in data])
 
     # rendering
     def render_rt(self, display: pg.Surface, camera):
@@ -105,7 +105,7 @@ class Simulation:
                     receptors[field] = np.array([data])
             
             for field, data in e_stomach.items():
-                if field in basic:
+                if field in stomach:
                     stomach[field] = np.array([*stomach[field], data]) 
                 else:
                     stomach[field] = np.array([data])
