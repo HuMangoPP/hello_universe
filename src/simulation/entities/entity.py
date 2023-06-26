@@ -28,6 +28,7 @@ determine ways of increasing the resolution of physics updates
 from .brain import Brain
 from .stomach import Stomach
 from .receptors import Receptors
+from .glands import Glands
 
 from ...util import rotate_z, triangle_wave
 
@@ -60,12 +61,14 @@ class Entity:
         self.brain = Brain(entity_data['brain'], entity_data['brain_history'])
         self.receptors = Receptors(entity_data['receptors'])
         self.stomach = Stomach(entity_data['stomach'])
+        self.glands = Glands(entity_data['glands'])
 
         # mutate on birth
         self.mutate()
         self.brain.adv_init()
         self.receptors.adv_init() # calculate some static values
         self.stomach.adv_init()
+        self.glands.adv_init()
     
     # sim update
     def update(self, env, dt: float) -> dict:
@@ -74,7 +77,7 @@ class Entity:
         self.clock_time += dt
         if self.clock_time > self.clock_period:
             self.clock_time = 0
-            self.release_pheromones(env)
+            self.glands.release_pheromones(self.pos, env)
 
         # movement
         self.movement(env, dt)
@@ -119,10 +122,6 @@ class Entity:
         self.vel = self.stats['mbl'] * np.sum(np.array([rotate_z(activations[mv] * np.array([1,0,0]), self.z_angle + i * np.pi/2) 
                                                for i, mv in enumerate(MOVEMENT_OPTIONS)]), axis=0)
         self.pos = self.pos + self.vel * dt
-    
-    def release_pheromones(self, env):
-        offsets = np.random.uniform(-25., 25., (5,3))
-        env.add_new_particles(5, self.pos + offsets, np.arange(5), np.random.uniform(0., 1., (5,)))
 
     def mutate(self):
         if np.random.uniform(0, 1) < MUTATION_RATE:
@@ -151,7 +150,9 @@ class Entity:
 
             'receptors': self.receptors.reproduce(),
 
-            'stomach': self.stomach.reproduce()
+            'stomach': self.stomach.reproduce(),
+
+            'glands': self.glands.reproduce(),
         }
 
     # rendering
@@ -167,13 +168,16 @@ class Entity:
                      anchor + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
         
         self.receptors.render_monitor(display, anchor, self.z_angle)
+        font.render(display, 'stomach', 60, 300, (255, 255, 255), size=10, style='center')
         self.stomach.render_monitor(display, (10, 310, 100))
+        font.render(display, 'glands', 160, 300, (255, 255, 255), size=10, style='center')
+        self.glands.render_monitor(display, (110, 310, 100))
         self.brain.render_monitor(display, font)
 
     # data
     def get_model(self):
         '''
-        CSV: basic, receptor, stomach
+        CSV: basic, receptor, stomach, glands
         JSON: brain
         '''
         basic = {
@@ -196,12 +200,16 @@ class Entity:
             'id': self.id,
             **self.stomach.get_model()
         }
+        glands = {
+            'id': self.id,
+            **self.glands.get_model()
+        }
         brain = {
             'id': self.id,
             **self.brain.get_model()
         }
 
-        return basic, receptor, stomach, brain
+        return basic, receptor, stomach, glands, brain
     
     def get_sim_data(self):
         '''

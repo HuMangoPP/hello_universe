@@ -124,6 +124,8 @@ class SimMenu:
                 },
                 
                 'stomach': {'opt_dens': np.full((5,), 0.5, np.float32)},
+
+                'glands': {'opt_dens': np.arange(0.3, 0.71, 0.1)},
             }]
         )
 
@@ -219,6 +221,8 @@ class MonitorMenu:
                 },
                 
                 'stomach': {'opt_dens': np.arange(0.3, 0.71, 0.1)},
+
+                'glands': {'opt_dens': np.arange(0.3, 0.71, 0.1)},
             }]
         )
 

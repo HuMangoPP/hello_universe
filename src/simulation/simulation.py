@@ -93,9 +93,10 @@ class Simulation:
         basic = {}
         receptors = {}
         stomach = {}
+        glands = {}
         brain = []
         for entity in entities:
-            e_basic, e_receptor, e_stomach, e_brain = entity.get_model()
+            e_basic, e_receptor, e_stomach, e_glands, e_brain = entity.get_model()
             for field, data in e_basic.items():
                 if field in basic:
                     basic[field] = np.array([*basic[field], data]) 
@@ -113,6 +114,12 @@ class Simulation:
                     stomach[field] = np.array([*stomach[field], data]) 
                 else:
                     stomach[field] = np.array([data])
+            
+            for field, data in e_glands.items():
+                if field in glands:
+                    glands[field] = np.array([*glands[field], data]) 
+                else:
+                    glands[field] = np.array([data])
             
             brain.append(e_brain)
 
