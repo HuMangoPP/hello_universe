@@ -4,18 +4,17 @@ import pygame as pg
 '''
 HU
 
-refactor entity code
-refactor brain to reflect amoeba movement rather than skeletal -> also switch to tanh and keep all activations normalized between -1 to +1
 create pheromones to send out for creatures (independent placing into environment and not the user)
+-> make a gland system that manages this
 
 refactor menus to decouple simulation - make a simulation class that runs all of the simulations rather than in the menu so it runs independent of the menu (rendering)
-
-create a separate renderer class -> send data to renderer to render onto the screen
-have different renderers in different modes based on what type of gui the user wants 
-- actual real-time simulation
-- monitoring stats only
+-> what data should be in the monitor?
+-> for monitoring mode, show pheromones that are in the view cones
+-> for monitoring mode, show the last item digested for each type
+-> optimize collision code? c extensions?
 
 EXTRA if have time
+--- multicell branch --- 
 segregate functions into single cells and have entities form via multicellular clumps
 cells specialized through mutations -> based on their genome, they may be enabled or disabled (nonfunctional due to an incompatible genome)
 have an idea of a genome, which encodes information

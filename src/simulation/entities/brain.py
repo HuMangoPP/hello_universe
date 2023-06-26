@@ -2,13 +2,11 @@ import numpy as np
 import pygame as pg
 import random
 
-from ...util import lerp, sigmoid
+from ...util import sigmoid
 
-# mut
-MUTATION_RATE = 0.1
-D_WEIGHT = 0.1
+from .entity_constants import MUTATION_RATE, D_WEIGHT
 
-# neurons
+# constants
 RECEPTOR_NAMES = np.array([
     'c', 'ca',
     't', 'ta',

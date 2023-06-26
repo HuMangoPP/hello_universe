@@ -2,35 +2,11 @@ import pygame as pg
 import numpy as np
 import math, random
 
-from ...util import lerp, gaussian_dist, proj
+from ...util import gaussian_dist, proj
+
+from .entity_constants import MUTATION_RATE, D_FOV, D_OPT_DENS, D_SPREAD, SHAPE_MAP, RECEPTOR_COLORS
 
 # constants
-SHAPE_MAP = {
-    'circle': 0,
-    'triangle': 1,
-    'square': 2,
-    'pentagon': 3,
-    'hexagon': 4,
-}
-INV_SHAPE_MAP = [
-    'circle',
-    'triangle',
-    'square',
-    'pentagon',
-    'hexagon',
-]
-
-RECEPTOR_COLORS = [
-    (255, 0, 0),
-    (0, 255, 0),
-    (0, 0, 255),
-    (255, 255, 0),
-    (255, 0, 255),
-]
-
-MUTATION_RATE = 0.1
-DMUT = 0.1
-
 MIN_FOV = 0.1
 MIN_SPREAD = 0.1
 ACTIVATION_THRESHOLD = 0.01
@@ -79,11 +55,11 @@ class Receptors:
         if random.uniform(0, 1) <= MUTATION_RATE:
             self.num_of_type = np.clip(self.num_of_type + np.random.randint(-1, 1, size=(5,)), 
                                        a_min=0, a_max=10)
-            self.spread = np.clip(self.spread + np.random.uniform(-DMUT, DMUT, size=(5,)), 
+            self.spread = np.clip(self.spread + np.random.uniform(-D_SPREAD, D_SPREAD, size=(5,)), 
                                   a_min=MIN_SPREAD, a_max=math.pi)
-            self.fov = np.clip(self.fov + np.random.uniform(-DMUT, DMUT, size=(5,)), 
+            self.fov = np.clip(self.fov + np.random.uniform(-D_FOV, D_FOV, size=(5,)), 
                                a_min=MIN_FOV, a_max=math.pi)
-            self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-DMUT, DMUT, size=(5,)), 
+            self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-D_OPT_DENS, D_OPT_DENS, size=(5,)), 
                                     a_min=-1, a_max=1)
     
     def reproduce(self) -> dict:
@@ -148,19 +124,19 @@ class Receptors:
         # get the num, spread, and fov of each receptor type (uniform)
         num = {
             f'num_{receptor_type}': num_of_type
-            for receptor_type, num_of_type in zip(INV_SHAPE_MAP, self.num_of_type)
+            for receptor_type, num_of_type in zip(SHAPE_MAP, self.num_of_type)
         }
         spread = {
             f'spread_{receptor_type}': spread
-            for receptor_type, spread in zip(INV_SHAPE_MAP, self.spread)
+            for receptor_type, spread in zip(SHAPE_MAP, self.spread)
         }
         fov = {
             f'fov_{receptor_type}': fov
-            for receptor_type, fov in zip(INV_SHAPE_MAP, self.fov)
+            for receptor_type, fov in zip(SHAPE_MAP, self.fov)
         }
         opt_dens = {
             f'dens_{receptor_type}': opt_dens
-            for receptor_type, opt_dens in zip(INV_SHAPE_MAP, self.opt_dens)
+            for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)
         }
         return {
             **num, **spread, **fov, **opt_dens

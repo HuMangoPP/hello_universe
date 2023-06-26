@@ -1,28 +1,13 @@
 import numpy as np
 import pygame as pg
-import random, math
 
-from ...util import lerp, gaussian_dist
+from ...util import gaussian_dist
+
+from .entity_constants import MUTATION_RATE, D_OPT_DENS, SHAPE_MAP, RECEPTOR_COLORS
 
 # constants
-MUTATION_RATE = 0.2
-DMUT = 0.1
-INV_SHAPE_MAP = [
-    'circle',
-    'triangle',
-    'square',
-    'pentagon',
-    'hexagon',
-]
 DIGEST_THRESHOLD = 0.5
 VARIATION = 0.2
-RECEPTOR_COLORS = [
-    (255, 0, 0),
-    (0, 255, 0),
-    (0, 0, 255),
-    (255, 255, 0),
-    (255, 0, 255),
-]
 
 # helper
 def get_dists(opt: np.ndarray, steps = 20) -> pg.Surface:
@@ -41,7 +26,7 @@ def digest(x: float, opt: float) -> float:
     return digest_amt if digest_amt > DIGEST_THRESHOLD else 0
 
 class Stomach:
-    def __init__(self, stomach_data: np.ndarray):
+    def __init__(self, stomach_data: dict):
         self.opt_dens = stomach_data['opt_dens']
 
     def adv_init(self):
@@ -50,8 +35,8 @@ class Stomach:
     
     # evo
     def mutate(self):
-        if random.uniform(0, 1) <= MUTATION_RATE:
-            self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-DMUT, DMUT, size=(5,)), 
+        if np.random.uniform(0, 1) <= MUTATION_RATE:
+            self.opt_dens = np.clip(self.opt_dens + np.random.uniform(-D_OPT_DENS, D_OPT_DENS, size=(5,)), 
                                     a_min=0, a_max=1)
 
     def reproduce(self) -> dict:
@@ -78,11 +63,10 @@ class Stomach:
         display.blit(pg.transform.scale(self.dists, (box[2], box[2])),
                      box[:2])
         
-
     # data
     def get_model(self):
         '''CSV format'''
         return {
             receptor_type: opt_dens
-            for receptor_type, opt_dens in zip(INV_SHAPE_MAP, self.opt_dens)
+            for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)
         }
