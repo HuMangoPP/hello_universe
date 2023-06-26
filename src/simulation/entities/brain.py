@@ -1,4 +1,5 @@
 import numpy as np
+import pygame as pg
 import random
 
 from ...util import lerp, sigmoid
@@ -53,6 +54,21 @@ def sum_actv(axons: dict[int, Axon], in_neurons: list, activations: dict[str, fl
             actv += activations[nid]
     return actv
 
+def render_neuron(display: pg.Surface, x: float, y: float, font, nid: str, actv: float,
+                  radius=5, font_size=10, text_loc : str | None=None):
+    color = (max(-255 * actv, 0), max(255 * actv, 0), 0)
+    pg.draw.circle(display, color, (x, y), radius)
+    if text_loc is None:
+        return
+    if text_loc == 'left':
+        font.render(display, nid, x - 1.25 * (len(nid) + 1) * font_size, y, (255, 255, 255), size=font_size, style='left')
+    else:
+        font.render(display, nid, x + 2.25 * font_size, y, (255, 255, 255), size=font_size, style='left')
+
+def render_axon(display: pg.Surface, inn: tuple, outn: tuple, weight: float):
+    norm = sigmoid(weight, 255, 1)
+    color = (max(-norm, 0), max(norm, 0), 0)
+    pg.draw.line(display, color, inn, outn)
 
 class Brain:
     def __init__(self, brain_data: dict, brain_history: BrainHistory):
@@ -67,13 +83,22 @@ class Brain:
             axon_label = f'{axon_data[0]}->{axon_data[1]}'
             self.add_axon(axon_data[0], axon_data[1], axon_data[2], 
                           self.brain_history.get_innov(axon_label))
-            
+
+    def adv_init(self):   
         # activations
-        self.activations = {}
+        self.activations = {
+            **{f'i_{inn}': 0
+               for inn in RECEPTOR_NAMES},
+            **{hn: 0
+               for hn in self.hidden_neurons},
+            **{f'o_{action}': 0
+               for action in ACTIONS},
+            'i_tick': 0
+        }
 
     def add_neuron(self, neuron_id: str):
         self.hidden_neurons.add(neuron_id)
-        self.all_neurons.add(neuron_id)
+        self.hidden_neurons.add(neuron_id)
 
     def add_axon(self, in_neuron: str, out_neuron: str, weight: float, innov: int):
         self.axons[innov] = Axon(in_neuron, out_neuron, weight)
@@ -162,6 +187,55 @@ class Brain:
 
     def get_energy_cost(self) -> float:
         return 0.5 * len([axon for axon in self.axons.values() if axon.enabled])
+
+    # render
+    def render_monitor(self, display: pg.Surface, font):
+        input_layer = {
+            nid: actv
+            for nid, actv in self.activations.items()
+            if nid.split('_')[0] == 'i'
+        }
+        output_layer = {
+            nid: actv
+            for nid, actv in self.activations.items()
+            if nid.split('_')[0] == 'o'
+        }
+        hidden_neurons = {
+            nid: actv
+            for nid, actv in self.activations.items()
+            if nid.split('_')[0] == 'h'
+        }
+
+        viz_loc = {}
+
+        input_size = len(input_layer.keys())
+        y = 100 - 15 * (input_size - 1) / 2
+        for nid, actv in input_layer.items():
+            render_neuron(display, 100, y, font, nid, actv, text_loc='left')
+            viz_loc[nid] = (100,y)
+            y += 15
+        
+        output_size = len(output_layer.keys())
+        y = 100 - 15 * (output_size - 1) / 2
+        for nid, actv in output_layer.items():
+            render_neuron(display, 540, y, font, nid, actv, text_loc='right')
+            viz_loc[nid] = (540,y)
+            y += 15
+        
+        hidden_size = len(hidden_neurons.keys())
+        if hidden_size > 0:
+            angle = np.pi
+            angle_step = 2 * np.pi / hidden_size
+            for nid, actv in hidden_neurons.items():
+                x, y = 80 * np.cos(angle), 80 * np.sin(angle)
+                render_neuron(display, x, y, font, nid, actv)
+                viz_loc[nid] = (x,y)
+                angle += angle_step
+        
+        for axon in self.axons.values():
+            render_axon(display, viz_loc[axon.in_neuron],
+                        viz_loc[axon.out_neuron], axon.weight)
+
 
     # data
     def get_model(self):

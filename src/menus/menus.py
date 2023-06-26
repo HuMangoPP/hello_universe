@@ -207,7 +207,8 @@ class MonitorMenu:
 
                 'brain': {
                     'neurons': [],
-                    'axons': [],
+                    'axons': [['i_c', 'o_mvf', 1],
+                              ['i_c', 'o_mvb', -1]],
                 },
 
                 'receptors': {
@@ -239,8 +240,6 @@ class MonitorMenu:
         # for transitions
         dt = self.clock.get_time() / 1000
         
-        # handle events
-        
         # handle transitions
         if self.transition_phase > 0:
             self.transition_time += dt
@@ -252,12 +251,14 @@ class MonitorMenu:
             if self.transition_time > TRANSITION_TIME:
                 self.transition_time = 0
                 self.transition_phase = (self.transition_phase + 1) % 4
+        else:
+            self.sim.update()
         return {}
 
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
 
-        self.sim.render_monitor(self.displays[DEFAULT_DISPLAY], self.entity_pointer)
+        self.sim.render_monitor(self.displays[DEFAULT_DISPLAY], self.entity_pointer, self.font)
 
         # transitions
         match self.transition_phase:

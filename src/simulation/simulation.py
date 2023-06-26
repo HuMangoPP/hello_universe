@@ -76,12 +76,12 @@ class Simulation:
 
         self.environment.render_rt(display, camera)
     
-    def render_monitor(self, display: pg.Surface, index: int):
+    def render_monitor(self, display: pg.Surface, index: int, font):
         if index < len(self.entities):
             entity_to_monitor = self.entities[index]
         else:
             entity_to_monitor = self.entities[0]
-        entity_to_monitor.render_monitor(display, (320, 300))
+        entity_to_monitor.render_monitor(display, (320, 300), font)
 
     # data
     @staticmethod

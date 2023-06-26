@@ -64,6 +64,7 @@ class Entity:
 
         # mutate on birth
         self.mutate()
+        self.brain.adv_init()
         self.receptors.adv_init() # calculate some static values
         self.stomach.adv_init()
     
@@ -113,7 +114,7 @@ class Entity:
         return ret
 
     def movement(self, env, dt: float):
-        activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env),
+        activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
                                        triangle_wave(self.clock_period, self.clock_time))
         self.z_angle += activations['rot'] * dt
         self.vel = self.stats['mbl'] * np.sum(np.array([rotate_z(activations[mv] * np.array([1,0,0]), self.z_angle + i * np.pi/2) 
@@ -161,13 +162,14 @@ class Entity:
         pg.draw.circle(display, (255, 0, 0), drawpos, 5)
         pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
 
-    def render_monitor(self, display: pg.Surface, anchor: tuple):
+    def render_monitor(self, display: pg.Surface, anchor: tuple, font):
         pg.draw.circle(display, (255, 0, 0), anchor, 5)
         pg.draw.line(display, (255, 0, 0), anchor, 
                      anchor + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
         
         self.receptors.render_monitor(display, anchor, self.z_angle)
-        self.stomach.render_monitor(display, (10, 10, 100))
+        self.stomach.render_monitor(display, (10, 310, 100))
+        self.brain.render_monitor(display, font)
 
     # data
     def get_model(self):
