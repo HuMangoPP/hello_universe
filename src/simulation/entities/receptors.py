@@ -76,22 +76,11 @@ class Receptors:
         receptor_sense = [np.zeros((num_of_type,), np.float32) for num_of_type in self.num_of_type]
 
         # pheromone data
-        p_pos = env.qtree.query_point(np.array([pos[0], pos[1], radius]))
-        p_data = env.qtree.query_data(np.array([pos[0], pos[1], radius]))
-        # iterate through all pheromones
-        for p, data in zip(p_pos, p_data):
-            if np.linalg.norm(p - pos) <= radius:
-                shape_index = data[1]
-                # for all receptor angles in this receptor type
-                for i, receptor_angle in enumerate(self.receptor_angles[shape_index]):
-                    # get relative measurements
-                    rel_pos = p - pos
-                    p_rel_angle = math.atan2(rel_pos[1], rel_pos[0]) - z_angle
-                    # determine collision
-                    r_unit_vec = np.array([math.cos(receptor_angle), math.sin(receptor_angle)])
-                    p_unit_vec = np.array([math.cos(p_rel_angle), math.sin(p_rel_angle)])
-                    if proj(p_unit_vec, r_unit_vec) >= self.receptor_threshold[shape_index]:
-                        receptor_sense[shape_index][i] += gaussian_dist(data[2], self.opt_dens[shape_index], VARIATION)
+        p_data = self.get_in_range(pos, z_angle, radius, env)
+        for p in p_data:
+            shape_index = p[1]
+            for i, _ in enumerate(self.receptor_angles[shape_index]):
+                receptor_sense[shape_index][i] += gaussian_dist(p[2], self.opt_dens[shape_index], VARIATION)
         
         # iterate through sensory activations
         sensory_data = []
@@ -106,7 +95,27 @@ class Receptors:
                 else:
                     avg_angle = np.sum(sense * receptor_angle) / np.sum(sense) / math.pi
             sensory_data.append(np.array([avg_actv, avg_angle]))
+
         return np.array(sensory_data)
+
+    def get_in_range(self, pos: np.ndarray, z_angle: float, radius: float, env):
+        p_pos = env.qtree.query_point(np.array([*pos[:2], radius]))
+        p_data = env.qtree.query_data(np.array([*pos[:2], radius]))
+        in_range = []
+        for p, data in zip(p_pos, p_data):
+            if np.linalg.norm(p - pos) <= radius:
+                shape_index = data[1]
+                # for all receptor angles in this receptor type
+                for receptor_angle in self.receptor_angles[shape_index]:
+                    # get relative measurements
+                    rel_pos = p - pos
+                    p_rel_angle = math.atan2(rel_pos[1], rel_pos[0]) - z_angle
+                    # determine collision
+                    r_unit_vec = np.array([math.cos(receptor_angle), math.sin(receptor_angle)])
+                    p_unit_vec = np.array([math.cos(p_rel_angle), math.sin(p_rel_angle)])
+                    if proj(p_unit_vec, r_unit_vec) >= self.receptor_threshold[shape_index]:
+                        in_range.append(data)
+        return in_range
 
     def get_energy_cost(self) -> float:
         return 0.5 * np.sum([num_of_type for num_of_type in self.num_of_type])

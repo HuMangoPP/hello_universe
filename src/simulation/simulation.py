@@ -82,6 +82,7 @@ class Simulation:
         else:
             entity_to_monitor = self.entities[0]
         entity_to_monitor.render_monitor(display, (320, 300), font)
+        self.environment.render_monitor(display, entity_to_monitor, (320, 300))
 
     # data
     @staticmethod

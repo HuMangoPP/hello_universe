@@ -12,7 +12,7 @@ SHAPE_MAP = {
     'hexagon': 4,
 }
 
-PARTICLE_LIFETIME = 5
+PARTICLE_LIFETIME = 1
 
 def draw_circle(display: pg.Surface, center: tuple, color: tuple, radius: float):
     pg.draw.circle(display, color, center, radius)
@@ -117,6 +117,31 @@ class Environment:
                 case 4:
                     draw_hexagon(display, camera.transform_to_screen(pos),
                                 color, radius)
+
+    def render_monitor(self, display: pg.Surface, entity, anchor: tuple):
+        p_data = entity.receptors.get_in_range(entity.pos, entity.z_angle, 100, self)
+        indices = [p[0] for p in p_data]
+        for pos, shape, dens in zip(self.positions[indices], self.shapes[indices], self.densities[indices]):
+            radius = 5
+            color = np.ceil(np.array([0,255,0]) * dens)
+            drawpos = (pos - entity.pos)[:2] + anchor
+            match shape:
+                case 0:
+                    draw_circle(display, drawpos,
+                                color, radius)
+                case 1:
+                    draw_triangle(display, drawpos,
+                                color, radius)
+                case 2:
+                    draw_square(display, drawpos,
+                                color, radius)
+                case 3:
+                    draw_pentagon(display, drawpos,
+                                color, radius)
+                case 4:
+                    draw_hexagon(display, drawpos,
+                                color, radius)
+
 
     # data
     def get_sim_data(self) -> dict[str, np.ndarray]:
