@@ -1,7 +1,7 @@
 import numpy as np
 import pygame as pg
 
-from ...util import gaussian_dist, draw_circle, draw_triangle, draw_square, draw_pentagon, draw_hexagon
+from ...util import gaussian_dist, draw_shape
 
 from .entity_constants import MUTATION_RATE, D_OPT_DENS, SHAPE_MAP, RECEPTOR_COLORS
 
@@ -63,6 +63,11 @@ class Stomach:
     # render
     def render_monitor(self, display: pg.Surface, box: tuple):
         dists = pg.transform.scale(self.dists, (box[2], box[2]))
+        xs = box[2] * self.digested
+        ys = box[2] * (1 - gaussian_dist(self.digested, self.opt_dens, VARIATION))
+        for i, (value, x, y) in enumerate(zip(self.digested, xs, ys)):
+            if value >= 0:
+                draw_shape(dists, (round(x), round(y)), np.ceil(np.array([0,255,0]) * value), 5, i)
         display.blit(dists, box[:2])
         
     # data
