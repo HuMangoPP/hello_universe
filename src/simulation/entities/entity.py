@@ -9,8 +9,6 @@ create pheromones to send out for creatures (independent placing into environmen
 
 refactor menus to decouple simulation - make a simulation class that runs all of the simulations rather than in the menu so it runs independent of the menu (rendering)
 -> what data should be in the monitor?
--> for monitoring mode, show the last few item digested for each type
--> for monitoring mode, show the last set of pheromones released
 -> optimize collision code? c extensions?
 
 EXTRA if have time

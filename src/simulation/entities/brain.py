@@ -54,6 +54,7 @@ def sum_actv(axons: dict[int, Axon], in_neurons: list, activations: dict[str, fl
 
 def render_neuron(display: pg.Surface, x: float, y: float, font, nid: str, actv: float,
                   radius=5, font_size=10, text_loc : str | None=None):
+    actv = np.clip(actv, a_min=-1, a_max=1)
     color = (max(-255 * actv, 0), max(255 * actv, 0), 0)
     pg.draw.circle(display, color, (x, y), radius)
     if text_loc is None:

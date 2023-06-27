@@ -1,7 +1,7 @@
 import numpy as np
 import pygame as pg
 
-from ...util import gaussian_dist
+from ...util import gaussian_dist, draw_circle, draw_triangle, draw_square, draw_pentagon, draw_hexagon
 
 from .entity_constants import MUTATION_RATE, D_OPT_DENS, SHAPE_MAP, RECEPTOR_COLORS
 
@@ -28,6 +28,7 @@ def digest(x: float, opt: float) -> float:
 class Stomach:
     def __init__(self, stomach_data: dict):
         self.opt_dens = stomach_data['opt_dens']
+        self.digested = np.full((5,), -1, np.float32)
 
     def adv_init(self):
         self.dists = get_dists(self.opt_dens)
@@ -53,6 +54,7 @@ class Stomach:
         for edible_item in edible_in_range:
             digest_item = digest(edible_item[2], self.opt_dens[edible_item[1]])
             if digest_item > 0:
+                self.digested[edible_item[1]] = edible_item[2]
                 digest_amt += digest_item
                 env.eat(edible_item[0])
         
@@ -60,8 +62,8 @@ class Stomach:
 
     # render
     def render_monitor(self, display: pg.Surface, box: tuple):
-        display.blit(pg.transform.scale(self.dists, (box[2], box[2])),
-                     box[:2])
+        dists = pg.transform.scale(self.dists, (box[2], box[2]))
+        display.blit(dists, box[:2])
         
     # data
     def get_model(self):
