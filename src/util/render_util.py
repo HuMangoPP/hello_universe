@@ -31,3 +31,16 @@ def draw_hexagon(display: pg.Surface, center: tuple, color:tuple, radius: float)
         for angle in np.arange(0, 2*math.pi, 2*math.pi/6)
     ]
     pg.draw.polygon(display, color, points)
+
+def draw_shape(display: pg.Surface, center: tuple, color: tuple, radius: float, type: int):
+    match type:
+        case 0:
+            draw_circle(display, center, color, radius)
+        case 1:
+            draw_triangle(display, center, color, radius)
+        case 2:
+            draw_square(display, center, color, radius)
+        case 3:
+            draw_pentagon(display, center, color, radius)
+        case 4:
+            draw_hexagon(display, center, color, radius)

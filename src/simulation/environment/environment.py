@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import math
 
-from ...util import QuadTree, draw_circle, draw_triangle, draw_square, draw_pentagon, draw_hexagon
+from ...util import QuadTree, draw_shape
 
 SHAPE_MAP = {
     'circle': 0,
@@ -71,22 +71,8 @@ class Environment:
         for pos, shape, dens in zip(self.positions, self.shapes, self.densities):
             radius = 7
             color = np.ceil(np.array([0,255,0]) * dens)
-            match shape:
-                case 0:
-                    draw_circle(display, camera.transform_to_screen(pos),
-                                color, radius)
-                case 1:
-                    draw_triangle(display, camera.transform_to_screen(pos),
-                                color, radius)
-                case 2:
-                    draw_square(display, camera.transform_to_screen(pos),
-                                color, radius)
-                case 3:
-                    draw_pentagon(display, camera.transform_to_screen(pos),
-                                color, radius)
-                case 4:
-                    draw_hexagon(display, camera.transform_to_screen(pos),
-                                color, radius)
+            draw_shape(display, camera.transform_to_screen(pos),
+                       color, radius, shape)
 
     def render_monitor(self, display: pg.Surface, entity, anchor: tuple):
         p_data = entity.receptors.get_in_range(entity.pos, entity.z_angle, 100, self)
@@ -95,22 +81,7 @@ class Environment:
             radius = 5
             color = np.ceil(np.array([0,255,0]) * dens)
             drawpos = (pos - entity.pos)[:2] + anchor
-            match shape:
-                case 0:
-                    draw_circle(display, drawpos,
-                                color, radius)
-                case 1:
-                    draw_triangle(display, drawpos,
-                                color, radius)
-                case 2:
-                    draw_square(display, drawpos,
-                                color, radius)
-                case 3:
-                    draw_pentagon(display, drawpos,
-                                color, radius)
-                case 4:
-                    draw_hexagon(display, drawpos,
-                                color, radius)
+            draw_shape(display, drawpos, color, radius, shape)
 
 
     # data

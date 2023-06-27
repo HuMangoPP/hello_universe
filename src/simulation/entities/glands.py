@@ -1,7 +1,7 @@
 import numpy as np
 import pygame as pg
 
-from ...util import gaussian_dist, draw_circle, draw_triangle, draw_square, draw_pentagon, draw_hexagon
+from ...util import gaussian_dist, draw_shape
 
 from .entity_constants import MUTATION_RATE, D_OPT_DENS, SHAPE_MAP, RECEPTOR_COLORS
 
@@ -52,11 +52,8 @@ class Glands:
         if self.release is not None:
             xs = box[2] * self.release
             ys = box[2] * (1 - gaussian_dist(self.release, self.opt_dens, VARIATION))
-            draw_circle(dists, (xs[0], ys[0]), np.ceil(np.array([0,255,0]) * self.release[0]), 5)
-            draw_triangle(dists, (xs[1], ys[1]), np.ceil(np.array([0,255,0]) * self.release[1]), 5)
-            draw_square(dists, (xs[2], ys[2]), np.ceil(np.array([0,255,0]) * self.release[2]), 5)
-            draw_pentagon(dists, (xs[3], ys[3]), np.ceil(np.array([0,255,0]) * self.release[3]), 5)
-            draw_hexagon(dists, (xs[4], ys[4]), np.ceil(np.array([0,255,0]) * self.release[4]), 5)
+            for i, (value, x, y) in enumerate(zip(self.release, xs, ys)):
+                draw_shape(dists, (x, y), np.ceil(np.array([0,255,0]) * value), 5, i)
         display.blit(dists, box[:2])
         
     
