@@ -23,6 +23,7 @@ def get_dists(opt: np.ndarray, steps = 20) -> pg.Surface:
 class Glands:
     def __init__(self, glands_data: dict):
         self.opt_dens = glands_data['opt_dens']
+        self.spread = glands_data['spread']
         self.release = None
     
     def adv_init(self):

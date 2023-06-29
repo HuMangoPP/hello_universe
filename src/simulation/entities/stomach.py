@@ -28,7 +28,8 @@ def digest(x: float, opt: float) -> float:
 class Stomach:
     def __init__(self, stomach_data: dict):
         self.opt_dens = stomach_data['opt_dens']
-        self.digested = np.full((5,), -1, np.float32)
+        self.swallowed = 0
+        self.metabolism = stomach_data['metabolism']
 
     def adv_init(self):
         self.dists = get_dists(self.opt_dens)
@@ -46,28 +47,23 @@ class Stomach:
         }
     
     # func
-    def eat(self, pos: np.ndarray, env) -> float:
-        digest_amt = 0
+    def eat(self, pos: np.ndarray, env, dt: float) -> float:
         # get pheromones
         edible_in_range = env.qtree.query_data(np.array([pos[0],pos[1],10]))
         # iterate through pheromones and digest them
         for edible_item in edible_in_range:
             digest_item = digest(edible_item[2], self.opt_dens[edible_item[1]])
             if digest_item > 0:
-                self.digested[edible_item[1]] = edible_item[2]
-                digest_amt += digest_item
+                self.swallowed += digest_item
                 env.eat(edible_item[0])
         
+        digest_amt = min(self.metabolism * dt, self.swallowed)
+        self.swallowed -= digest_amt
         return digest_amt
 
     # render
     def render_monitor(self, display: pg.Surface, box: tuple):
         dists = pg.transform.scale(self.dists, (box[2], box[2]))
-        xs = box[2] * self.digested
-        ys = box[2] * (1 - gaussian_dist(self.digested, self.opt_dens, VARIATION))
-        for i, (value, x, y) in enumerate(zip(self.digested, xs, ys)):
-            if value >= 0:
-                draw_shape(dists, (round(x), round(y)), np.ceil(np.array([0,255,0]) * value), 5, i)
         display.blit(dists, box[:2])
         
     # data

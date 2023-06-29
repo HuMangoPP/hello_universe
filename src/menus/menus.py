@@ -120,12 +120,19 @@ class SimMenu:
                     'num_of_type': np.zeros((5,), np.int32),
                     'spread': np.full((5,), np.pi/6, np.float32),
                     'fov': np.full((5,), np.pi/6, np.float32),
-                    'opt_dens': np.full((5,), 0.5, np.float32)
+                    'opt_dens': np.full((5,), 0.5, np.float32),
+                    'sense_radius': np.full((5,), 100, np.float32),
                 },
                 
-                'stomach': {'opt_dens': np.full((5,), 0.5, np.float32)},
+                'stomach': {
+                    'opt_dens': np.full((5,), 0.5, np.float32),
+                    'metabolism': 1
+                },
 
-                'glands': {'opt_dens': np.arange(0.3, 0.71, 0.1)},
+                'glands': {
+                    'opt_dens': np.arange(0.3, 0.71, 0.1),
+                    'spread': np.full((5,), (np.pi/6), np.float32)
+                },
             }]
         )
 

@@ -42,6 +42,7 @@ class Receptors:
         self.spread : np.ndarray = receptor_data['spread']
         self.fov : np.ndarray = receptor_data['fov']
         self.opt_dens : np.ndarray = receptor_data['opt_dens']
+        self.sense_radius = np.ndarray = receptor_data['sense_radius']
 
     def adv_init(self):
         self.receptor_angles = [get_receptor_angles(num_of_type, spread)

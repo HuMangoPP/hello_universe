@@ -11,6 +11,8 @@ refactor menus to decouple simulation - make a simulation class that runs all of
 -> what data should be in the monitor?
 -> optimize collision code? c extensions?
 
+make a separate no rendering simulation option
+
 EXTRA if have time
 --- multicell branch --- 
 segregate functions into single cells and have entities form via multicellular clumps
@@ -84,11 +86,11 @@ class Entity:
         energy_spent = np.linalg.norm(self.vel) * self.scale / 50
         energy_spent += self.receptors.get_energy_cost()
         energy_spent += self.brain.get_energy_cost()
-        energy_spent *= dt
+        energy_spent *= (dt * self.stomach.metabolism)
         self.energy -= energy_spent
 
         # # energy regen
-        digest = self.stomach.eat(self.pos, env)
+        digest = self.stomach.eat(self.pos, env, dt)
         self.energy += digest
         self.reproduction_guage += dt / 10
         if self.reproduction_guage > 1:
