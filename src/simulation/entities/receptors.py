@@ -148,6 +148,10 @@ class Receptors:
             f'dens_{receptor_type}': opt_dens
             for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)
         }
+        radius = {
+            f'radius_{receptor_type}': radius
+            for receptor_type, radius in zip(SHAPE_MAP, self.sense_radius)
+        }
         return {
             **num, **spread, **fov, **opt_dens
         }

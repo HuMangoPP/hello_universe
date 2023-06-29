@@ -70,6 +70,7 @@ class Stomach:
     def get_model(self):
         '''CSV format'''
         return {
-            receptor_type: opt_dens
-            for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)
+            **{f'{receptor_type}': opt_dens
+            for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)},
+            'metabolism': self.metabolism
         }

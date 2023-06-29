@@ -62,6 +62,8 @@ class Glands:
     def get_model(self):
         '''CSV format'''
         return {
-            receptor_type: opt_dens
-            for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)
+            **{f'dens_{receptor_type}': opt_dens
+            for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)},
+            **{f'spread_{receptor_type}': spread
+            for receptor_type, spread in zip(SHAPE_MAP, self.spread)},
         }
