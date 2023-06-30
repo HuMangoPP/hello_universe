@@ -6,10 +6,8 @@ from ...util import QuadTree, draw_shape
 
 '''
 TODO:
-- separate each pheromone type into its own category, this might allow me to take advantage of numpy calculations
 - create a base pheromone density for each type and measure pheromone densities relative to the base
   for creatures
-- collisions use hashed grid in dict?
 - separate pheromones from food?
 '''
 

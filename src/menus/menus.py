@@ -191,6 +191,10 @@ class SimMenu:
         return displays_to_render
 
 
+'''
+TODO:
+scroll entity pointer
+'''
 class MonitorMenu:
     def __init__(self, game):
         # import game
@@ -255,6 +259,14 @@ class MonitorMenu:
     def update(self, events: list[pg.Event]):
         # for transitions
         dt = self.clock.get_time() / 1000
+
+        for event in events:
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RIGHT:
+                    self.entity_pointer += 1
+                if event.key == pg.K_LEFT:
+                    self.entity_pointer += 1
+                self.entity_pointer %= len(self.sim.entities)
         
         # handle transitions
         if self.transition_phase > 0:
