@@ -92,7 +92,7 @@ class Entity:
         # # energy regen
         digest = self.stomach.eat(self.pos, env, dt)
         self.energy += digest
-        self.reproduction_guage += dt / 10
+        self.reproduction_guage += digest / 10
         if self.reproduction_guage > 1:
             ret['child'] = self.reproduce()
             self.reproduction_guage = 0
