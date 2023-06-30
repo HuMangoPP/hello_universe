@@ -42,7 +42,7 @@ class Receptors:
         self.spread : np.ndarray = receptor_data['spread']
         self.fov : np.ndarray = receptor_data['fov']
         self.opt_dens : np.ndarray = receptor_data['opt_dens']
-        self.sense_radius = np.ndarray = receptor_data['sense_radius']
+        self.sense_radius : np.ndarray = receptor_data['sense_radius']
 
     def adv_init(self):
         self.receptor_angles = [get_receptor_angles(num_of_type, spread)
@@ -68,54 +68,71 @@ class Receptors:
             'num_of_type': self.num_of_type.copy(),
             'spread': self.spread.copy(),
             'fov': self.spread.copy(),
-            'opt_dens': self.opt_dens.copy()
+            'opt_dens': self.opt_dens.copy(),
+            'sense_radius': self.sense_radius.copy()
         }
     
     # functionality
-    def poll_receptors(self, pos: np.ndarray, z_angle: float, radius: float, env):
-        # list of np arrays with each np array as the size of how many receptors of that type there are
-        receptor_sense = [np.zeros((num_of_type,), np.float32) for num_of_type in self.num_of_type]
+    def poll_receptors(self, pos: np.ndarray, z_angle: float, env):
+        # sensory information
+        receptor_data = self.get_in_range(pos, z_angle, env, True)
 
-        # pheromone data
-        p_data = self.get_in_range(pos, z_angle, radius, env)
-        for p in p_data:
-            shape_index = p[1]
-            for i, _ in enumerate(self.receptor_angles[shape_index]):
-                receptor_sense[shape_index][i] += gaussian_dist(p[2], self.opt_dens[shape_index], VARIATION)
-        
-        # iterate through sensory activations
         sensory_data = []
-        for sense, receptor_angle in zip(receptor_sense, self.receptor_angles):
-            if sense.size == 0: # no receptors exist, so default to these activations
+        for receptor_type in receptor_data:
+            if receptor_type['actv'].size == 0:
                 avg_actv = 0
                 avg_angle = 0
-            else: # otherwise, determine the actv and angle
-                avg_actv = np.average(sense)
-                if avg_actv < ACTIVATION_THRESHOLD:
+            else:
+                avg_actv = np.average(receptor_type['actv'])
+                if avg_actv == 0:
                     avg_angle = 0
                 else:
-                    avg_angle = np.sum(sense * receptor_angle) / np.sum(sense) / math.pi
+                    avg_angle = (np.sum(receptor_type['actv'] * receptor_type['angle']) / 
+                                 np.sum(receptor_type['actv']) / np.pi)
             sensory_data.append(np.array([avg_actv, avg_angle]))
-
+        
         return np.array(sensory_data)
 
-    def get_in_range(self, pos: np.ndarray, z_angle: float, radius: float, env):
-        p_pos = env.qtree.query_point(np.array([*pos[:2], radius]))
-        p_data = env.qtree.query_data(np.array([*pos[:2], radius]))
+    def get_in_range(self, pos: np.ndarray, z_angle: float, env, get_angles=False) -> list[dict[str, np.ndarray]]:
+        pheromone_data = env.get_pheromone_data(pos[:2], self.sense_radius)
+
         in_range = []
-        for p, data in zip(p_pos, p_data):
-            if np.linalg.norm(p - pos) <= radius:
-                shape_index = data[1]
-                # for all receptor angles in this receptor type
-                for receptor_angle in self.receptor_angles[shape_index]:
-                    # get relative measurements
-                    rel_pos = p - pos
-                    p_rel_angle = math.atan2(rel_pos[1], rel_pos[0]) - z_angle
-                    # determine collision
-                    r_unit_vec = np.array([math.cos(receptor_angle), math.sin(receptor_angle)])
-                    p_unit_vec = np.array([math.cos(p_rel_angle), math.sin(p_rel_angle)])
-                    if proj(p_unit_vec, r_unit_vec) >= self.receptor_threshold[shape_index]:
-                        in_range.append(data)
+        for i, (p_data, radius, angles, threshold) in enumerate(zip(pheromone_data, 
+                                                                    self.sense_radius, 
+                                                                    self.receptor_angles, 
+                                                                    self.receptor_threshold)):
+            p_pos = p_data['pos']
+            if p_pos.size == 0: # sentinel
+                in_range.append({
+                        'angle': np.empty((0,), np.float32),
+                        'actv': np.empty((0,), np.float32),
+                        'pos': np.empty((0,), np.float32),
+                        'dens': np.empty((0,), np.float32),
+                })
+                continue
+            
+            p_dens = p_data['dens']
+            rel_pos = p_pos - pos
+            rel_angle = np.arctan2(rel_pos[:,1], rel_pos[:,0]) - z_angle
+            rel_angle = np.vstack([rel_angle - angle for angle in angles])
+
+            in_radius = np.linalg.norm(rel_pos, axis=1) <= radius
+            in_cone = np.cos(rel_angle) >= threshold
+            in_cone_reduce = np.sum(in_cone, axis=0) > 0
+
+            if get_angles:
+                which_cone = np.tile(np.array([angles]).T, (1, p_dens.size))[in_cone]
+                in_range.append({
+                    'angle': np.average(which_cone, axis=0)[in_radius],
+                    'actv': gaussian_dist(p_dens[np.logical_and(in_range, in_cone_reduce)], 
+                                          self.opt_dens[i], VARIATION)
+                })
+            else:
+                in_range.append({
+                    'pos': p_pos[np.logical_and(in_range, in_cone_reduce)],
+                    'dens': p_dens[np.logical_and(in_range, in_cone_reduce)],
+                })
+        
         return in_range
 
     def get_energy_cost(self) -> float:

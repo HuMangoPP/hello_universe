@@ -13,84 +13,113 @@ TODO:
 - separate pheromones from food?
 '''
 
-SHAPE_MAP = {
-    'circle': 0,
-    'triangle': 1,
-    'square': 2,
-    'pentagon': 3,
-    'hexagon': 4,
-}
+SHAPE_MAP = [
+    'circle',
+    'triangle',
+    'square',
+    'pentagon',
+    'hexagon',
+]
 
 PARTICLE_LIFETIME = 1
 
 class Environment:
     def __init__(self):
-        self.num_particles = 0
-        self.positions = np.array([]) # shape=(n,3)
-        self.lifetimes = np.array([]) #shape=(n,)
-        self.shapes = np.array([]) # shape=(n,)
-        self.densities = np.array([]) # shape=(n,)
-
-        self.build_qtree()
-    
+        self.pheromones = [{} for _ in SHAPE_MAP]
+        
     # func
-    def build_qtree(self):
-        self.qtree = QuadTree(np.array([0,0]), 500, 4)
-        [self.qtree.insert(pos, data=[i, shape, density]) for i, (pos, shape, density) in enumerate(zip(self.positions, self.shapes, self.densities))]
-
     def clear_particles(self):
-        self.num_particles = 0
-        self.positions = np.array([]) # shape=(n,3)
-        self.lifetimes = np.array([]) #shape=(n,)
-        self.shapes = np.array([]) # shape=(n,)
-        self.densities = np.array([]) # shape=(n,)
+        self.pheromones = {
+            pheromone_type: {}
+            for pheromone_type in SHAPE_MAP
+        }
 
-    def add_new_particles(self, num_new_particles: int, 
-                          positions: np.ndarray, shapes: np.ndarray, densities: np.ndarray):
-        self.num_particles += num_new_particles
-        if self.positions.size == 0:
-            self.positions = positions
-            self.lifetimes = np.full((num_new_particles,), PARTICLE_LIFETIME)
-            self.shapes = shapes
-            self.densities = densities
-        else:
-            self.positions = np.concatenate([self.positions, positions])
-            self.lifetimes = np.concatenate([self.lifetimes, np.full((num_new_particles,), PARTICLE_LIFETIME)])
-            self.shapes = np.concatenate([self.shapes, shapes])
-            self.densities = np.concatenate([self.densities, densities])
-    
-    def eat(self, index):
-        self.lifetimes[index] = 0
+    def add_new_particles(self, positions: np.ndarray, shapes: np.ndarray, densities: np.ndarray):
+        for pos, shape, dens in zip(positions, shapes, densities):
+            gridx, gridy = pos[:2] // 10 * 10
+            grid_label = f'{int(gridx),int(gridy)}'
+            if grid_label in self.pheromones[shape]:
+                self.pheromones[shape][grid_label] = {
+                    'pos': np.array([*self.pheromones[shape][grid_label]['pos'], pos]),
+                    'dens': np.array([*self.pheromones[shape][grid_label]['dens'], dens]),
+                    'lifetime': np.array([*self.pheromones[shape][grid_label]['lifetime'], PARTICLE_LIFETIME])
+                }
+            else:
+                self.pheromones[shape][grid_label] = {
+                    'pos': np.array([pos]),
+                    'dens': np.array([dens], np.float32),
+                    'lifetime': np.array([PARTICLE_LIFETIME], np.float32)
+                }
+
+    def get_pheromone_data(self, xy: np.ndarray, boxradius: np.ndarray) -> list[dict[str, np.ndarray]]:
+        gridx, gridy = xy // 10 * 10
+        return_data = []
+        for radius, pheromone_data in zip(boxradius, self.pheromones):
+            pos = np.array([], np.float32)
+            dens = np.array([], np.float32)
+            indices = np.array([], np.int32)
+
+            num_grids_along_axis = radius // 10 + 1
+            grids_in_range = [
+                f'{int(x + gridx)},{int(y + gridy)}'
+                for x in np.arange(-num_grids_along_axis, num_grids_along_axis+1)
+                for y in np.arange(-num_grids_along_axis, num_grids_along_axis+1)
+            ]
+            for grid in grids_in_range:
+                if grid in pheromone_data:
+                    pos = np.array([*pos, pheromone_data[grid]['pos']])
+                    dens = np.array([*dens, pheromone_data[grid]['dens']])
+                    indices = np.array([*indices, np.arange(pheromone_data[grid]['dens'].size)])
+            return_data.append({
+                'pos': pos,
+                'dens': dens,
+                'ind': indices,
+            })
+        return return_data
+
+    def eat(self, positions: np.ndarray, indices: np.ndarray, shape: int):
+        if indices.size > 0:
+            grid_labels = np.char.add(np.char.add(positions[:,0].astype(str), 
+                                                np.full_like(indices, ',')), 
+                                    positions[:,1].astype(str))
+            for grid_label in grid_labels.unique():
+                index = indices[grid_labels == grid_label]
+                self.pheromones[shape][grid_label]['lifetime'][index] = 0
 
     # update
     def update(self, dt: float):
-        if self.num_particles > 0:
-            self.lifetimes = self.lifetimes - np.full((self.num_particles,), dt)
-            keep = self.lifetimes > 0
-            self.positions = self.positions[keep]
-            self.lifetimes = self.lifetimes[keep]
-            self.shapes = self.shapes[keep]
-            self.densities = self.densities[keep]
-            self.num_particles = np.sum(keep)
-        
-        self.build_qtree()
+        for i, pheromone_data in enumerate(self.pheromones):
+            new_grid = {}
+            for grid, data in pheromone_data.items():
+                keep = data['lifetime'] > 0
+                new_pos = data['pos'][keep]
+                new_lifetime = data['lifetime'][keep] - dt
+                new_dens = data['dens'][keep]
+                if new_pos.size > 0:
+                    new_grid[grid] = {
+                        'pos': new_pos,
+                        'dens': new_dens,
+                        'lifetime': new_lifetime
+                    }
+            self.pheromones[i] = new_grid
     
     # render
     def render_rt(self, display: pg.Surface, camera):
-        for pos, shape, dens in zip(self.positions, self.shapes, self.densities):
-            radius = 7
-            color = np.ceil(np.array([0,255,0]) * dens)
-            draw_shape(display, camera.transform_to_screen(pos),
-                       color, radius, shape)
+        for i, pheromone_data in enumerate(self.pheromones):
+            for tile in pheromone_data.values():
+                for pos, dens in zip(tile['pos'], tile['dens']):
+                    drawpos = camera.transform_to_screen(pos)
+                    color = np.ceil(np.array([0,255,0]) * dens)
+                    draw_shape(display, drawpos, color, 5, i)
 
     def render_monitor(self, display: pg.Surface, entity, anchor: tuple):
-        p_data = entity.receptors.get_in_range(entity.pos, entity.z_angle, 100, self)
-        indices = [p[0] for p in p_data]
-        for pos, shape, dens in zip(self.positions[indices], self.shapes[indices], self.densities[indices]):
-            radius = 5
-            color = np.ceil(np.array([0,255,0]) * dens)
-            drawpos = (pos - entity.pos)[:2] + anchor
-            draw_shape(display, drawpos, color, radius, shape)
+        pheromone_data = entity.receptors.get_in_range(entity.pos, entity.z_angle, self)
+
+        for shape, data in enumerate(pheromone_data):
+            for pos, dens in zip(data['pos'], data['dens']):
+                color = np.ceil(np.array([0,255,0]) * dens)
+                drawpos = (pos - entity.pos)[:2] + anchor
+                draw_shape(display, drawpos, color, 5, shape)
 
 
     # data

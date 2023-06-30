@@ -32,7 +32,7 @@ from .glands import Glands
 
 from ...util import rotate_z, triangle_wave
 
-MOVEMENT_OPTIONS = ['mvf', 'mvr', 'mvb', 'mvl']
+MOVEMENT_OPTIONS = ['mvf', 'mvs']
 
 MUTATION_RATE = 0.1
 STAT_MUT = 0.1
@@ -116,10 +116,10 @@ class Entity:
         return ret
 
     def movement(self, env, dt: float):
-        activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, 100, env).flatten(),
+        activations = self.brain.think(self.receptors.poll_receptors(self.pos, self.z_angle, env).flatten(),
                                        triangle_wave(self.clock_period, self.clock_time))
         self.z_angle += activations['rot'] * dt
-        self.vel = self.stats['mbl'] * np.sum(np.array([rotate_z(activations[mv] * np.array([1,0,0]), self.z_angle + i * np.pi/2) 
+        self.vel = (50 + self.stats['mbl']) * np.sum(np.array([rotate_z(activations[mv] * np.array([1,0,0]), self.z_angle + i * np.pi/2) 
                                                for i, mv in enumerate(MOVEMENT_OPTIONS)]), axis=0)
         self.pos = self.pos + self.vel * dt
 

@@ -21,15 +21,15 @@ def get_dists(opt: np.ndarray, steps = 20) -> pg.Surface:
     surf.set_colorkey((0,0,0))
     return surf
 
-def digest(x: float, opt: float) -> float:
+def digest(x: float | np.ndarray, opt: float) -> tuple[np.ndarray, np.ndarray]:
     digest_amt = gaussian_dist(x, opt, VARIATION)
-    return digest_amt if digest_amt > DIGEST_THRESHOLD else 0
+    return digest_amt, digest_amt > DIGEST_THRESHOLD
 
 class Stomach:
     def __init__(self, stomach_data: dict):
-        self.opt_dens = stomach_data['opt_dens']
+        self.opt_dens : np.ndarray = stomach_data['opt_dens']
         self.swallowed = 0
-        self.metabolism = stomach_data['metabolism']
+        self.metabolism : float = stomach_data['metabolism']
 
     def adv_init(self):
         self.dists = get_dists(self.opt_dens)
@@ -43,19 +43,19 @@ class Stomach:
 
     def reproduce(self) -> dict:
         return {
-            'opt_dens': self.opt_dens.copy()
+            'opt_dens': self.opt_dens.copy(),
+            'metabolism': self.metabolism
         }
     
     # func
     def eat(self, pos: np.ndarray, env, dt: float) -> float:
         # get pheromones
-        edible_in_range = env.qtree.query_data(np.array([pos[0],pos[1],10]))
-        # iterate through pheromones and digest them
-        for edible_item in edible_in_range:
-            digest_item = digest(edible_item[2], self.opt_dens[edible_item[1]])
-            if digest_item > 0:
-                self.swallowed += digest_item
-                env.eat(edible_item[0])
+        pheromone_data = env.get_pheromone_data(pos[:2], np.full((5,), 10, np.float32))
+        # iterate through pheromones types and digest them
+        for shape, (pheromone_type, opt_dens) in enumerate(zip(pheromone_data, self.opt_dens)):
+            digest_ph, digested = digest(pheromone_type['dens'], opt_dens)
+            self.swallowed += np.sum(digest_ph[digested])
+            env.eat(pheromone_type['pos'][digested], pheromone_type['ind'][digested], shape)
         
         digest_amt = min(self.metabolism * dt, self.swallowed)
         self.swallowed -= digest_amt

@@ -23,7 +23,6 @@ def get_dists(opt: np.ndarray, steps = 20) -> pg.Surface:
 class Glands:
     def __init__(self, glands_data: dict):
         self.opt_dens = glands_data['opt_dens']
-        self.spread = glands_data['spread']
         self.release = None
     
     def adv_init(self):
@@ -45,7 +44,7 @@ class Glands:
     def release_pheromones(self, pos: np.ndarray, env):
         offsets = np.random.uniform(-25., 25., (5,3))
         self.release = np.clip(self.opt_dens + VARIATION * np.random.randn(5), a_min=0, a_max=1)
-        env.add_new_particles(5, pos + offsets, np.arange(5), self.release)
+        env.add_new_particles(pos + offsets, np.arange(5), self.release)
 
     # render
     def render_monitor(self, display: pg.Surface, box: tuple):
@@ -62,8 +61,6 @@ class Glands:
     def get_model(self):
         '''CSV format'''
         return {
-            **{f'dens_{receptor_type}': opt_dens
+            **{f'{receptor_type}': opt_dens
             for receptor_type, opt_dens in zip(SHAPE_MAP, self.opt_dens)},
-            **{f'spread_{receptor_type}': spread
-            for receptor_type, spread in zip(SHAPE_MAP, self.spread)},
         }
