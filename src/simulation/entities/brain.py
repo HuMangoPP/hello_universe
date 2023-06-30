@@ -14,7 +14,7 @@ RECEPTOR_NAMES = np.array([
     'p', 'pa',
     'h', 'ha'
 ])
-ACTIONS = ['rot', 'mvf', 'mvr', 'mvb', 'mvl']
+ACTIONS = ['rot', 'mvf', 'mvs']
 SIGMOID_SQUEEZE = 5
 
 

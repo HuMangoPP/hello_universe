@@ -131,7 +131,6 @@ class SimMenu:
 
                 'glands': {
                     'opt_dens': np.arange(0.3, 0.71, 0.1),
-                    'spread': np.full((5,), (np.pi/6), np.float32)
                 },
             }]
         )
@@ -217,19 +216,25 @@ class MonitorMenu:
                 'brain': {
                     'neurons': [],
                     'axons': [['i_c', 'o_mvf', 1],
-                              ['i_c', 'o_mvb', -1]],
+                              ['i_c', 'o_mvs', -1]],
                 },
 
                 'receptors': {
                     'num_of_type': np.array([3,2,0,0,0]),
                     'spread': np.full((5,), np.pi/6, np.float32),
                     'fov': np.full((5,), np.pi/6, np.float32),
-                    'opt_dens': np.full((5,), 0.5, np.float32)
+                    'opt_dens': np.full((5,), 0.5, np.float32),
+                    'sense_radius': np.full((5,), 100, np.float32),
                 },
                 
-                'stomach': {'opt_dens': np.arange(0.3, 0.71, 0.1)},
+                'stomach': {
+                    'opt_dens': np.full((5,), 0.5, np.float32),
+                    'metabolism': 1
+                },
 
-                'glands': {'opt_dens': np.arange(0.3, 0.71, 0.1)},
+                'glands': {
+                    'opt_dens': np.arange(0.3, 0.71, 0.1),
+                },
             }]
         )
 
