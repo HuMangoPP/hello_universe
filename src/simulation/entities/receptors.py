@@ -21,11 +21,11 @@ def draw_view_cone(pos: np.ndarray, angle: float, fov: float, length: float, dis
     ]
     pg.draw.lines(display, color, True, points)
 
-def draw_view_cones(receptor_angles: list, fovs: list):
+def draw_view_cones(receptor_angles: list, fovs: list, radii: list):
     surf = pg.Surface((200, 200))
-    for color, angles, fov in zip(RECEPTOR_COLORS, receptor_angles, fovs):
+    for color, angles, fov, radius in zip(RECEPTOR_COLORS, receptor_angles, fovs, radii):
         for angle in angles:
-            draw_view_cone((100,100), angle, fov, 100, surf, color)
+            draw_view_cone((100,100), angle, fov, radius, surf, color)
     surf.set_colorkey((0,0,0))
     return surf
 
@@ -49,7 +49,7 @@ class Receptors:
                                 for num_of_type, spread in zip(self.num_of_type, self.spread)]
         self.receptor_threshold = np.array([math.cos(fov/2) for fov in self.fov])
 
-        self.cones = draw_view_cones(self.receptor_angles, self.fov)
+        self.cones = draw_view_cones(self.receptor_angles, self.fov, self.sense_radius)
 
     # evo
     def mutate(self):

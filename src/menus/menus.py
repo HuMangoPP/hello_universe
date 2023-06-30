@@ -228,7 +228,7 @@ class MonitorMenu:
                     'spread': np.full((5,), np.pi/6, np.float32),
                     'fov': np.full((5,), np.pi/6, np.float32),
                     'opt_dens': np.full((5,), 0.5, np.float32),
-                    'sense_radius': np.full((5,), 100, np.float32),
+                    'sense_radius': np.array([100, 65, 65, 77, 45], np.float32),
                 },
                 
                 'stomach': {
@@ -287,6 +287,9 @@ class MonitorMenu:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
 
         self.sim.render_monitor(self.displays[DEFAULT_DISPLAY], self.entity_pointer, self.font)
+
+        self.font.render(self.displays[DEFAULT_DISPLAY], f'{self.entity_pointer + 1}-{len(self.sim.entities)}',
+                         50, 370, (255, 255, 255), size=15, style='left')
 
         # transitions
         match self.transition_phase:

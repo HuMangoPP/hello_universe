@@ -168,10 +168,10 @@ class Entity:
                      anchor + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
         
         self.receptors.render_monitor(display, anchor, self.z_angle)
-        font.render(display, 'stomach', 60, 300, (255, 255, 255), size=10, style='center')
-        self.stomach.render_monitor(display, (10, 310, 100))
-        font.render(display, 'glands', 160, 300, (255, 255, 255), size=10, style='center')
-        self.glands.render_monitor(display, (110, 310, 100))
+        font.render(display, 'stomach', 580, 300, (255, 255, 255), size=10, style='center')
+        self.stomach.render_monitor(display, (530, 310, 100))
+        font.render(display, 'glands', 470, 300, (255, 255, 255), size=10, style='center')
+        self.glands.render_monitor(display, (420, 310, 100))
         self.brain.render_monitor(display, font)
 
     # data
