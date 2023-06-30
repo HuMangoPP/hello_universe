@@ -61,7 +61,9 @@ class Game:
             if exit_status:
                 if exit_status['exit']:
                     pg.quit()
-                    return
+                    if 'run_sim' in exit_status:
+                        return True
+                    return False
                 else:
                     self.current_menu = MENU_MAP[exit_status['goto']]
                     self.menus[self.current_menu].on_load()

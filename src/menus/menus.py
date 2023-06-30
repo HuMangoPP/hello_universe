@@ -39,7 +39,7 @@ class StartMenu:
         # handle events
         for event in events:
             if event.type == pg.KEYDOWN:
-                if event.key in [pg.K_s, pg.K_SPACE]:
+                if event.key in [pg.K_r, pg.K_SPACE]:
                     self.transition_phase = 1
                     self.transition_time = 0
                     self.goto = 'sim'
@@ -47,6 +47,11 @@ class StartMenu:
                     self.transition_phase = 1
                     self.transition_time = 0
                     self.goto = 'monitor'
+                if event.key == pg.K_s:
+                    return {
+                        'exit': True,
+                        'run_sim': True
+                    }
             if event.type == pg.MOUSEBUTTONDOWN:
                 self.transition_phase = 1
                 self.transition_time = 0
@@ -102,6 +107,12 @@ class SimMenu:
 
         # sim
         self.sim = Simulation()
+        
+        # rendering
+        self.camera = Camera(np.zeros((3,), np.float32), game.res)
+
+    def on_load(self):
+        self.on_transition()
         self.sim.spawn_entities(
             [{
                 'id': 'e0',
@@ -135,11 +146,6 @@ class SimMenu:
             }]
         )
 
-        # rendering
-        self.camera = Camera(np.zeros((3,), np.float32), game.res)
-
-    def on_load(self):
-        self.on_transition()
     
     def on_transition(self):
         # 0 -> no transition
@@ -191,10 +197,6 @@ class SimMenu:
         return displays_to_render
 
 
-'''
-TODO:
-scroll entity pointer
-'''
 class MonitorMenu:
     def __init__(self, game):
         # import game
@@ -208,6 +210,12 @@ class MonitorMenu:
 
         # sim
         self.sim = Simulation()
+
+        # render
+        self.entity_pointer = 0
+    
+    def on_load(self):
+        self.on_transition()
         self.sim.spawn_entities(
             [{
                 'id': 'e0',
@@ -242,12 +250,6 @@ class MonitorMenu:
             }]
         )
 
-        # render
-        self.entity_pointer = 0
-    
-    def on_load(self):
-        self.on_transition()
-
     def on_transition(self):
         # 0 -> no transition
         # 1 -> transition out
@@ -265,7 +267,7 @@ class MonitorMenu:
                 if event.key == pg.K_RIGHT:
                     self.entity_pointer += 1
                 if event.key == pg.K_LEFT:
-                    self.entity_pointer += 1
+                    self.entity_pointer -= 1
                 self.entity_pointer %= len(self.sim.entities)
         
         # handle transitions
@@ -289,7 +291,9 @@ class MonitorMenu:
         self.sim.render_monitor(self.displays[DEFAULT_DISPLAY], self.entity_pointer, self.font)
 
         self.font.render(self.displays[DEFAULT_DISPLAY], f'{self.entity_pointer + 1}-{len(self.sim.entities)}',
-                         50, 370, (255, 255, 255), size=15, style='left')
+                         20, 400, (255, 255, 255), size=15, style='left')
+        self.font.render(self.displays[DEFAULT_DISPLAY], f'st {round(self.sim.sim_time, 2)}',
+                         20, 350, (255, 255, 255), size=15, style='left')
 
         # transitions
         match self.transition_phase:
