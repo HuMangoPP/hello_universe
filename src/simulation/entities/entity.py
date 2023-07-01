@@ -163,10 +163,19 @@ class Entity:
         pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
 
     def render_monitor(self, display: pg.Surface, anchor: tuple, font):
+        # creature
         pg.draw.circle(display, (255, 0, 0), anchor, 5)
         pg.draw.line(display, (255, 0, 0), anchor, 
                      anchor + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
         
+        # health and energy
+        pg.draw.rect(display, (255, 0, 0), pg.Rect(420, 270, int(self.health), 10))
+        pg.draw.rect(display, (255, 255, 255), pg.Rect(420, 270, 100, 10), 2)
+        pg.draw.rect(display, (0, 0, 255), pg.Rect(530, 270, int(self.energy), 10))
+        pg.draw.rect(display, (255, 255, 255), pg.Rect(530, 270, 100, 10), 2)
+        
+
+        # systems
         self.receptors.render_monitor(display, anchor, self.z_angle)
         font.render(display, 'stomach', 580, 300, (255, 255, 255), size=10, style='center')
         self.stomach.render_monitor(display, (530, 310, 100))

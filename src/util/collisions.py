@@ -6,32 +6,26 @@ class QuadTree:
         self.capacity = capacity
         self.center = center
         self.length = length
-        self.points = np.array([])
-        self.data = []
-        self.divided = False
 
-    def insert(self, point: np.ndarray, data: float=0):
+        self.clear()
 
-        # if not self.contains(point):
-        #     return
-        
-        if self.points.size == 0:
-            self.points = np.array([point])
-            self.data = [data]
-        elif self.points.shape[0] < self.capacity:
-            self.points = np.concatenate([self.points, np.array([point])])
-            self.data.append(data)
+    def insert(self, point: np.ndarray, index: int):
+
+        if self.indices.size < self.capacity:
+            self.points = np.array([*self.points, point])
+            self.indices = np.array([*self.indices, index])
         else:
             if not self.divided:
                 self.subdivide()
+            
             if point[0] <= self.center[0] and point[1] <= self.center[1]:
-                self.northwest.insert(point, data)
+                self.northwest.insert(point, index)
             elif point[0] >= self.center[0] and point[1] <= self.center[1]:
-                self.northeast.insert(point, data)
+                self.northeast.insert(point, index)
             elif point[0] <= self.center[0] and point[1] >= self.center[1]:
-                self.southwest.insert(point, data)
+                self.southwest.insert(point, index)
             else:
-                self.southeast.insert(point, data)
+                self.southeast.insert(point, index)
     
     def subdivide(self):
         self.northwest = QuadTree(self.center - np.array([self.length,self.length])/2, self.length/2, self.capacity)
@@ -40,50 +34,55 @@ class QuadTree:
         self.southeast = QuadTree(self.center + np.array([self.length,self.length])/2, self.length/2, self.capacity)
         self.divided = True
     
-    def query_point(self, boundary: np.ndarray) -> np.ndarray:
-        if (self.center[0] + self.length < boundary[0] - boundary[2] or 
-            self.center[0] - self.length > boundary[0] + boundary[2] or
-            self.center[1] + self.length < boundary[1] - boundary[2] or
-            self.center[1] - self.length > boundary[1] + boundary[2]):
-            return np.array([])
+    def query_point(self, xy: np.ndarray, boxradius: float) -> np.ndarray:
+        if (self.center[0] + self.length < xy[0] - boxradius or 
+            self.center[0] - self.length > xy[0] + boxradius or
+            self.center[1] + self.length < xy[1] - boxradius or
+            self.center[1] - self.length > xy[1] + boxradius):
+            # the boundaries do not intersect
+            return np.array([], np.float32)
 
         points_within_boundary = np.array([p for p in self.points 
-                                           if (boundary[0] - boundary[2] <= p[0] and 
-                                               p[0] <= boundary[0] + boundary[2] and
-                                               boundary[1] - boundary[2] <= p[1] and
-                                               p[1] <= boundary[1] + boundary[2])])
+                                           if (xy[0] - boxradius <= p[0] and 
+                                               p[0] <= xy[0] + boxradius and
+                                               xy[1] - boxradius <= p[1] and
+                                               p[1] <= xy[1] + boxradius)], np.float32)
         if self.divided:
             quadrants = [self.northwest,self.northeast,self.southwest,self.southeast]
             for q in quadrants:
-                points_within_quadrant = q.query_point(boundary)
-                if points_within_quadrant.size > 0:
-                    if points_within_boundary.size > 0:
-                        points_within_boundary = np.concatenate([points_within_boundary, points_within_quadrant])
-                    else:
-                        points_within_boundary = points_within_quadrant
+                points_within_boundary = np.array([*points_within_boundary, *q.query_point(xy, boxradius)], np.float32)
 
-    
         return points_within_boundary
 
-    def query_data(self, boundary: np.ndarray) -> list:
-        if (self.center[0] + self.length < boundary[0] - boundary[2] or 
-            self.center[0] - self.length > boundary[0] + boundary[2] or
-            self.center[1] + self.length < boundary[1] - boundary[2] or
-            self.center[1] - self.length > boundary[1] + boundary[2]):
-            return []
-
-        points_within_boundary = [data for p, data in zip(self.points, self.data) 
-                                           if (boundary[0] - boundary[2] <= p[0] and 
-                                               p[0] <= boundary[0] + boundary[2] and
-                                               boundary[1] - boundary[2] <= p[1] and
-                                               p[1] <= boundary[1] + boundary[2])]
+    def query_indices(self, xy: np.ndarray, boxradius: float) -> np.ndarray:
+        if (self.center[0] + self.length < xy[0] - boxradius or 
+            self.center[0] - self.length > xy[0] + boxradius or
+            self.center[1] + self.length < xy[1] - boxradius or
+            self.center[1] - self.length > xy[1] + boxradius):
+            # the boundaries do not intersect
+            return np.array([], np.int32)
+        
+        points_within_boundary = np.array([index for p, index in zip(self.points, self.indices)
+                                           if (xy[0] - boxradius <= p[0] and 
+                                               p[0] <= xy[0] + boxradius and
+                                               xy[1] - boxradius <= p[1] and
+                                               p[1] <= xy[1] + boxradius)], np.int32)
         if self.divided:
             quadrants = [self.northwest,self.northeast,self.southwest,self.southeast]
             for q in quadrants:
-                points_within_quadrant = q.query_data(boundary)
-                points_within_boundary = points_within_boundary + points_within_quadrant
+                points_within_boundary = np.array([*points_within_boundary, *q.query_indices(xy, boxradius)], np.int32)
 
         return points_within_boundary
+
+    def clear(self):
+        self.points = np.array([], np.float32) # (n,3)
+        self.indices = np.array([], np.int32) # (n,)
+
+        self.northwest = None
+        self.northeast = None
+        self.southwest = None
+        self.southeast = None
+        self.divided = False
 
     def render(self, display: pg.Surface):
         boundary = pg.Rect(0, 0, self.length*2, self.length*2)

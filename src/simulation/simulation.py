@@ -64,8 +64,8 @@ class Simulation:
                 self.collection_time = 0
 
         # environment and entity update
-        update_data = [entity.update(self.environment, dt) for entity in self.entities]
         self.environment.update(dt)
+        update_data = [entity.update(self.environment, dt) for entity in self.entities]
 
         # entity death
         self.entities = [entity for entity, data in zip(self.entities, update_data) if 'dead' not in data]

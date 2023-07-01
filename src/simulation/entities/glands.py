@@ -44,7 +44,7 @@ class Glands:
     def release_pheromones(self, pos: np.ndarray, env):
         offsets = np.random.uniform(-25., 25., (5,3))
         self.release = np.clip(self.opt_dens + VARIATION * np.random.randn(5), a_min=0, a_max=1)
-        env.add_new_particles(pos + offsets, np.arange(5), self.release)
+        env.add_pheromones(pos + offsets, np.arange(5), self.release)
 
     # render
     def render_monitor(self, display: pg.Surface, box: tuple):

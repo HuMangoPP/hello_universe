@@ -97,12 +97,13 @@ class Receptors:
         pheromone_data = env.get_pheromone_data(pos[:2], self.sense_radius)
 
         in_range = []
-        for i, (p_data, radius, angles, threshold) in enumerate(zip(pheromone_data, 
-                                                                    self.sense_radius, 
-                                                                    self.receptor_angles, 
-                                                                    self.receptor_threshold)):
+        for p_data, radius, angles, threshold, opt_dens in zip(pheromone_data, 
+                                                               self.sense_radius, 
+                                                               self.receptor_angles, 
+                                                               self.receptor_threshold,
+                                                               self.opt_dens):
             p_pos = p_data['pos']
-            if p_pos.size == 0: # sentinel
+            if p_pos.size == 0: # no phermones
                 in_range.append({
                         'angle': np.empty((0,), np.float32),
                         'actv': np.empty((0,), np.float32),
@@ -111,6 +112,15 @@ class Receptors:
                 })
                 continue
             
+            if angles.size == 0: # no receptors
+                in_range.append({
+                        'angle': np.empty((0,), np.float32),
+                        'actv': np.empty((0,), np.float32),
+                        'pos': np.empty((0,), np.float32),
+                        'dens': np.empty((0,), np.float32),
+                })
+                continue
+
             p_dens = p_data['dens']
             rel_pos = p_pos - pos
             rel_angle = np.arctan2(rel_pos[:,1], rel_pos[:,0]) - z_angle
@@ -125,7 +135,7 @@ class Receptors:
                 in_range.append({
                     'angle': np.average(which_cone, axis=0)[in_radius],
                     'actv': gaussian_dist(p_dens[np.logical_and(in_range, in_cone_reduce)], 
-                                          self.opt_dens[i], VARIATION)
+                                          opt_dens, VARIATION)
                 })
             else:
                 in_range.append({

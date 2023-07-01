@@ -55,7 +55,7 @@ class Stomach:
         for shape, (pheromone_type, opt_dens) in enumerate(zip(pheromone_data, self.opt_dens)):
             digest_ph, digested = digest(pheromone_type['dens'], opt_dens)
             self.swallowed += np.sum(digest_ph[digested])
-            env.eat(pheromone_type['pos'][digested], pheromone_type['ind'][digested], shape)
+            env.eat(digested, shape)
         
         digest_amt = min(self.metabolism * dt, self.swallowed)
         self.swallowed -= digest_amt
