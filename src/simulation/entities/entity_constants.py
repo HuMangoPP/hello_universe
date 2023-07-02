@@ -1,6 +1,7 @@
 # mutation
 MUTATION_RATE = 0.1
 D_OPT_DENS = 0.1
+D_META = 0.1
 D_WEIGHT = 0.1
 D_SPREAD = 0.1
 D_FOV = 0.1
@@ -19,4 +20,9 @@ RECEPTOR_COLORS = [
     (0, 0, 255),
     (255, 255, 0),
     (255, 0, 255),
+]
+
+# food
+FOOD_MAP = [
+    'circle', 'triangle'
 ]

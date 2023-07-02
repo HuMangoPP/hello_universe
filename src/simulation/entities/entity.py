@@ -11,7 +11,11 @@ refactor menus to decouple simulation - make a simulation class that runs all of
 -> what data should be in the monitor?
 -> optimize collision code? c extensions?
 
-make a separate no rendering simulation option
+separate phermones from food ---> receptors should be able to detect food though
+--- repurpose circle phermone as food?
+----- this is already built, just need to change how the glands work and how the stomach works 
+--- or creature separate thing for food
+----- this will give me more control over the system, need to change how the stomach works and need to add onto the receptors
 
 EXTRA if have time
 --- multicell branch --- 
@@ -86,13 +90,19 @@ class Entity:
         energy_spent = np.linalg.norm(self.vel) * self.scale / 50
         energy_spent += self.receptors.get_energy_cost()
         energy_spent += self.brain.get_energy_cost()
-        energy_spent *= (dt * self.stomach.metabolism)
+        energy_spent *= (dt * np.sum(self.stomach.metabolism))
         self.energy -= energy_spent
 
-        # # energy regen
+        # energy regen
         digest = self.stomach.eat(self.pos, env, dt)
-        self.energy += digest
-        self.reproduction_guage += digest / 10
+        self.energy += (digest + dt)
+        if self.energy > 100 and self.clock_time == 0:
+            offset_angle = np.random.uniform(0, 2 * np.pi)
+            env.add_food(np.array([self.pos + 25 * np.array([np.cos(offset_angle), np.sin(offset_angle), 0])]), 
+                         np.zeros(1, np.int32))
+            self.energy = 100
+            
+        self.reproduction_guage += digest
         if self.reproduction_guage > 1:
             ret['child'] = self.reproduce()
             self.reproduction_guage = 0

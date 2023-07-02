@@ -136,8 +136,7 @@ class SimMenu:
                 },
                 
                 'stomach': {
-                    'opt_dens': np.full((5,), 0.5, np.float32),
-                    'metabolism': 1
+                    'metabolism': np.ones((2,), np.float32),
                 },
 
                 'glands': {
@@ -145,8 +144,7 @@ class SimMenu:
                 },
             }]
         )
-
-    
+  
     def on_transition(self):
         # 0 -> no transition
         # 1 -> transition out
@@ -240,8 +238,7 @@ class MonitorMenu:
                 },
                 
                 'stomach': {
-                    'opt_dens': np.full((5,), 0.5, np.float32),
-                    'metabolism': 1
+                    'metabolism': np.ones((2,), np.float32),
                 },
 
                 'glands': {
