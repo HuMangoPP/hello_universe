@@ -137,6 +137,7 @@ class SimMenu:
                 
                 'stomach': {
                     'metabolism': np.ones((2,), np.float32),
+                    'capacity': 10,
                 },
 
                 'glands': {
@@ -239,6 +240,7 @@ class MonitorMenu:
                 
                 'stomach': {
                     'metabolism': np.ones((2,), np.float32),
+                    'capacity': 10,
                 },
 
                 'glands': {
