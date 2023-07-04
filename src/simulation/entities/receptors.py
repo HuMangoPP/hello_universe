@@ -131,16 +131,16 @@ class Receptors:
             in_cone_reduce = np.sum(in_cone, axis=0) > 0
 
             if get_angles:
-                which_cone = np.tile(np.array([angles]).T, (1, p_dens.size))[in_cone]
+                which_cone = np.tile(np.array([angles]).T, (1, p_dens[in_radius].size))[in_cone]
                 in_range.append({
-                    'angle': np.average(which_cone, axis=0)[in_radius],
-                    'actv': gaussian_dist(p_dens[np.logical_and(in_range, in_cone_reduce)], 
-                                          opt_dens, VARIATION)
-                })
+                        'angle': which_cone,
+                        'actv': gaussian_dist(p_dens[np.logical_and(in_radius, in_cone_reduce)], 
+                                            opt_dens, VARIATION)
+                    })
             else:
                 in_range.append({
-                    'pos': p_pos[np.logical_and(in_range, in_cone_reduce)],
-                    'dens': p_dens[np.logical_and(in_range, in_cone_reduce)],
+                    'pos': p_pos[np.logical_and(in_radius, in_cone_reduce)],
+                    'dens': p_dens[np.logical_and(in_radius, in_cone_reduce)],
                 })
         
         return in_range
