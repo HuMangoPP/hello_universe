@@ -246,4 +246,6 @@ class Brain:
     
     def get_sim_data(self):
         '''JSON format'''
-        return self.activations
+        return {
+            name: float(actv) for name, actv in self.activations.items()
+        }

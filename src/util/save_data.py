@@ -11,7 +11,7 @@ def get_df_from_csv(csv_file: str) -> pd.DataFrame:
 def write_entity_data_as_csv(sim_time: float, data: dict, csv_file: str) -> pd.DataFrame:
     old_df = get_df_from_csv(csv_file)
     df = pd.DataFrame.from_dict(data)
-    df['sim_time'] = np.full_like(df['id'], sim_time, np.float32)
+    df['sim_time'] = np.full(len(df.index), sim_time, np.float32)
     df = pd.concat([old_df, df])
     fpath = f'./assets/data/{csv_file}.csv'
     df.to_csv(fpath, index=False)

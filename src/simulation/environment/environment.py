@@ -167,11 +167,48 @@ class Environment:
 
     # data
     def get_sim_data(self) -> dict[str, np.ndarray]:
+        x_pos = np.zeros(0)
+        y_pos = np.zeros(0)
+        z_pos = np.zeros(0)
+        lt = np.zeros(0)
+        dens = np.zeros(0)
+        shape = np.zeros(0)
+        p_type = np.zeros(0)
+
+        for i, p_data in enumerate(self.pheromones):
+            if p_data['lifetime'].size > 0:
+                x_pos = np.array([*x_pos, *p_data['pos'][:,0]])
+                y_pos = np.array([*y_pos, *p_data['pos'][:,1]])
+                z_pos = np.array([*z_pos, *p_data['pos'][:,2]])
+
+                lt = np.array([*lt, *p_data['lifetime']])
+
+                dens = np.array([*dens, *p_data['dens']])
+
+                shape = np.array([*shape, *np.full_like(p_data['lifetime'], i, np.int32)])
+
+                p_type = np.array([*p_type, *np.full_like(p_data['lifetime'], 0)])
+
+        for i, f_data in enumerate(self.food):
+            if f_data['lifetime'].size > 0:
+                x_pos = np.array([*x_pos, *f_data['pos'][:,0]])
+                y_pos = np.array([*y_pos, *f_data['pos'][:,1]])
+                z_pos = np.array([*z_pos, *f_data['pos'][:,2]])
+
+                lt = np.array([*lt, *f_data['lifetime']])
+
+                dens = np.array([*dens, *np.full_like(f_data['life_time'], 1, np.float32)])
+
+                shape = np.array([*shape, *np.full_like(f_data['lifetime'], i, np.int32)])
+
+                p_type = np.array([*p_type, *np.full_like(f_data['lifetime'], 1)])
+
         return {
-            'x': self.positions[:,0],
-            'y': self.positions[:,1],
-            'z': self.positions[:,2],
-            'lifetimes': self.lifetimes,
-            'shapes': self.shapes,
-            'densities': self.densities,
+            'x': x_pos,
+            'y': y_pos,
+            'z': z_pos,
+            'lf': lt,
+            'shapes': shape,
+            'densities': dens,
+            'particle_type': p_type,
         }
