@@ -119,6 +119,8 @@ class Entity:
     
         # death
         if self.health <= 0:
+            env.add_food(np.array([self.pos]), 
+                         np.zeros(1, np.int32))
             return {
                 **ret,
                 'dead': True
