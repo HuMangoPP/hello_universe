@@ -168,11 +168,13 @@ class Entity:
         }
 
     # rendering
-    def render_rt(self, display: pg.Surface, camera):
-        drawpos = camera.transform_to_screen(self.pos)
+    def render_rt(self):
+        # drawpos = camera.transform_to_screen(self.pos)
 
-        pg.draw.circle(display, (255, 0, 0), drawpos, 5)
-        pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
+        # pg.draw.circle(display, (255, 0, 0), drawpos, 5)
+        # pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
+
+        return np.array([*self.pos, self.z_angle])
 
     def render_monitor(self, display: pg.Surface, anchor: tuple, font):
         # creature

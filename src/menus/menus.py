@@ -1,7 +1,7 @@
 import pygame as pg
 import numpy as np
 
-from ..util import transition_in, transition_out, TRANSITION_TIME
+from ..util import transition_in, transition_out, TRANSITION_TIME, draw_shape
 
 from ..simulation import Simulation
 from .camera import Camera
@@ -178,7 +178,23 @@ class SimMenu:
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
 
-        self.sim.render_rt(self.displays[DEFAULT_DISPLAY], self.camera)
+        render_data = self.sim.render_rt()
+
+        for e_render in render_data['entities']:
+            drawpos = self.camera.transform_to_screen(e_render[:3])
+            pg.draw.circle(self.displays[DEFAULT_DISPLAY], (255, 255, 255), drawpos, 5)
+            pg.draw.line(self.displays[DEFAULT_DISPLAY], (255, 255, 255), drawpos,
+                         drawpos + 10 * np.array([np.cos(e_render[3]), np.sin(e_render[3])]))
+        
+        for p_render in render_data['env']['pheromones']:
+            drawpos = self.camera.transform_to_screen(p_render[:3])
+            color = (0, p_render[3] * 255, 0)
+            draw_shape(self.displays[DEFAULT_DISPLAY], drawpos, color, 5, p_render[4])
+        
+        for f_render in render_data['env']['food']:
+            drawpos = self.camera.transform_to_screen(f_render[:3])
+            color = (0, 0, 255)
+            draw_shape(self.displays[DEFAULT_DISPLAY], drawpos, color, 5, f_render[3])
 
         # transitions
         match self.transition_phase:

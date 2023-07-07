@@ -1,6 +1,5 @@
 import pygame as pg
 import numpy as np
-import math
 
 from ...util import QuadTree, draw_shape
 
@@ -143,18 +142,35 @@ class Environment:
             [food_qtree.insert(pos, index) for index, pos in enumerate(food_data['pos'])]
 
     # render
-    def render_rt(self, display: pg.Surface, camera):
-        for shape, pheromone_data in enumerate(self.pheromones):
-            for pos, dens in zip(pheromone_data['pos'], pheromone_data['dens']):
-                drawpos = camera.transform_to_screen(pos)
-                color = np.ceil(np.array([0,255,0]) * dens)
-                draw_shape(display, drawpos, color, 5, shape)
+    def render_rt(self):
+        # for shape, pheromone_data in enumerate(self.pheromones):
+        #     for pos, dens in zip(pheromone_data['pos'], pheromone_data['dens']):
+        #         drawpos = camera.transform_to_screen(pos)
+        #         color = np.ceil(np.array([0,255,0]) * dens)
+        #         draw_shape(display, drawpos, color, 5, shape)
         
+        # for food_type, food_data in enumerate(self.food):
+        #     for pos in food_data['pos']:
+        #         drawpos = camera.transform_to_screen(pos)
+        #         color = (0, 0, 255)
+        #         draw_shape(display, drawpos, color, 5, food_type)
+
+        ph_render = np.zeros(0)
+        for shape, ph_data in enumerate(self.pheromones):
+            shapes = np.full_like(ph_data['dens'], shape)
+            if shapes.size > 0:
+                ph_render = np.array([*ph_render, *np.column_stack([ph_data['pos'], ph_data['dens'], shapes])])
+        
+        food_render = np.zeros(0)
         for food_type, food_data in enumerate(self.food):
-            for pos in food_data['pos']:
-                drawpos = camera.transform_to_screen(pos)
-                color = (0, 0, 255)
-                draw_shape(display, drawpos, color, 5, food_type)
+            food_types = np.full_like(food_data['lifetime'], food_type)
+            if food_types.size > 0:
+                food_render = np.array([*food_render, *np.column_stack([food_data['pos'], food_types])])
+        
+        return {
+            'pheromones': ph_render,
+            'food': food_render
+        }
 
     def render_monitor(self, display: pg.Surface, entity, anchor: tuple):
         pheromone_data = entity.receptors.get_in_range(entity.pos, entity.z_angle, self)

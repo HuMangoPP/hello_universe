@@ -53,8 +53,8 @@ class Stomach:
         bar = pg.Rect(box[0], box[1], 20, swallowed * box[2])
         bar.bottom = bar_bg.bottom
 
-        pg.draw.rect(display, (255, 255, 255), bar_bg, 1)
         pg.draw.rect(display, (0, 0, 255), bar)
+        pg.draw.rect(display, (255, 255, 255), bar_bg, 2)
         
     # data
     def get_model(self):

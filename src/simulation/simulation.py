@@ -76,10 +76,14 @@ class Simulation:
                              for i, data in enumerate(update_data) if 'child' in data])
 
     # rendering
-    def render_rt(self, display: pg.Surface, camera):
-        [entity.render_rt(display, camera) for entity in self.entities]
+    def render_rt(self) -> dict:
+        render_data = {}
 
-        self.environment.render_rt(display, camera)
+        render_data['entities'] = np.array([entity.render_rt() for entity in self.entities])
+
+        render_data['env'] = self.environment.render_rt()
+
+        return render_data
     
     def render_monitor(self, display: pg.Surface, index: int, font):
         if index < len(self.entities):
