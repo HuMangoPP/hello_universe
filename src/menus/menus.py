@@ -1,7 +1,7 @@
 import pygame as pg
 import numpy as np
 
-from ..util import transition_in, transition_out, TRANSITION_TIME, draw_shape
+from ..util import transition_in, transition_out, TRANSITION_TIME, draw_shape, render_neuron, render_axon
 
 from ..simulation import Simulation
 from .camera import Camera
@@ -212,6 +212,35 @@ class SimMenu:
         return displays_to_render
 
 
+def render_brain(display: pg.Surface, font, neuron_loc: dict, neuron_actv: dict, axons: list):
+        for nid in neuron_loc:
+            render_neuron(display, *neuron_loc[nid], font, nid, neuron_actv[nid])
+
+        for axon in axons:
+            render_axon(display, neuron_loc[axon[0]], neuron_loc[axon[1]], axon[2])
+
+
+def render_stomach(display: pg.Surface, font, width, height, fullness: float):
+    stomachbar = pg.Rect(width - 130, height - 110, 10, 100 * fullness)
+    stomachbar.bottom = height - 10
+    pg.draw.rect(display, (0, 255, 0), stomachbar)
+    stomachbar.height = 100
+    stomachbar.bottom = height - 10
+    pg.draw.rect(display, (255, 255, 255), stomachbar, 2)
+
+
+def render_health_and_energy(display: pg.Surface, font, health: float, energy: float):
+    hpbar = pg.Rect(10, 300, health, 10)
+    pg.draw.rect(display, (255, 0, 0), hpbar)
+    hpbar.width = 100
+    pg.draw.rect(display, (255, 255, 255), hpbar, 2)
+    
+    enbar = pg.Rect(10, 285, energy, 10)
+    pg.draw.rect(display, (0, 0, 255), enbar)
+    enbar.width = 100
+    pg.draw.rect(display, (255, 255, 255), enbar, 2)
+
+
 class MonitorMenu:
     def __init__(self, game):
         # import game
@@ -303,8 +332,41 @@ class MonitorMenu:
     def render(self) -> list[str]:
         self.displays[DEFAULT_DISPLAY].fill((20, 26, 51))
 
-        self.sim.render_monitor(self.displays[DEFAULT_DISPLAY], self.entity_pointer, self.font)
+        render_data = self.sim.render_monitor(self.entity_pointer)
 
+        # creature
+        drawpos = (self.width/2, self.height *3/4)
+        pg.draw.circle(self.displays[DEFAULT_DISPLAY], (255, 255, 255), drawpos, 5)
+
+        # env
+        for ph in render_data['env']['pheromones']:
+            pos = ph[:3] - render_data['entity']['pos']
+            color = (0, 255 * ph[3], 0)
+            draw_shape(self.displays[DEFAULT_DISPLAY], pos[:2] + drawpos, color, 5, ph[4])
+        
+        # glands
+        self.font.render(self.displays[DEFAULT_DISPLAY], 'glands', self.width - 55, self.height - 120, (255, 255, 255), 
+                         size=10, style='center')
+        self.displays[DEFAULT_DISPLAY].blit(render_data['entity']['glands'], (self.width - 110, self.height - 110))
+
+        # receptors
+        drawbox = render_data['entity']['receptors'].get_rect()
+        drawbox.center = drawpos
+        self.displays[DEFAULT_DISPLAY].blit(render_data['entity']['receptors'], drawbox)
+
+        # health and energy
+        render_health_and_energy(self.displays[DEFAULT_DISPLAY], self.font,
+                                 render_data['entity']['health'], render_data['entity']['energy'])
+
+        # stomach
+        render_stomach(self.displays[DEFAULT_DISPLAY], self.font, self.width, self.height, 
+                       render_data['entity']['stomach'])
+
+        # brain
+        render_brain(self.displays[DEFAULT_DISPLAY], self.font, *render_data['entity']['brain'])
+
+
+        # timer
         self.font.render(self.displays[DEFAULT_DISPLAY], f'{self.entity_pointer + 1}-{len(self.sim.entities)}',
                          20, 400, (255, 255, 255), size=15, style='left')
         self.font.render(self.displays[DEFAULT_DISPLAY], f'st {round(self.sim.sim_time, 2)}',

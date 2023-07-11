@@ -143,18 +143,6 @@ class Environment:
 
     # render
     def render_rt(self):
-        # for shape, pheromone_data in enumerate(self.pheromones):
-        #     for pos, dens in zip(pheromone_data['pos'], pheromone_data['dens']):
-        #         drawpos = camera.transform_to_screen(pos)
-        #         color = np.ceil(np.array([0,255,0]) * dens)
-        #         draw_shape(display, drawpos, color, 5, shape)
-        
-        # for food_type, food_data in enumerate(self.food):
-        #     for pos in food_data['pos']:
-        #         drawpos = camera.transform_to_screen(pos)
-        #         color = (0, 0, 255)
-        #         draw_shape(display, drawpos, color, 5, food_type)
-
         ph_render = np.zeros(0)
         for shape, ph_data in enumerate(self.pheromones):
             shapes = np.full_like(ph_data['dens'], shape)
@@ -172,14 +160,19 @@ class Environment:
             'food': food_render
         }
 
-    def render_monitor(self, display: pg.Surface, entity, anchor: tuple):
+    def render_monitor(self, entity):
         pheromone_data = entity.receptors.get_in_range(entity.pos, entity.z_angle, self)
 
-        for shape, data in enumerate(pheromone_data):
-            for pos, dens in zip(data['pos'], data['dens']):
-                color = np.ceil(np.array([0,255,0]) * dens)
-                drawpos = (pos - entity.pos)[:2] + anchor
-                draw_shape(display, drawpos, color, 5, shape)
+        
+        ph_render = np.zeros(0)
+        for shape, ph_data in enumerate(pheromone_data):
+            shapes = np.full_like(ph_data['dens'], shape)
+            if shapes.size > 0:
+                ph_render = np.array([*ph_render, *np.column_stack([ph_data['pos'], ph_data['dens'], shapes])])
+        
+        return {
+            'pheromones': ph_render,
+        }
 
     # data
     def get_sim_data(self) -> dict[str, np.ndarray]:

@@ -47,14 +47,15 @@ class Glands:
         env.add_pheromones(pos + offsets, np.arange(5), self.release)
 
     # render
-    def render_monitor(self, display: pg.Surface, box: tuple):
-        dists = pg.transform.scale(self.dists, (box[2], box[2]))
+    def render_monitor(self, size: float):
+        dists = pg.transform.scale(self.dists, (size, size))
         if self.release is not None:
-            xs = box[2] * self.release
-            ys = box[2] * (1 - gaussian_dist(self.release, self.opt_dens, VARIATION))
+            xs = size * self.release
+            ys = size * (1 - gaussian_dist(self.release, self.opt_dens, VARIATION))
             for i, (value, x, y) in enumerate(zip(self.release, xs, ys)):
                 draw_shape(dists, (x, y), np.ceil(np.array([0,255,0]) * value), 5, i)
-        display.blit(dists, box[:2])
+        
+        return dists
         
     
     # data

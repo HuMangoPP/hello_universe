@@ -47,14 +47,8 @@ class Stomach:
         return digest_amt[0] + digest_amt[1] * 5
 
     # render
-    def render_monitor(self, display: pg.Surface, box: tuple):
-        bar_bg = pg.Rect(box[0], box[1], 20, box[2])
-        swallowed = np.sum(self.swallowed) / self.capacity
-        bar = pg.Rect(box[0], box[1], 20, swallowed * box[2])
-        bar.bottom = bar_bg.bottom
-
-        pg.draw.rect(display, (0, 0, 255), bar)
-        pg.draw.rect(display, (255, 255, 255), bar_bg, 2)
+    def render_monitor(self):
+        return np.sum(self.swallowed) / self.capacity
         
     # data
     def get_model(self):

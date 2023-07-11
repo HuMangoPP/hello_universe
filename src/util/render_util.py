@@ -2,6 +2,8 @@ import pygame as pg
 import numpy as np
 import math
 
+from .adv_math import sigmoid
+
 def draw_circle(display: pg.Surface, center: tuple, color: tuple, radius: float):
     pg.draw.circle(display, color, center, radius)
 
@@ -44,3 +46,20 @@ def draw_shape(display: pg.Surface, center: tuple, color: tuple, radius: float, 
             draw_pentagon(display, center, color, radius)
         case 4:
             draw_hexagon(display, center, color, radius)
+
+def render_neuron(display: pg.Surface, x: float, y: float, font, nid: str, actv: float,
+                  radius=5, font_size=10, text_loc : str | None=None):
+    actv = np.clip(actv, a_min=-1, a_max=1)
+    color = (max(-255 * actv, 0), max(255 * actv, 0), 0)
+    pg.draw.circle(display, color, (x, y), radius)
+    if text_loc is None:
+        return
+    if text_loc == 'left':
+        font.render(display, nid, x - 1.25 * (len(nid) + 1) * font_size, y, (255, 255, 255), size=font_size, style='left')
+    else:
+        font.render(display, nid, x + 2.25 * font_size, y, (255, 255, 255), size=font_size, style='left')
+
+def render_axon(display: pg.Surface, inn: tuple, outn: tuple, weight: float):
+    norm = sigmoid(weight, 255, 1)
+    color = (max(-norm, 0), max(norm, 0), 0)
+    pg.draw.line(display, color, inn, outn)

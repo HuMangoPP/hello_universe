@@ -169,33 +169,19 @@ class Entity:
 
     # rendering
     def render_rt(self):
-        # drawpos = camera.transform_to_screen(self.pos)
-
-        # pg.draw.circle(display, (255, 0, 0), drawpos, 5)
-        # pg.draw.line(display, (255,0,0), drawpos, drawpos + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
-
         return np.array([*self.pos, self.z_angle])
 
-    def render_monitor(self, display: pg.Surface, anchor: tuple, font):
-        # creature
-        pg.draw.circle(display, (255, 0, 0), anchor, 5)
-        pg.draw.line(display, (255, 0, 0), anchor, 
-                     anchor + 10 * np.array([np.cos(self.z_angle), np.sin(self.z_angle)]))
-        
-        # health and energy
-        pg.draw.rect(display, (255, 0, 0), pg.Rect(420, 270, int(self.health), 10))
-        pg.draw.rect(display, (255, 255, 255), pg.Rect(420, 270, 100, 10), 2)
-        pg.draw.rect(display, (0, 0, 255), pg.Rect(530, 270, int(self.energy), 10))
-        pg.draw.rect(display, (255, 255, 255), pg.Rect(530, 270, 100, 10), 2)
-        
-
-        # systems
-        self.receptors.render_monitor(display, anchor, self.z_angle)
-        font.render(display, 'stomach', 580, 300, (255, 255, 255), size=10, style='center')
-        self.stomach.render_monitor(display, (530, 310, 100))
-        font.render(display, 'glands', 470, 300, (255, 255, 255), size=10, style='center')
-        self.glands.render_monitor(display, (420, 310, 100))
-        self.brain.render_monitor(display, font)
+    def render_monitor(self):
+        return {
+            'pos': self.pos,
+            'z_angle': self.z_angle,
+            'health': self.health,
+            'energy': self.energy,
+            'receptors': self.receptors.render_monitor(self.z_angle),
+            'stomach': self.stomach.render_monitor(),
+            'glands': self.glands.render_monitor(100),
+            'brain': self.brain.render_monitor(),
+        }
 
     # data
     def get_model(self):

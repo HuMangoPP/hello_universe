@@ -149,11 +149,10 @@ class Receptors:
         return 0.5 * np.sum([num_of_type for num_of_type in self.num_of_type])
 
     # render
-    def render_monitor(self, display: pg.Surface, anchor: tuple, z_angle: float):
+    def render_monitor(self, z_angle: float):
         rot = pg.transform.rotate(self.cones, z_angle)
-        drawrect = rot.get_rect()
-        drawrect.center = anchor
-        display.blit(rot, drawrect)
+        
+        return rot
 
     # data
     def get_model(self) -> dict:

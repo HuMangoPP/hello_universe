@@ -85,13 +85,17 @@ class Simulation:
 
         return render_data
     
-    def render_monitor(self, display: pg.Surface, index: int, font):
+    def render_monitor(self, index: int):
         if index < len(self.entities):
             entity_to_monitor = self.entities[index]
         else:
             entity_to_monitor = self.entities[0]
-        entity_to_monitor.render_monitor(display, (320, 300), font)
-        self.environment.render_monitor(display, entity_to_monitor, (320, 300))
+        
+        render_data = {}
+        render_data['entity'] = entity_to_monitor.render_monitor()
+        render_data['env'] = self.environment.render_monitor(entity_to_monitor)
+        
+        return render_data
 
     # data
     def save_models(self, entities: list[Entity]):

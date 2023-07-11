@@ -6,4 +6,4 @@ from .collisions import QuadTree
 
 from .save_data import write_entity_data_as_csv, write_entity_data_as_json
 
-from .render_util import draw_shape
+from .render_util import draw_shape, render_neuron, render_axon

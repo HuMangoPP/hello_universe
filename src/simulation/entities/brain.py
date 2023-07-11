@@ -52,22 +52,6 @@ def sum_actv(axons: dict[int, Axon], in_neurons: list, activations: dict[str, fl
             actv += activations[nid]
     return actv
 
-def render_neuron(display: pg.Surface, x: float, y: float, font, nid: str, actv: float,
-                  radius=5, font_size=10, text_loc : str | None=None):
-    actv = np.clip(actv, a_min=-1, a_max=1)
-    color = (max(-255 * actv, 0), max(255 * actv, 0), 0)
-    pg.draw.circle(display, color, (x, y), radius)
-    if text_loc is None:
-        return
-    if text_loc == 'left':
-        font.render(display, nid, x - 1.25 * (len(nid) + 1) * font_size, y, (255, 255, 255), size=font_size, style='left')
-    else:
-        font.render(display, nid, x + 2.25 * font_size, y, (255, 255, 255), size=font_size, style='left')
-
-def render_axon(display: pg.Surface, inn: tuple, outn: tuple, weight: float):
-    norm = sigmoid(weight, 255, 1)
-    color = (max(-norm, 0), max(norm, 0), 0)
-    pg.draw.line(display, color, inn, outn)
 
 class Brain:
     def __init__(self, brain_data: dict, brain_history: BrainHistory):
@@ -188,7 +172,7 @@ class Brain:
         return 0.5 * len([axon for axon in self.axons.values() if axon.enabled])
 
     # render
-    def render_monitor(self, display: pg.Surface, font):
+    def render_monitor(self):
         input_layer = {
             nid: actv
             for nid, actv in self.activations.items()
@@ -209,15 +193,13 @@ class Brain:
 
         input_size = len(input_layer.keys())
         y = 100 - 15 * (input_size - 1) / 2
-        for nid, actv in input_layer.items():
-            render_neuron(display, 100, y, font, nid, actv, text_loc='left')
+        for nid in input_layer:
             viz_loc[nid] = (100,y)
             y += 15
         
         output_size = len(output_layer.keys())
         y = 100 - 15 * (output_size - 1) / 2
-        for nid, actv in output_layer.items():
-            render_neuron(display, 540, y, font, nid, actv, text_loc='right')
+        for nid in output_layer:
             viz_loc[nid] = (540,y)
             y += 15
         
@@ -225,15 +207,13 @@ class Brain:
         if hidden_size > 0:
             angle = np.pi
             angle_step = 2 * np.pi / hidden_size
-            for nid, actv in hidden_neurons.items():
+            for nid in hidden_neurons:
                 x, y = 80 * np.cos(angle), 80 * np.sin(angle)
-                render_neuron(display, x, y, font, nid, actv)
                 viz_loc[nid] = (x,y)
                 angle += angle_step
         
-        for axon in self.axons.values():
-            render_axon(display, viz_loc[axon.in_neuron],
-                        viz_loc[axon.out_neuron], axon.weight)
+        return [viz_loc, self.activations, 
+                [[axon.in_neuron, axon.out_neuron, axon.weight] for axon in self.axons.values()]]
 
 
     # data
