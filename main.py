@@ -1,15 +1,42 @@
+#!/usr/bin/env python
 import sys
+import typer
 import numpy as np
 
 from src.game import Game
 from src.simulation import Simulation
 
-if __name__ == '__main__':
+app = typer.Typer()
+
+DEFAULT_SAVE = './assets/data/rt.csv'
+
+
+@app.command()
+def sim_rt(
+    save_file: str = DEFAULT_SAVE,
+    collection_mode: int = 0
+):
     game = Game()
-    if game.run():
-        sim = Simulation(collection_type=2)
-        sim.spawn_entities(
-            [{
+    game.run()
+
+
+@app.command()
+def sim_m(
+    save_file: str = DEFAULT_SAVE,
+    collection_mode: int = 0
+):
+    game = Game()
+    game.run()
+
+
+@app.command()
+def sim(
+    save_file: str = DEFAULT_SAVE,
+    collection_mode: int = 0
+):
+    sim = Simulation(collection_type=2)
+    sim.spawn_entities(
+        [{
                 'id': 'e0',
                 'pos': np.zeros((3,), np.float32),
                 'scale': 1,
@@ -40,7 +67,11 @@ if __name__ == '__main__':
                     'opt_dens': np.arange(0.3, 0.71, 0.1),
                 },
             }]
-        )
-        while True:
-            sim.update()
-    sys.exit()
+    )
+
+    while True:
+        sim.update()
+
+
+if __name__ == '__main__':
+    app()

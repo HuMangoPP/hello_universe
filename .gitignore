@@ -1,3 +1,4 @@
 *.kra
 __pycache__/
 hello_universe_env/
+assets/data/

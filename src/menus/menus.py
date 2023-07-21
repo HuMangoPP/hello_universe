@@ -47,11 +47,6 @@ class StartMenu:
                     self.transition_phase = 1
                     self.transition_time = 0
                     self.goto = 'monitor'
-                if event.key == pg.K_s:
-                    return {
-                        'exit': True,
-                        'run_sim': True
-                    }
             if event.type == pg.MOUSEBUTTONDOWN:
                 self.transition_phase = 1
                 self.transition_time = 0

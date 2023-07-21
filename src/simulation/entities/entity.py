@@ -99,7 +99,7 @@ class Entity:
         if self.energy > 100 and self.clock_time == 0:
             offset_angle = np.random.uniform(0, 2 * np.pi)
             env.add_food(np.array([self.pos + 25 * np.array([np.cos(offset_angle), np.sin(offset_angle), 0])]), 
-                         np.zeros(1, np.int32))
+                         np.zeros(1, np.int32), np.full(1, self.glands.opt_dens[0]))
             self.energy = 100
             
         self.reproduction_guage += digest

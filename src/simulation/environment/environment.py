@@ -27,17 +27,10 @@ FOOD_LIFETIME = 10
 
 class Environment:
     def __init__(self):
-        self.pheromones = [{
-            'pos': np.array([], np.float32), # (n,3)
-            'dens': np.array([], np.float32), # (n,)
-            'lifetime': np.array([], np.float32), # (n,)
-        } for _ in SHAPE_MAP]
+        self.clear_particles()
+
         self.ph_qtree = [QuadTree(np.zeros((2,), np.float32), 500, 4) for _ in SHAPE_MAP]
 
-        self.food = [{
-            'pos': np.array([], np.float32), # (n,3)
-            'lifetime': np.array([], np.float32), # (n,)
-        } for _ in FOOD_MAP]
         self.food_qtree = [QuadTree(np.zeros((2,), np.float32), 500, 4) for _ in FOOD_MAP]
         
         self.pheromones_changed = False
@@ -53,6 +46,7 @@ class Environment:
         
         self.food = [{
             'pos': np.array([], np.float32), # (n,3)
+            'dens': np.array([], np.float32), # (n,)
             'lifetime': np.array([], np.float32), # (n,)
         } for _ in FOOD_MAP]
 
@@ -88,16 +82,18 @@ class Environment:
         return return_data
     
     # food
-    def add_food(self, positions: np.ndarray, food_types: np.ndarray):
-        for pos, food_type in zip(positions, food_types):
+    def add_food(self, positions: np.ndarray, food_types: np.ndarray, densities: np.ndarray):
+        for pos, food_type, dens in zip(positions, food_types, densities):
             if self.food[food_type]:
                 self.food[food_type] = {
                     'pos': np.array([*self.food[food_type]['pos'], pos]),
+                    'dens': np.array([*self.food[food_type]['dens'], dens]),
                     'lifetime': np.array([*self.food[food_type]['lifetime'], FOOD_LIFETIME])
                 }
             else:
                 self.food[food_type] = {
                     'pos': np.array([pos]),
+                    'dens': np.array([dens]),
                     'lifetime': np.array([FOOD_LIFETIME])
                 }
 
@@ -123,10 +119,24 @@ class Environment:
         self.make_ph_qtree()
 
         for food_type, food_data in enumerate(self.food):
-            food_data['lifetime'] = food_data['lifetime'] - dt
+            new_lifetime = food_data['lifetime'] - dt
+
+            # food release "pheromones" (smell, colors)
+            release_pheromone = np.floor(food_data['lifetime']) > np.floor(new_lifetime) 
+            if np.any(release_pheromone):
+                offset_angles = np.random.uniform(0, 2 * np.pi, size=release_pheromone.shape)
+                p_pos = food_data['pos'][release_pheromone] + 5 * np.column_stack([np.cos(offset_angles), np.sin(offset_angles), 
+                                                                                   np.zeros_like(offset_angles)])
+                self.add_pheromones(p_pos, 
+                                    np.full_like(release_pheromone, food_type), 
+                                    food_data['dens'][release_pheromone])
+
+            # determine which food to keep, decay food
+            food_data['lifetime'] = new_lifetime
             keep = food_data['lifetime'] > 0
             self.food[food_type] = {
                 'pos': food_data['pos'][keep],
+                'dens': food_data['dens'][keep],
                 'lifetime': food_data['lifetime'][keep]
             }
         self.make_food_qtree()
